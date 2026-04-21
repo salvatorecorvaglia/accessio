@@ -3,9 +3,13 @@
   "version": "0.0.1",
   "description": "Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free",
   "type": "module",
-  "main": "./src/index.js",
+  "main": "./cjs/index.cjs",
   "module": "./src/index.js",
   "types": "./index.d.ts",
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "exports": {
     ".": {
       "types": "./index.d.ts",
