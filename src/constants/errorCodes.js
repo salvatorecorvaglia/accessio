@@ -1,0 +1,36 @@
+/**
+ * Accessio error code constants.
+ *
+ * Centralised here so that modules that only need the constants
+ * (e.g. retry.js) do not have to import the full AccessioError class.
+ */
+
+const ErrorCodes = {
+  ERR_BAD_OPTION_VALUE: 'ERR_BAD_OPTION_VALUE',
+  ERR_BAD_OPTION: 'ERR_BAD_OPTION',
+  ECONNABORTED: 'ECONNABORTED',
+  ETIMEDOUT: 'ETIMEDOUT',
+  ERR_NETWORK: 'ERR_NETWORK',
+  ERR_FR_TOO_MANY_REDIRECTS: 'ERR_FR_TOO_MANY_REDIRECTS',
+  ERR_BAD_RESPONSE: 'ERR_BAD_RESPONSE',
+  ERR_BAD_REQUEST: 'ERR_BAD_REQUEST',
+  ERR_CANCELED: 'ERR_CANCELED',
+  ERR_NOT_SUPPORT: 'ERR_NOT_SUPPORT',
+  ERR_INVALID_URL: 'ERR_INVALID_URL',
+};
+
+export default ErrorCodes;
+
+export const {
+  ERR_BAD_OPTION_VALUE,
+  ERR_BAD_OPTION,
+  ECONNABORTED,
+  ETIMEDOUT,
+  ERR_NETWORK,
+  ERR_FR_TOO_MANY_REDIRECTS,
+  ERR_BAD_RESPONSE,
+  ERR_BAD_REQUEST,
+  ERR_CANCELED,
+  ERR_NOT_SUPPORT,
+  ERR_INVALID_URL,
+} = ErrorCodes;

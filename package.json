@@ -1,0 +1,111 @@
+{
+  "name": "accessio",
+  "version": "0.0.1",
+  "description": "Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free",
+  "type": "module",
+  "main": "./src/index.js",
+  "module": "./src/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/index.js",
+      "require": "./cjs/index.cjs"
+    },
+    "./helpers/rateLimiter": {
+      "types": "./index.d.ts",
+      "import": "./src/helpers/rateLimiter.js",
+      "require": "./cjs/helpers/rateLimiter.cjs"
+    },
+    "./helpers/debug": {
+      "types": "./index.d.ts",
+      "import": "./src/helpers/debug.js",
+      "require": "./cjs/helpers/debug.cjs"
+    },
+    "./core/buildURL": {
+      "types": "./index.d.ts",
+      "import": "./src/core/buildURL.js",
+      "require": "./cjs/core/buildURL.cjs"
+    },
+    "./core/mergeConfig": {
+      "types": "./index.d.ts",
+      "import": "./src/core/mergeConfig.js",
+      "require": "./cjs/core/mergeConfig.cjs"
+    },
+    "./core/request": {
+      "types": "./index.d.ts",
+      "import": "./src/core/request.js",
+      "require": "./cjs/core/request.cjs"
+    },
+    "./core/retry": {
+      "types": "./index.d.ts",
+      "import": "./src/core/retry.js",
+      "require": "./cjs/core/retry.cjs"
+    },
+    "./helpers/parseHeaders": {
+      "types": "./index.d.ts",
+      "import": "./src/helpers/parseHeaders.js",
+      "require": "./cjs/helpers/parseHeaders.cjs"
+    },
+    "./helpers/settle": {
+      "types": "./index.d.ts",
+      "import": "./src/helpers/settle.js",
+      "require": "./cjs/helpers/settle.cjs"
+    },
+    "./helpers/transformData": {
+      "types": "./index.d.ts",
+      "import": "./src/helpers/transformData.js",
+      "require": "./cjs/helpers/transformData.cjs"
+    }
+  },
+  "files": [
+    "src/",
+    "cjs/",
+    "index.d.ts",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build:cjs": "tsup",
+    "build": "npm run build:cjs",
+    "prepublishOnly": "npm run build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:browser": "vitest run --config vitest.browser.config.js",
+    "benchmark": "node benchmarks/benchmark.mjs",
+    "release:npm": "gh workflow run publish-npm.yml -f publish_tag=$(git describe --tags --abbrev=0)"
+  },
+  "keywords": [
+    "http",
+    "client",
+    "ajax",
+    "fetch",
+    "promise",
+    "request",
+    "accessio"
+  ],
+  "author": "salvatorecorvaglia",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/salvatorecorvaglia/accessio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/salvatorecorvaglia/accessio/issues"
+  },
+  "homepage": "https://github.com/salvatorecorvaglia/accessio#readme",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^3.1.0",
+    "eslint": "^9.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.1.0"
+  }
+}
