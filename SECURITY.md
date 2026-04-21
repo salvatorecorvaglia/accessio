@@ -2,17 +2,17 @@
 
 ## Supported Versions
 
-The following versions of accessio are currently supported with security updates:
+The following versions of Accessio are currently supported with security updates:
 
 | Version | Supported          |
 | ------- | ------------------ |
 | 0.0.x   | :white_check_mark: |
 
-As accessio is in active development (v0.x), we recommend using the latest version to benefit from security improvements and bug fixes.
+As Accessio is in active development (v0.0.x), we recommend using the latest version to benefit from security improvements and bug fixes.
 
 ## Reporting a Vulnerability
 
-We take the security of accessio seriously. If you discover a security vulnerability, please follow these steps:
+We take the security of Accessio seriously. If you discover a security vulnerability, please follow these steps:
 
 ### 🔒 Responsible Disclosure
 
@@ -42,7 +42,7 @@ We take the security of accessio seriously. If you discover a security vulnerabi
 
 ## Security Best Practices
 
-When using accessio in your applications, we recommend following these security practices:
+When using Accessio in your applications, we recommend following these security practices:
 
 ### 🔐 Authentication & Authorization
 
@@ -70,13 +70,13 @@ When using accessio in your applications, we recommend following these security 
 
 ### 📦 Dependency Management
 
-- accessio is **zero-dependency**, reducing the attack surface
+- Accessio is **zero-dependency**, reducing the attack surface
 - Keep your project dependencies up to date using `npm audit` regularly
-- Review the accessio source code for any concerns — it's open source and auditable
+- Review the Accessio source code for any concerns — it's open source and auditable
 
 ## Security Features
 
-accessio includes several built-in security features:
+Accessio includes several built-in security features:
 
 - **Zero external dependencies** — reduces supply chain attack risk
 - **Structured error handling** — prevents information leakage in error messages
@@ -86,8 +86,8 @@ accessio includes several built-in security features:
 
 ## Known Limitations
 
-- accessio relies on the native `fetch` API; security vulnerabilities in the underlying implementation may affect accessio
-- In browser environments, accessio is subject to the browser's same-origin policy and CORS restrictions
+- Accessio relies on the native `fetch` API; security vulnerabilities in the underlying implementation may affect Accessio
+- In browser environments, Accessio is subject to the browser's same-origin policy and CORS restrictions
 
 ## Acknowledgments
 
