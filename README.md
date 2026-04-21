@@ -1,4 +1,4 @@
-# 🐦‍⬛ accessio
+# accessio 🎯
 
 **Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free** — lightweight, modern, zero dependencies.
 
