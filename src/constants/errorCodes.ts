@@ -1,10 +1,3 @@
-/**
- * Accessio error code constants.
- *
- * Centralised here so that modules that only need the constants
- * (e.g. retry.js) do not have to import the full AccessioError class.
- */
-
 const ErrorCodes = {
   ERR_BAD_OPTION_VALUE: 'ERR_BAD_OPTION_VALUE',
   ERR_BAD_OPTION: 'ERR_BAD_OPTION',
@@ -17,7 +10,7 @@ const ErrorCodes = {
   ERR_CANCELED: 'ERR_CANCELED',
   ERR_NOT_SUPPORT: 'ERR_NOT_SUPPORT',
   ERR_INVALID_URL: 'ERR_INVALID_URL',
-};
+} as const;
 
 export default ErrorCodes;
 

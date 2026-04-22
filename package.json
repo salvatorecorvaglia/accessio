@@ -1,10 +1,10 @@
 {
   "name": "accessio",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
-  "module": "./src/index.js",
+  "module": "./src/index.ts",
   "types": "./index.d.ts",
   "publishConfig": {
     "access": "public",
@@ -13,52 +13,52 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./src/index.js",
+      "import": "./src/index.ts",
       "require": "./cjs/index.cjs"
     },
     "./helpers/rateLimiter": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/rateLimiter.js",
+      "import": "./src/helpers/rateLimiter.ts",
       "require": "./cjs/helpers/rateLimiter.cjs"
     },
     "./helpers/debug": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/debug.js",
+      "import": "./src/helpers/debug.ts",
       "require": "./cjs/helpers/debug.cjs"
     },
     "./core/buildURL": {
       "types": "./index.d.ts",
-      "import": "./src/core/buildURL.js",
-      "require": "./cjs/core/buildURL.cjs"
+      "import": "./src/core/buildURL.ts",
+      "require": "./cjs/helpers/buildURL.cjs"
     },
     "./core/mergeConfig": {
       "types": "./index.d.ts",
-      "import": "./src/core/mergeConfig.js",
+      "import": "./src/core/mergeConfig.ts",
       "require": "./cjs/core/mergeConfig.cjs"
     },
     "./core/request": {
       "types": "./index.d.ts",
-      "import": "./src/core/request.js",
+      "import": "./src/core/request.ts",
       "require": "./cjs/core/request.cjs"
     },
     "./core/retry": {
       "types": "./index.d.ts",
-      "import": "./src/core/retry.js",
+      "import": "./src/core/retry.ts",
       "require": "./cjs/core/retry.cjs"
     },
     "./helpers/parseHeaders": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/parseHeaders.js",
+      "import": "./src/helpers/parseHeaders.ts",
       "require": "./cjs/helpers/parseHeaders.cjs"
     },
     "./helpers/settle": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/settle.js",
+      "import": "./src/helpers/settle.ts",
       "require": "./cjs/helpers/settle.cjs"
     },
     "./helpers/transformData": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/transformData.js",
+      "import": "./src/helpers/transformData.ts",
       "require": "./cjs/helpers/transformData.cjs"
     }
   },
@@ -80,7 +80,8 @@
     "test:coverage": "vitest run --coverage",
     "test:browser": "vitest run --config vitest.browser.config.js",
     "benchmark": "node benchmarks/benchmark.mjs",
-    "release:npm": "gh workflow run publish-npm.yml -f publish_tag=$(git describe --tags --abbrev=0)"
+    "release:npm": "gh workflow run publish-npm.yml -f publish_tag=$(git describe --tags --abbrev=0)",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [
     "http",

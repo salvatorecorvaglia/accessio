@@ -40,7 +40,7 @@ npm install @salvatorecorvaglia/accessio
 
 ## 🚀 Quick Start
 
-```javascript
+```typescript
 import accessio from "accessio";
 
 // GET request
@@ -161,7 +161,7 @@ accessio.getUri(config)
 
 ## 🔧 Creating Instances
 
-```javascript
+```typescript
 import accessio from "accessio";
 
 const api = accessio.create({
@@ -181,7 +181,7 @@ const posts = await api.get("/posts", { params: { limit: 5 } });
 
 ## 🔄 Interceptors
 
-```javascript
+```typescript
 // Request interceptor — runs before every request
 accessio.interceptors.request.use(
   (config) => {
@@ -229,7 +229,7 @@ accessio.interceptors.request.clear();
 
 ## 🛡️ Error Handling
 
-```javascript
+```typescript
 try {
   await accessio.get("/might-fail");
 } catch (error) {
@@ -434,7 +434,7 @@ await accessio.get("/debug-this", { debug: true });
 
 ### ESM (recommended)
 
-```javascript
+```typescript
 import accessio from "accessio";
 import {
   createRateLimiter,
@@ -449,7 +449,7 @@ import {
 
 ### CommonJS
 
-```javascript
+```typescript
 const accessio = require("accessio");
 const { createRateLimiter } = require("accessio");
 ```

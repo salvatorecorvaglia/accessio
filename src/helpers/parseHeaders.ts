@@ -1,26 +1,19 @@
-/**
- * Parse response headers from a Headers object into a plain object.
- * All header names are lowercased for consistency.
- *
- * @param {Headers} headers - Fetch API Headers object
- * @returns {object} Plain object of header key-value pairs
- */
-export default function parseHeaders(headers) {
-  const parsed = {};
+export default function parseHeaders(
+  headers: any,
+): Record<string, string> {
+  const parsed: Record<string, string> = {};
 
   if (!headers) return parsed;
 
-  // Handle Fetch API Headers object
   if (typeof headers.forEach === 'function') {
-    headers.forEach((value, key) => {
+    headers.forEach((value: string, key: string) => {
       parsed[key.toLowerCase()] = value;
     });
     return parsed;
   }
 
-  // Handle raw header string (fallback)
   if (typeof headers === 'string') {
-    headers.split('\n').forEach(line => {
+    headers.split('\n').forEach((line: string) => {
       const index = line.indexOf(':');
       if (index > 0) {
         const key = line.substring(0, index).trim().toLowerCase();
@@ -31,9 +24,8 @@ export default function parseHeaders(headers) {
     return parsed;
   }
 
-  // Handle plain object
   if (typeof headers === 'object') {
-    Object.keys(headers).forEach(key => {
+    Object.keys(headers).forEach((key) => {
       parsed[key.toLowerCase()] = headers[key];
     });
     return parsed;
