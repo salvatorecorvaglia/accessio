@@ -45,14 +45,14 @@ npm run benchmark     # Performance benchmark vs native fetch
 
 3. **Write or update tests** — we use [Vitest](https://vitest.dev/). Test files go in `tests/`.
 
- 4. **Run the checks locally**:
+4. **Run the checks locally**:
 
-   ```bash
-   npm run lint         # Must pass
-   npm run typecheck   # Must pass
-   npm test             # Must pass
-   npm run build        # Must succeed
-   ```
+```bash
+npm run lint         # Must pass
+npm run typecheck   # Must pass
+npm test             # Must pass
+npm run build        # Must succeed
+```
 
 5. **Commit with a clear message** following [Conventional Commits](https://www.conventionalcommits.org/):
 
@@ -152,12 +152,12 @@ If you find a bug or have a feature request:
 
 When you open a PR, GitHub Actions will automatically run:
 
-| Check     | Command            | What it does                     |
-| --------- | ------------------ | -------------------------------- |
-| Lint      | `npm run lint`     | ESLint static analysis           |
-| TypeCheck | `npm run typecheck`| TypeScript type checking         |
-| Test      | `npm test`         | Vitest across Node.js 18, 20, 22 |
-| Build     | `npm run build`    | CommonJS build via tsup          |
+| Check     | Command             | What it does                     |
+| --------- | ------------------- | -------------------------------- |
+| Lint      | `npm run lint`      | ESLint static analysis           |
+| TypeCheck | `npm run typecheck` | TypeScript type checking         |
+| Test      | `npm test`          | Vitest across Node.js 18, 20, 22 |
+| Build     | `npm run build`     | CommonJS build via tsup          |
 
 All four must pass before a PR can be merged.
 

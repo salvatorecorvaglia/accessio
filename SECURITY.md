@@ -6,9 +6,10 @@ The following versions of Accessio are currently supported with security updates
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 0.1.x   | :white_check_mark: |
 | 0.0.x   | :white_check_mark: |
 
-As Accessio is in active development (v0.0.x), we recommend using the latest version to benefit from security improvements and bug fixes.
+As Accessio is in active development (v0.x.x), we recommend using the latest version to benefit from security improvements and bug fixes.
 
 ## Reporting a Vulnerability
 
@@ -91,4 +92,4 @@ Accessio includes several built-in security features:
 
 ## Acknowledgments
 
-We would like to thank the security researchers and community members who responsiblyably disclose vulnerabilities and help improve the security of accessio.
+We would like to thank the security researchers and community members who responsibly disclose vulnerabilities and help improve the security of accessio.
