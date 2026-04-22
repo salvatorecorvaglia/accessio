@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import InterceptorManager from '../src/interceptors/interceptorManager.js';
+import InterceptorManager from '../src/interceptors/interceptorManager';
 
 describe('InterceptorManager', () => {
   it('starts with no handlers', () => {
@@ -25,11 +25,11 @@ describe('InterceptorManager', () => {
 
     it('stores fulfilled and rejected handlers', () => {
       const manager = new InterceptorManager();
-      const fulfilled = (v) => v;
-      const rejected = (e) => e;
+      const fulfilled = (v: any) => v;
+      const rejected = (e: any) => e;
       manager.use(fulfilled, rejected);
 
-      let captured;
+      let captured: any;
       manager.forEach((h) => { captured = h; });
       expect(captured.fulfilled).toBe(fulfilled);
       expect(captured.rejected).toBe(rejected);
@@ -38,9 +38,9 @@ describe('InterceptorManager', () => {
     it('stores options', () => {
       const manager = new InterceptorManager();
       const runWhen = () => true;
-      manager.use(() => {}, null, { synchronous: true, runWhen });
+      manager.use(() => {}, undefined, { synchronous: true, runWhen });
 
-      let captured;
+      let captured: any;
       manager.forEach((h) => { captured = h; });
       expect(captured.synchronous).toBe(true);
       expect(captured.runWhen).toBe(runWhen);
@@ -66,13 +66,13 @@ describe('InterceptorManager', () => {
 
     it('skips ejected handlers in forEach', () => {
       const manager = new InterceptorManager();
-      const results = [];
+      const results: string[] = [];
       manager.use(() => results.push('a'));
       const id = manager.use(() => results.push('b'));
       manager.use(() => results.push('c'));
 
       manager.eject(id);
-      manager.forEach((h) => h.fulfilled());
+      manager.forEach((h) => (h as any).fulfilled());
       expect(results).toEqual(['a', 'c']);
     });
   });
@@ -93,11 +93,11 @@ describe('InterceptorManager', () => {
   describe('forEach', () => {
     it('iterates over all active interceptors', () => {
       const manager = new InterceptorManager();
-      const items = [];
+      const items: number[] = [];
       manager.use(() => items.push(1));
       manager.use(() => items.push(2));
 
-      manager.forEach((h) => h.fulfilled());
+      manager.forEach((h) => (h as any).fulfilled());
       expect(items).toEqual([1, 2]);
     });
   });

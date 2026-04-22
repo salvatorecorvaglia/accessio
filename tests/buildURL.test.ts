@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import buildURL, { serializeParams, combineURLs, isAbsoluteURL } from '../src/core/buildURL.js';
+import buildURL, { serializeParams, combineURLs, isAbsoluteURL } from '../src/core/buildURL';
 
 describe('buildURL', () => {
   it('returns the url as-is when no baseURL or params', () => {
@@ -34,20 +34,20 @@ describe('buildURL', () => {
   });
 
   it('uses custom paramsSerializer', () => {
-    const serializer = (params) => `custom=${Object.keys(params).join(',')}`;
+    const serializer = (params: Record<string, unknown>) => `custom=${Object.keys(params).join(',')}`;
     const result = buildURL('/users', undefined, { a: 1, b: 2 }, serializer);
     expect(result).toBe('/users?custom=a,b');
   });
 
   it('returns empty string when no url and no baseURL', () => {
-    expect(buildURL(undefined)).toBe('');
+    expect(buildURL('')).toBe('');
   });
 });
 
 describe('serializeParams', () => {
   it('returns empty string for null/undefined', () => {
-    expect(serializeParams(null)).toBe('');
-    expect(serializeParams(undefined)).toBe('');
+    expect(serializeParams(null as any)).toBe('');
+    expect(serializeParams(undefined as any)).toBe('');
   });
 
   it('serializes simple key-value pairs', () => {

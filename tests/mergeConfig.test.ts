@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import mergeConfig, { deepMerge } from '../src/core/mergeConfig.js';
+import mergeConfig, { deepMerge } from '../src/core/mergeConfig';
 
 describe('mergeConfig', () => {
   it('returns config2 values when both are provided', () => {
@@ -45,10 +45,10 @@ describe('mergeConfig', () => {
       { headers: { common: { Accept: 'application/json' }, 'X-Default': 'yes' } },
       { headers: { common: { Authorization: 'Bearer tok' }, 'X-Custom': 'val' } }
     );
-    expect(result.headers.common.Accept).toBe('application/json');
-    expect(result.headers.common.Authorization).toBe('Bearer tok');
-    expect(result.headers['X-Default']).toBe('yes');
-    expect(result.headers['X-Custom']).toBe('val');
+    expect((result.headers as any).common.Accept).toBe('application/json');
+    expect((result.headers as any).common.Authorization).toBe('Bearer tok');
+    expect((result.headers as any)['X-Default']).toBe('yes');
+    expect((result.headers as any)['X-Custom']).toBe('val');
   });
 
   it('handles empty configs', () => {

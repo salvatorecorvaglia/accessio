@@ -1,8 +1,7 @@
 import { describe, it, expect, vi } from "vitest";
 
-// Mock the request pipeline to avoid real HTTP
-vi.mock("../src/core/request.js", () => ({
-  default: vi.fn((config) =>
+vi.mock("../src/core/request", () => ({
+  default: vi.fn((config: any) =>
     Promise.resolve({
       data: { ok: true },
       status: 200,
@@ -15,17 +14,16 @@ vi.mock("../src/core/request.js", () => ({
   ),
 }));
 
-vi.mock("../src/core/retry.js", () => ({
-  default: vi.fn((dispatchFn, config) => dispatchFn(config)),
+vi.mock("../src/core/retry", () => ({
+  default: vi.fn((dispatchFn: any, config: any) => dispatchFn(config)),
 }));
 
-vi.mock("../src/helpers/debug.js", () => ({
+vi.mock("../src/helpers/debug", () => ({
   logRequest: vi.fn(),
   logResponse: vi.fn(),
   logError: vi.fn(),
 }));
 
-// Import AFTER mocks are set up
 import accessio, {
   Accessio,
   AccessioError,
@@ -34,9 +32,9 @@ import accessio, {
   InterceptorManager,
   createInstance,
   createRateLimiter,
-} from "../src/index.js";
+} from "../src/index";
 
-describe("index.js — default instance and exports", () => {
+describe("index.ts — default instance and exports", () => {
   describe("default export (accessio)", () => {
     it("is a callable function", () => {
       expect(typeof accessio).toBe("function");
@@ -54,13 +52,13 @@ describe("index.js — default instance and exports", () => {
         "patch",
       ];
       for (const method of methods) {
-        expect(typeof accessio[method]).toBe("function");
+        expect(typeof (accessio as any)[method]).toBe("function");
       }
     });
 
     it("has form methods", () => {
       for (const method of ["postForm", "putForm", "patchForm"]) {
-        expect(typeof accessio[method]).toBe("function");
+        expect(typeof (accessio as any)[method]).toBe("function");
       }
     });
 
@@ -103,7 +101,6 @@ describe("index.js — default instance and exports", () => {
       });
       expect(instance.defaults.baseURL).toBe("https://custom.com");
       expect(instance.defaults.timeout).toBe(3000);
-      // Should inherit defaults like responseType
       expect(instance.defaults.responseType).toBe("json");
     });
 
@@ -118,7 +115,7 @@ describe("index.js — default instance and exports", () => {
         "head",
         "options",
       ]) {
-        expect(typeof instance[method]).toBe("function");
+        expect(typeof (instance as any)[method]).toBe("function");
       }
     });
 
@@ -150,20 +147,20 @@ describe("index.js — default instance and exports", () => {
 
   describe("accessio.spread()", () => {
     it("spreads array to arguments", () => {
-      const fn = accessio.spread((a, b) => a + b);
+      const fn = accessio.spread((a: number, b: number) => a + b);
       expect(fn([3, 7])).toBe(10);
     });
   });
 
   describe("accessio.isCancel()", () => {
     it("returns true for cancel errors", () => {
-      const error = new AccessioError("cancelled", "ERR_CANCELED");
-      error.isAccessioError = true;
+      const error = new AccessioError("cancelled", "ERR_CANCELED", null, null, null);
+      (error as any).isAccessioError = true;
       expect(accessio.isCancel(error)).toBe(true);
     });
 
     it("returns false for non-cancel errors", () => {
-      const error = new AccessioError("network", "ERR_NETWORK");
+      const error = new AccessioError("network", "ERR_NETWORK", null, null, null);
       expect(accessio.isCancel(error)).toBe(false);
     });
 
@@ -175,7 +172,7 @@ describe("index.js — default instance and exports", () => {
 
   describe("accessio.isAccessioError()", () => {
     it("returns true for AccessioError instances", () => {
-      expect(accessio.isAccessioError(new AccessioError("test"))).toBe(true);
+      expect(accessio.isAccessioError(new AccessioError("test", "", null, null, null))).toBe(true);
     });
 
     it("returns true for duck-typed AccessioErrors", () => {

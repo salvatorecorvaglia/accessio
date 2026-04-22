@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import Accessio from "../src/accessio.js";
+import Accessio from "../src/accessio";
 
-// Mock the request module to avoid real HTTP calls
-vi.mock("../src/core/request.js", () => ({
-  default: vi.fn((config) => {
-    // Simulate a successful response
+vi.mock("../src/core/request", () => ({
+  default: vi.fn((config: any) => {
     return Promise.resolve({
       data: { ok: true },
       status: 200,
@@ -17,20 +15,18 @@ vi.mock("../src/core/request.js", () => ({
   }),
 }));
 
-// Mock retry to just passthrough
-vi.mock("../src/core/retry.js", () => ({
-  default: vi.fn((dispatchFn, config) => dispatchFn(config)),
+vi.mock("../src/core/retry", () => ({
+  default: vi.fn((dispatchFn: any, config: any) => dispatchFn(config)),
 }));
 
-// Silence debug logging in tests
-vi.mock("../src/helpers/debug.js", () => ({
+vi.mock("../src/helpers/debug", () => ({
   logRequest: vi.fn(),
   logResponse: vi.fn(),
   logError: vi.fn(),
 }));
 
 describe("Accessio class", () => {
-  let accessio;
+  let accessio: InstanceType<typeof Accessio>;
 
   beforeEach(() => {
     accessio = new Accessio({
@@ -96,13 +92,13 @@ describe("Accessio class", () => {
   describe("shorthand methods without body", () => {
     for (const method of ["get", "delete", "head", "options"]) {
       it(`${method}() sets correct method and url`, async () => {
-        const res = await accessio[method]("/endpoint");
+        const res = await accessio[method as keyof typeof accessio]("/endpoint");
         expect(res.config.method).toBe(method);
         expect(res.config.url).toBe("/endpoint");
       });
 
       it(`${method}() merges extra config`, async () => {
-        const res = await accessio[method]("/endpoint", { timeout: 9999 });
+        const res = await accessio[method as keyof typeof accessio]("/endpoint", { timeout: 9999 });
         expect(res.config.timeout).toBe(9999);
       });
     }
@@ -112,14 +108,14 @@ describe("Accessio class", () => {
     for (const method of ["post", "put", "patch"]) {
       it(`${method}() sets method, url, and data`, async () => {
         const body = { name: "test" };
-        const res = await accessio[method]("/endpoint", body);
+        const res = await accessio[method as keyof typeof accessio]("/endpoint", body);
         expect(res.config.method).toBe(method);
         expect(res.config.url).toBe("/endpoint");
         expect(res.config.data).toEqual(body);
       });
 
       it(`${method}() merges extra config`, async () => {
-        const res = await accessio[method]("/endpoint", null, {
+        const res = await accessio[method as keyof typeof accessio]("/endpoint", null, {
           timeout: 1234,
         });
         expect(res.config.timeout).toBe(1234);
@@ -132,13 +128,13 @@ describe("Accessio class", () => {
       const formMethod = `${method}Form`;
 
       it(`${formMethod}() sets Content-Type to multipart/form-data`, async () => {
-        const res = await accessio[formMethod]("/upload", { file: "data" });
+        const res = await accessio[formMethod as keyof typeof accessio]("/upload", { file: "data" });
         expect(res.config.headers).toBeDefined();
         expect(res.config.headers["Content-Type"]).toBe("multipart/form-data");
       });
 
       it(`${formMethod}() sets correct method`, async () => {
-        const res = await accessio[formMethod]("/upload", null);
+        const res = await accessio[formMethod as keyof typeof accessio]("/upload", null);
         expect(res.config.method).toBe(method);
       });
     }
@@ -158,7 +154,7 @@ describe("Accessio class", () => {
 
   describe("interceptors", () => {
     it("request interceptors modify config", async () => {
-      accessio.interceptors.request.use((config) => {
+      accessio.interceptors.request.use((config: any) => {
         config.headers = config.headers || {};
         config.headers["X-Test"] = "intercepted";
         return config;
@@ -169,7 +165,7 @@ describe("Accessio class", () => {
     });
 
     it("response interceptors modify response", async () => {
-      accessio.interceptors.response.use((response) => {
+      accessio.interceptors.response.use((response: any) => {
         response.data = { ...response.data, intercepted: true };
         return response;
       });
@@ -181,26 +177,25 @@ describe("Accessio class", () => {
     it("request interceptors with runWhen condition", async () => {
       let called = false;
       accessio.interceptors.request.use(
-        (config) => {
+        (config: any) => {
           called = true;
           return config;
         },
-        null,
-        { runWhen: (config) => config.method === "post" },
+        undefined,
+        { runWhen: (config: any) => config.method === "post" },
       );
 
-      // GET should NOT trigger the interceptor
       await accessio.get("/test");
       expect(called).toBe(false);
     });
 
     it("request interceptors run in reverse order", async () => {
-      const order = [];
-      accessio.interceptors.request.use((config) => {
+      const order: string[] = [];
+      accessio.interceptors.request.use((config: any) => {
         order.push("first");
         return config;
       });
-      accessio.interceptors.request.use((config) => {
+      accessio.interceptors.request.use((config: any) => {
         order.push("second");
         return config;
       });
@@ -210,12 +205,12 @@ describe("Accessio class", () => {
     });
 
     it("response interceptors run in normal order", async () => {
-      const order = [];
-      accessio.interceptors.response.use((response) => {
+      const order: string[] = [];
+      accessio.interceptors.response.use((response: any) => {
         order.push("first");
         return response;
       });
-      accessio.interceptors.response.use((response) => {
+      accessio.interceptors.response.use((response: any) => {
         order.push("second");
         return response;
       });
@@ -226,7 +221,7 @@ describe("Accessio class", () => {
 
     it("ejected interceptors are skipped", async () => {
       let called = false;
-      const id = accessio.interceptors.request.use((config) => {
+      const id = accessio.interceptors.request.use((config: any) => {
         called = true;
         return config;
       });

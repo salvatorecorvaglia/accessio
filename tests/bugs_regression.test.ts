@@ -1,10 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import Accessio from '../src/accessio.js';
+import Accessio from '../src/accessio';
 
 describe('Bugs Regression Tests', () => {
   describe('Default Method Bug', () => {
     it('should respect default method set in instance config', async () => {
-      // Mock fetch to track the method
       const mockFetch = vi.fn().mockResolvedValue({
         status: 200,
         statusText: 'OK',
@@ -16,8 +15,6 @@ describe('Bugs Regression Tests', () => {
       const client = new Accessio({ method: 'post' });
       await client.request({ url: '/test' });
 
-      // EXPECTATION: It should be POST, but currently falls back to GET
-      // because 'method' is in requestOnlyKeys in mergeConfig.js
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/test'),
         expect.objectContaining({ method: 'POST' })
@@ -35,7 +32,7 @@ describe('Bugs Regression Tests', () => {
       });
       global.fetch = mockFetch;
 
-      const transformer = vi.fn((data) => data.toUpperCase());
+      const transformer = vi.fn((data: any) => data.toUpperCase());
       const client = new Accessio();
       
       const response = await client.request({
@@ -44,8 +41,6 @@ describe('Bugs Regression Tests', () => {
         transformResponse: [transformer]
       });
 
-      // EXPECTATION: transformer should be called and data should be "HELLO WORLD"
-      // currently it is skipped unless responseType is 'json'
       expect(transformer).toHaveBeenCalled();
       expect(response.data).toBe('HELLO WORLD');
     });

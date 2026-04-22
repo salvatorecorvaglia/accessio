@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import parseHeaders from '../src/helpers/parseHeaders.js';
+import parseHeaders from '../src/helpers/parseHeaders';
 
 describe('parseHeaders', () => {
   it('returns empty object for null/undefined', () => {
@@ -28,12 +28,12 @@ describe('parseHeaders', () => {
 
   it('parses Headers-like object with forEach', () => {
     const mockHeaders = {
-      forEach(fn) {
+      forEach(fn: (value: string, key: string) => void) {
         fn('application/json', 'Content-Type');
         fn('no-cache', 'Cache-Control');
       }
     };
-    const result = parseHeaders(mockHeaders);
+    const result = parseHeaders(mockHeaders as any);
     expect(result['content-type']).toBe('application/json');
     expect(result['cache-control']).toBe('no-cache');
   });

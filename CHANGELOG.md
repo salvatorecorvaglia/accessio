@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **Refactored from JavaScript to TypeScript** — full type safety and modern best practices
   - All source files converted from `.js` to `.ts`
+  - All test files converted from `.js` to `.ts`
   - Strict TypeScript configuration with comprehensive type definitions
   - Build process updated via tsup for CommonJS output
   - Added `npm run typecheck` script for type validation

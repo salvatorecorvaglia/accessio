@@ -1,33 +1,33 @@
 import { describe, it, expect, vi } from 'vitest';
-import retryRequest, { defaultRetryCondition, calculateDelay } from '../src/core/retry.js';
-import AccessioError from '../src/core/accessioError.js';
+import retryRequest, { defaultRetryCondition, calculateDelay } from '../src/core/retry';
+import AccessioError from '../src/core/accessioError';
 
-describe('retry.js', () => {
+describe('retry.ts', () => {
   describe('defaultRetryCondition', () => {
     it('does not retry on ERR_CANCELED', () => {
-      const error = new AccessioError('cancelled', AccessioError.ERR_CANCELED);
+      const error = new AccessioError('cancelled', AccessioError.ERR_CANCELED, null, null, null);
       expect(defaultRetryCondition(error)).toBe(false);
     });
 
     it('retries on ERR_NETWORK', () => {
-      const error = new AccessioError('network', AccessioError.ERR_NETWORK);
+      const error = new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null);
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
     it('retries on ETIMEDOUT', () => {
-      const error = new AccessioError('timeout', AccessioError.ETIMEDOUT);
+      const error = new AccessioError('timeout', AccessioError.ETIMEDOUT, null, null, null);
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
     it('retries on 5xx server errors', () => {
-      const error = new AccessioError('server error', AccessioError.ERR_BAD_RESPONSE);
-      error.response = { status: 503 };
+      const error = new AccessioError('server error', AccessioError.ERR_BAD_RESPONSE, null, null, null);
+      error.response = { status: 503, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
     it('does not retry on 4xx client errors', () => {
-      const error = new AccessioError('client error', AccessioError.ERR_BAD_REQUEST);
-      error.response = { status: 404 };
+      const error = new AccessioError('client error', AccessioError.ERR_BAD_REQUEST, null, null, null);
+      error.response = { status: 404, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
       expect(defaultRetryCondition(error)).toBe(false);
     });
   });
@@ -39,10 +39,9 @@ describe('retry.js', () => {
     });
 
     it('increases with attempt number', () => {
-      // With jitter this isn't deterministic, but on average attempt 2 > attempt 0
       const delays = Array.from({ length: 100 }, () => calculateDelay(2, 1000));
       const avg = delays.reduce((a, b) => a + b, 0) / delays.length;
-      expect(avg).toBeGreaterThan(2000); // base * 2^2 = 4000, with jitter ±25%
+      expect(avg).toBeGreaterThan(2000);
     });
   });
 
@@ -68,12 +67,12 @@ describe('retry.js', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 3) {
-          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK));
+          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null));
         }
         return Promise.resolve({ status: 200 });
       });
 
-      const config = { retry: 3, retryDelay: 1 }; // 1ms delay for test speed
+      const config = { retry: 3, retryDelay: 1 };
 
       const result = await retryRequest(dispatch, config);
       expect(result.status).toBe(200);
@@ -82,7 +81,7 @@ describe('retry.js', () => {
 
     it('throws after exhausting retries', async () => {
       const dispatch = vi.fn(() =>
-        Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK))
+        Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null))
       );
 
       const config = { retry: 2, retryDelay: 1 };
@@ -90,12 +89,12 @@ describe('retry.js', () => {
       await expect(retryRequest(dispatch, config)).rejects.toMatchObject({
         code: 'ERR_NETWORK'
       });
-      expect(dispatch).toHaveBeenCalledTimes(3); // initial + 2 retries
+      expect(dispatch).toHaveBeenCalledTimes(3);
     });
 
     it('does not retry when retryCondition returns false', async () => {
       const dispatch = vi.fn(() =>
-        Promise.reject(new AccessioError('bad request', AccessioError.ERR_BAD_REQUEST))
+        Promise.reject(new AccessioError('bad request', AccessioError.ERR_BAD_REQUEST, null, null, null))
       );
 
       const config = {
@@ -115,7 +114,7 @@ describe('retry.js', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 3) {
-          return Promise.reject(new AccessioError('net', AccessioError.ERR_NETWORK));
+          return Promise.reject(new AccessioError('net', AccessioError.ERR_NETWORK, null, null, null));
         }
         return Promise.resolve({ status: 200 });
       });
@@ -133,8 +132,8 @@ describe('retry.js', () => {
       let attempt = 0;
       const dispatch = vi.fn(() => {
         attempt++;
-        const error = new AccessioError('error', AccessioError.ERR_BAD_REQUEST);
-        error.response = { status: 429 };
+        const error = new AccessioError('error', AccessioError.ERR_BAD_REQUEST, null, null, null);
+        error.response = { status: 429, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
         if (attempt < 2) return Promise.reject(error);
         return Promise.resolve({ status: 200 });
       });
@@ -142,7 +141,7 @@ describe('retry.js', () => {
       const config = {
         retry: 3,
         retryDelay: 1,
-        retryCondition: (error) => error.response?.status === 429
+        retryCondition: (error: any) => error.response?.status === 429
       };
 
       const result = await retryRequest(dispatch, config);
@@ -156,26 +155,23 @@ describe('retry.js', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 2) {
-          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK));
+          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null));
         }
         return Promise.resolve({ status: 200 });
       });
 
       const config = {
         retry: 3,
-        retryDelay: 10000, // Long delay to ensure we abort during wait
+        retryDelay: 10000,
         signal: controller.signal
       };
 
-      // Start the retry request
       const retryPromise = retryRequest(dispatch, config);
 
-      // Abort after a short delay
       setTimeout(() => controller.abort(new Error('Test abort')), 10);
 
-      // Should reject with abort error
       await expect(retryPromise).rejects.toThrow('Test abort');
-      expect(dispatch).toHaveBeenCalledTimes(1); // Only initial attempt
+      expect(dispatch).toHaveBeenCalledTimes(1);
     });
   });
 });

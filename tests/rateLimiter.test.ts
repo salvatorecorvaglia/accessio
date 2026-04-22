@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createRateLimiter, rateLimitedRequest } from '../src/helpers/rateLimiter.js';
+import { createRateLimiter, rateLimitedRequest } from '../src/helpers/rateLimiter';
 
 describe('createRateLimiter', () => {
   it('starts with zero active and pending', () => {
@@ -24,13 +24,11 @@ describe('createRateLimiter', () => {
     await limiter.acquire();
     expect(limiter.active).toBe(1);
 
-    // This should queue
     let resolved = false;
     const pending = limiter.acquire().then(() => { resolved = true; });
     expect(limiter.pending).toBe(1);
     expect(resolved).toBe(false);
 
-    // Release to let the queued one proceed
     limiter.release();
     await pending;
     expect(resolved).toBe(true);
@@ -83,9 +81,8 @@ describe('createRateLimiter', () => {
 
     it('rejects all queued pending promises', async () => {
       const limiter = createRateLimiter(1);
-      await limiter.acquire(); // occupy the only slot
+      await limiter.acquire();
 
-      // Queue 3 more acquire calls
       const results = [
         limiter.acquire().catch(e => e.message),
         limiter.acquire().catch(e => e.message),
@@ -122,11 +119,10 @@ describe('createRateLimiter', () => {
   describe('rateLimitedRequest()', () => {
     it('acquires, dispatches and releases automatically', async () => {
       const limiter = createRateLimiter(2);
-      const dispatch = async (config) => ({ status: 200, config });
+      const dispatch = async (config: any) => ({ status: 200, config });
 
       const result = await rateLimitedRequest(dispatch, limiter, { url: '/test' });
       expect(result.status).toBe(200);
-      // Slot should have been released
       expect(limiter.active).toBe(0);
     });
 

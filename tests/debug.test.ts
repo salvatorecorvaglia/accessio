@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logRequest, logResponse, logError } from '../src/helpers/debug.js';
+import { logRequest, logResponse, logError } from '../src/helpers/debug';
 
-describe('debug.js', () => {
-  let consoleSpy;
+describe('debug.ts', () => {
+  let consoleSpy: any;
 
   beforeEach(() => {
     consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
@@ -46,7 +46,7 @@ describe('debug.js', () => {
     });
 
     it('truncates large body data', () => {
-      const largeData = {};
+      const largeData: Record<string, string> = {};
       for (let i = 0; i < 50; i++) {
         largeData[`key_${i}`] = 'a'.repeat(20);
       }
@@ -76,12 +76,12 @@ describe('debug.js', () => {
 
   describe('logResponse', () => {
     it('does nothing when config.debug is false', () => {
-      logResponse({ config: { debug: false }, status: 200 });
+      logResponse({ config: { debug: false }, status: 200 } as any);
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('does nothing when config is missing', () => {
-      logResponse({ status: 200 });
+      logResponse({ status: 200 } as any);
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
@@ -91,8 +91,11 @@ describe('debug.js', () => {
         status: 200,
         statusText: 'OK',
         duration: 42,
-        data: { ok: true }
-      });
+        data: { ok: true },
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
 
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('200');
@@ -103,7 +106,11 @@ describe('debug.js', () => {
       logResponse({
         config: { debug: true },
         status: 200,
-      });
+        statusText: '',
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('??');
     });
@@ -112,8 +119,12 @@ describe('debug.js', () => {
       logResponse({
         config: { debug: true },
         status: 200,
-        duration: 10
-      });
+        statusText: '',
+        duration: 10,
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('✅');
     });
@@ -122,8 +133,12 @@ describe('debug.js', () => {
       logResponse({
         config: { debug: true },
         status: 500,
-        duration: 10
-      });
+        statusText: '',
+        duration: 10,
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('❌');
     });
@@ -132,8 +147,12 @@ describe('debug.js', () => {
       logResponse({
         config: { debug: true },
         status: 301,
-        duration: 5
-      });
+        statusText: '',
+        duration: 5,
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('⚠️');
     });
@@ -142,21 +161,29 @@ describe('debug.js', () => {
       logResponse({
         config: { debug: true },
         status: 200,
+        statusText: '',
         duration: 10,
-        data: 'hello world'
-      });
+        data: 'hello world',
+        headers: {},
+        request: {},
+        config: { debug: true }
+      } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('Size');
     });
 
     it('does not crash when data cannot be estimated', () => {
-      const circular = {};
+      const circular: any = {};
       circular.self = circular;
       expect(() => logResponse({
         config: { debug: true },
         status: 200,
+        statusText: '',
         duration: 10,
-        data: circular
+        data: circular,
+        headers: {},
+        request: {},
+        config: { debug: true }
       })).not.toThrow();
     });
   });
@@ -173,14 +200,14 @@ describe('debug.js', () => {
     });
 
     it('logs error message', () => {
-      logError(new Error('Network failure'), { debug: true });
+      logError(new Error('Network failure') as any, { debug: true });
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('ERROR');
       expect(output).toContain('Network failure');
     });
 
     it('logs error code when available', () => {
-      const error = new Error('fail');
+      const error = new Error('fail') as any;
       error.code = 'ERR_NETWORK';
       logError(error, { debug: true });
       const output = consoleSpy.mock.calls[0][0];
@@ -188,7 +215,7 @@ describe('debug.js', () => {
     });
 
     it('logs status when response exists', () => {
-      const error = new Error('fail');
+      const error = new Error('fail') as any;
       error.response = { status: 503 };
       logError(error, { debug: true });
       const output = consoleSpy.mock.calls[0][0];
@@ -196,7 +223,7 @@ describe('debug.js', () => {
     });
 
     it('does not crash when error has no code or response', () => {
-      expect(() => logError(new Error('bare error'), { debug: true })).not.toThrow();
+      expect(() => logError(new Error('bare error') as any, { debug: true })).not.toThrow();
     });
   });
 });
