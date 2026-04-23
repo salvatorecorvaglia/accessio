@@ -6,8 +6,7 @@ The following versions of Accessio are currently supported with security updates
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 0.1.x   | :white_check_mark: |
-| 0.0.x   | :white_check_mark: |
+| 1.0.x   | :white_check_mark: |
 
 As Accessio is in active development (v0.x.x), we recommend using the latest version to benefit from security improvements and bug fixes.
 

@@ -1,6 +1,6 @@
 {
   "name": "accessio",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
@@ -79,7 +79,6 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:browser": "vitest run --config vitest.browser.config.js",
-    "benchmark": "node benchmarks/benchmark.mjs",
     "release:npm": "gh workflow run publish-npm.yml -f publish_tag=$(git describe --tags --abbrev=0)",
     "typecheck": "tsc --noEmit"
   },
@@ -109,6 +108,7 @@
   "devDependencies": {
     "@vitest/coverage-v8": "^3.1.0",
     "eslint": "^9.0.0",
+    "jsdom": "^29.0.2",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
     "vitest": "^3.1.0"
