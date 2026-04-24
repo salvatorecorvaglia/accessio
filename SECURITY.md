@@ -2,93 +2,17 @@
 
 ## Supported Versions
 
-The following versions of Accessio are currently supported with security updates:
+We currently support the following versions with security updates.
 
 | Version | Supported          |
 | ------- | ------------------ |
 | 1.0.x   | :white_check_mark: |
-
-As Accessio is in active development (v0.x.x), we recommend using the latest version to benefit from security improvements and bug fixes.
+| < 1.0   | :x:                |
 
 ## Reporting a Vulnerability
 
-We take the security of Accessio seriously. If you discover a security vulnerability, please follow these steps:
+We take the security of this project seriously. 
 
-### 🔒 Responsible Disclosure
+Please report any security vulnerabilities by creating a private vulnerability report on GitHub at [https://github.com/salvatorecorvaglia/accessio/security/advisories/new](https://github.com/salvatorecorvaglia/accessio/security/advisories/new) or by reaching out to the maintainers directly.
 
-1. **DO NOT** create a public GitHub issue for security vulnerabilities
-2. **DO** report the vulnerability privately via one of these methods:
-   - **GitHub Private Vulnerability Reporting**: [Report a vulnerability](https://github.com/salvatorecorvaglia/accessio/security/advisories/new)
-
-3. Include as much information as possible:
-   - Description of the vulnerability
-   - Steps to reproduce
-   - Potential impact
-   - Suggested fix (if you have one)
-
-### Response Timeline
-
-- **Initial response**: We will acknowledge your report within **48 hours**
-- **Assessment**: We will assess the vulnerability and provide an initial response within **7 days**
-- **Fix timeline**: Critical vulnerabilities will be addressed within **14 days** when possible
-- **Disclosure**: We will coordinate with you on the disclosure timeline
-
-### What to Expect
-
-- We will keep you informed of the progress toward a fix
-- We will credit you in the release notes (unless you prefer to remain anonymous)
-- We will notify you before public disclosure
-- We may ask for additional information or assistance in verifying the fix
-
-## Security Best Practices
-
-When using Accessio in your applications, we recommend following these security practices:
-
-### 🔐 Authentication & Authorization
-
-- Never hardcode credentials or API keys in your source code
-- Use environment variables or secure secret management for sensitive configuration
-- Always validate and sanitize user input before including it in requests
-
-### 🛡️ Request Validation
-
-- Use the `validateStatus` configuration option to define acceptable response codes
-- Implement proper error handling for all HTTP responses, including 4xx and 5xx errors
-- Validate response data before processing it in your application
-
-### 🌐 Network Security
-
-- Always use HTTPS in production to encrypt data in transit
-- Configure appropriate timeout values to prevent resource exhaustion
-- Use `withCredentials` carefully when making cross-origin requests
-
-### ⚙️ Configuration Security
-
-- Review and validate all configuration options before use
-- Be cautious when using interceptors that modify request headers or data
-- Use the rate limiter to prevent abuse and resource exhaustion
-
-### 📦 Dependency Management
-
-- Accessio is **zero-dependency**, reducing the attack surface
-- Keep your project dependencies up to date using `npm audit` regularly
-- Review the Accessio source code for any concerns — it's open source and auditable
-
-## Security Features
-
-Accessio includes several built-in security features:
-
-- **Zero external dependencies** — reduces supply chain attack risk
-- **Structured error handling** — prevents information leakage in error messages
-- **Configurable timeouts** — prevents resource exhaustion attacks
-- **Request cancellation** — supports `AbortController` for request lifecycle management
-- **Rate limiting** — prevents abuse through concurrency control
-
-## Known Limitations
-
-- Accessio relies on the native `fetch` API; security vulnerabilities in the underlying implementation may affect Accessio
-- In browser environments, Accessio is subject to the browser's same-origin policy and CORS restrictions
-
-## Acknowledgments
-
-We would like to thank the security researchers and community members who responsibly disclose vulnerabilities and help improve the security of accessio.
+We will acknowledge receipt of your vulnerability report as soon as possible and strive to send you regular updates about our progress.
