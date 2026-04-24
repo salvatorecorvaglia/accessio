@@ -100,7 +100,7 @@
   "bugs": {
     "url": "https://github.com/salvatorecorvaglia/accessio/issues"
   },
-  "homepage": "https://github.com/salvatorecorvaglia/accessio#readme",
+  "homepage": "https://github.com/salvatorecorvaglia/accessio",
   "sideEffects": false,
   "engines": {
     "node": ">=18.0.0"
