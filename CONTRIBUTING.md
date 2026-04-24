@@ -124,9 +124,8 @@ accessio/
 ### Pull Requests
 
 - Keep PRs focused — one feature or fix per PR.
-- Update documentation (README, JSDoc) if behavior changes.
+- Update documentation if behavior changes.
 - Ensure all CI checks pass before requesting review.
-- Add yourself to `CONTRIBUTORS.md` if this is your first contribution!
 
 ## Reporting Issues
 
@@ -162,6 +161,5 @@ All four must pass before a PR can be merged.
 ## Need Help?
 
 - Open an [Issue](https://github.com/salvatorecorvaglia/accessio/issues) for bugs and feature requests
-- Read the [README.md](./README.md) for API documentation
 
 Thank you for helping make Accessio better! 🙏

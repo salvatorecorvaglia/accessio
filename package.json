@@ -65,9 +65,7 @@
   "files": [
     "src/",
     "cjs/",
-    "index.d.ts",
-    "README.md",
-    "LICENSE"
+    "index.d.ts"
   ],
   "scripts": {
     "build:cjs": "tsup",

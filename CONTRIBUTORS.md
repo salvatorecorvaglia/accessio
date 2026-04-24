@@ -6,10 +6,6 @@ Thank you to everyone who has contributed to **Accessio**! 🎉
 
 - **[Salvatore Corvaglia](https://github.com/salvatorecorvaglia)** — Creator & Lead Maintainer
 
-## Contributors
-
-_Be the first! See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started._
-
 ---
 
 ### How to Get Listed

@@ -471,15 +471,6 @@ import { transformData } from "accessio/helpers/transformData";
 
 ---
 
-## 📚 Documentation
-
-| Document                          | Description                                 |
-| --------------------------------- | ------------------------------------------- |
-| [CHANGELOG](./CHANGELOG.md)       | Version history and release notes           |
-| [CONTRIBUTING](./CONTRIBUTING.md) | Guide for contributors                      |
-| [SECURITY](./SECURITY.md)         | Security policy and vulnerability reporting |
-| [CONTRIBUTORS](./CONTRIBUTORS.md) | Project contributors                        |
-
 ## 📝 Author
 
 **Salvatore Corvaglia**
