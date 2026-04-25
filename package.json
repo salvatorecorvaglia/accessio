@@ -81,15 +81,6 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx}\""
   },
-  "keywords": [
-    "http",
-    "client",
-    "ajax",
-    "fetch",
-    "promise",
-    "request",
-    "accessio"
-  ],
   "author": "salvatorecorvaglia",
   "license": "MIT",
   "repository": {
