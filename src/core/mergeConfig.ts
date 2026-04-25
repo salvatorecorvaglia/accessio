@@ -1,33 +1,29 @@
-import type { AccessioRequestConfig } from '../types';
+import type { AccessioRequestConfig } from "../types";
 
 function deepMerge(...sources: any[]): Record<string, any> {
   const result: Record<string, any> = {};
 
   for (const source of sources) {
-    if (!source || typeof source !== 'object') continue;
+    if (!source || typeof source !== "object") continue;
 
     for (const key of Object.keys(source)) {
       const value = source[key];
 
-      if (
-        value &&
-        typeof value === 'object' &&
-        !Array.isArray(value)
-      ) {
+      if (value && typeof value === "object" && !Array.isArray(value)) {
         if (
           value instanceof Date ||
           value instanceof RegExp ||
           value instanceof Map ||
           value instanceof Set ||
           value instanceof Error ||
-          (typeof ArrayBuffer !== 'undefined' &&
+          (typeof ArrayBuffer !== "undefined" &&
             value instanceof ArrayBuffer) ||
-          (typeof Blob !== 'undefined' && value instanceof Blob)
+          (typeof Blob !== "undefined" && value instanceof Blob)
         ) {
           result[key] = value;
         } else if (
           result[key] &&
-          typeof result[key] === 'object' &&
+          typeof result[key] === "object" &&
           !Array.isArray(result[key])
         ) {
           result[key] = deepMerge(result[key], value);
@@ -43,8 +39,8 @@ function deepMerge(...sources: any[]): Record<string, any> {
   return result;
 }
 
-const requestOnlyKeys = new Set<string>(['url', 'data', 'signal']);
-const deepMergeKeys = new Set<string>(['headers']);
+const requestOnlyKeys = new Set<string>(["url", "data", "signal"]);
+const deepMergeKeys = new Set<string>(["headers"]);
 
 export default function mergeConfig(
   config1: AccessioRequestConfig = {},

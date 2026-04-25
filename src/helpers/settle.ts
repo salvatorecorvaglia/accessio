@@ -1,5 +1,5 @@
-import AccessioError from '../core/accessioError';
-import type { AccessioResponse, AccessioRequestConfig } from '../types';
+import AccessioError from "../core/accessioError";
+import type { AccessioResponse, AccessioRequestConfig } from "../types";
 
 export default function settle(
   resolve: (value: AccessioResponse) => void,

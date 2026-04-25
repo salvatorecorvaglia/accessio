@@ -1,27 +1,27 @@
-import Accessio from './accessio';
-import defaults from './defaults';
-import AccessioError from './core/accessioError';
-import mergeConfig from './core/mergeConfig';
-import buildURL from './core/buildURL';
-import InterceptorManager from './interceptors/interceptorManager';
-import { createRateLimiter } from './helpers/rateLimiter';
-import { logRequest, logResponse, logError } from './helpers/debug';
-import { ERR_CANCELED } from './constants/errorCodes';
-import type { AccessioRequestConfig, AccessioResponse } from './types';
+import Accessio from "./accessio";
+import defaults from "./defaults";
+import AccessioError from "./core/accessioError";
+import mergeConfig from "./core/mergeConfig";
+import buildURL from "./core/buildURL";
+import InterceptorManager from "./interceptors/interceptorManager";
+import { createRateLimiter } from "./helpers/rateLimiter";
+import { logRequest, logResponse, logError } from "./helpers/debug";
+import { ERR_CANCELED } from "./constants/errorCodes";
+import type { AccessioRequestConfig, AccessioResponse } from "./types";
 
 const PUBLIC_METHODS = [
-  'request',
-  'getUri',
-  'get',
-  'delete',
-  'head',
-  'options',
-  'post',
-  'put',
-  'patch',
-  'postForm',
-  'putForm',
-  'patchForm',
+  "request",
+  "getUri",
+  "get",
+  "delete",
+  "head",
+  "options",
+  "post",
+  "put",
+  "patch",
+  "postForm",
+  "putForm",
+  "patchForm",
 ];
 
 function createInstance(defaultConfig: AccessioRequestConfig) {
@@ -36,7 +36,7 @@ function createInstance(defaultConfig: AccessioRequestConfig) {
 
   for (const key of PUBLIC_METHODS) {
     const method: any = (context as any)[key];
-    if (typeof method === 'function') {
+    if (typeof method === "function") {
       instance[key] = method.bind(context);
     }
   }
@@ -54,18 +54,12 @@ function createInstance(defaultConfig: AccessioRequestConfig) {
     };
   };
   instance.isCancel = function isCancel(value: any): boolean {
-    return !!(
-      value &&
-      value.isAccessioError &&
-      value.code === ERR_CANCELED
-    );
+    return !!(value && value.isAccessioError && value.code === ERR_CANCELED);
   };
-  instance.isAccessioError = function isAccessioError(
-    value: any,
-  ): boolean {
+  instance.isAccessioError = function isAccessioError(value: any): boolean {
     return (
       value instanceof AccessioError ||
-      !!(value && typeof value === 'object' && value.isAccessioError === true)
+      !!(value && typeof value === "object" && value.isAccessioError === true)
     );
   };
   instance.AccessioError = AccessioError;

@@ -1,5 +1,5 @@
-import ErrorCodes from '../constants/errorCodes';
-import type { AccessioRequestConfig, AccessioResponse } from '../types';
+import ErrorCodes from "../constants/errorCodes";
+import type { AccessioRequestConfig, AccessioResponse } from "../types";
 
 export class AccessioError extends Error {
   static ERR_BAD_OPTION_VALUE: string = ErrorCodes.ERR_BAD_OPTION_VALUE;
@@ -7,7 +7,8 @@ export class AccessioError extends Error {
   static ECONNABORTED: string = ErrorCodes.ECONNABORTED;
   static ETIMEDOUT: string = ErrorCodes.ETIMEDOUT;
   static ERR_NETWORK: string = ErrorCodes.ERR_NETWORK;
-  static ERR_FR_TOO_MANY_REDIRECTS: string = ErrorCodes.ERR_FR_TOO_MANY_REDIRECTS;
+  static ERR_FR_TOO_MANY_REDIRECTS: string =
+    ErrorCodes.ERR_FR_TOO_MANY_REDIRECTS;
   static ERR_BAD_RESPONSE: string = ErrorCodes.ERR_BAD_RESPONSE;
   static ERR_BAD_REQUEST: string = ErrorCodes.ERR_BAD_REQUEST;
   static ERR_CANCELED: string = ErrorCodes.ERR_CANCELED;
@@ -29,7 +30,7 @@ export class AccessioError extends Error {
     response: AccessioResponse | null,
   ) {
     super(message);
-    this.name = 'AccessioError';
+    this.name = "AccessioError";
     this.code = code ?? null;
     this.config = config ?? null;
     this.request = request ?? null;

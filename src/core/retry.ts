@@ -1,15 +1,11 @@
-import {
-  ERR_CANCELED,
-  ERR_NETWORK,
-  ETIMEDOUT,
-} from '../constants/errorCodes';
+import { ERR_CANCELED, ERR_NETWORK, ETIMEDOUT } from "../constants/errorCodes";
 import type {
   AccessioRequestConfig,
   AccessioResponse,
   AccessioError,
   RetryConditionFunction,
   OnRetryFunction,
-} from '../types';
+} from "../types";
 
 function defaultRetryCondition(error: any): boolean {
   if (error.code === ERR_CANCELED) {
@@ -43,7 +39,7 @@ function sleep(ms: number, options?: { signal?: AbortSignal }): Promise<void> {
 
     const timeoutId = setTimeout(() => {
       if (options?.signal && onAbort) {
-        options.signal.removeEventListener('abort', onAbort);
+        options.signal.removeEventListener("abort", onAbort);
       }
       resolve();
     }, ms);
@@ -51,17 +47,15 @@ function sleep(ms: number, options?: { signal?: AbortSignal }): Promise<void> {
     if (options?.signal) {
       if (options.signal.aborted) {
         clearTimeout(timeoutId);
-        return reject(
-          options.signal.reason || new Error('Sleep aborted'),
-        );
+        return reject(options.signal.reason || new Error("Sleep aborted"));
       }
 
       onAbort = () => {
         clearTimeout(timeoutId);
-        reject(options.signal!.reason || new Error('Sleep aborted'));
+        reject(options.signal!.reason || new Error("Sleep aborted"));
       };
 
-      options.signal.addEventListener('abort', onAbort, { once: true });
+      options.signal.addEventListener("abort", onAbort, { once: true });
     }
   });
 }
@@ -90,7 +84,8 @@ async function retryRequest(
       lastError = error;
 
       const isLastAttempt = attempt >= maxRetries;
-      const shouldRetry = !isLastAttempt && retryCondition(error as AccessioError);
+      const shouldRetry =
+        !isLastAttempt && retryCondition(error as AccessioError);
 
       if (!shouldRetry) {
         throw error;
@@ -98,7 +93,7 @@ async function retryRequest(
 
       const delay = calculateDelay(attempt, retryDelay);
 
-      if (typeof config.onRetry === 'function') {
+      if (typeof config.onRetry === "function") {
         (config.onRetry as OnRetryFunction)(
           attempt + 1,
           error as AccessioError,

@@ -1,4 +1,4 @@
-import { InterceptorManager } from '../types';
+import { InterceptorManager } from "../types";
 
 export { InterceptorManager };
 

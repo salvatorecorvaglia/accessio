@@ -1,17 +1,17 @@
-import InterceptorManager from './interceptors/interceptorManager';
-import AccessioError from './core/accessioError';
-import mergeConfig from './core/mergeConfig';
-import dispatchRequest from './core/request';
-import buildURL from './core/buildURL';
-import retryRequest from './core/retry';
-import { logRequest, logResponse, logError } from './helpers/debug';
-import { rateLimitedRequest } from './helpers/rateLimiter';
+import InterceptorManager from "./interceptors/interceptorManager";
+import AccessioError from "./core/accessioError";
+import mergeConfig from "./core/mergeConfig";
+import dispatchRequest from "./core/request";
+import buildURL from "./core/buildURL";
+import retryRequest from "./core/retry";
+import { logRequest, logResponse, logError } from "./helpers/debug";
+import { rateLimitedRequest } from "./helpers/rateLimiter";
 import type {
   AccessioRequestConfig,
   AccessioResponse,
   Interceptors,
   InterceptorHandler,
-} from './types';
+} from "./types";
 
 export class Accessio {
   defaults: AccessioRequestConfig;
@@ -29,7 +29,7 @@ export class Accessio {
     configOrUrl: string | AccessioRequestConfig,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    if (typeof configOrUrl === 'string') {
+    if (typeof configOrUrl === "string") {
       config = { ...config, url: configOrUrl };
     } else {
       config = configOrUrl ? { ...configOrUrl } : {};
@@ -37,11 +37,11 @@ export class Accessio {
 
     const mergedConfig = mergeConfig(this.defaults, config);
 
-    mergedConfig.method = (mergedConfig.method || 'get').toLowerCase();
+    mergedConfig.method = (mergedConfig.method || "get").toLowerCase();
 
     if (!mergedConfig.url && !mergedConfig.baseURL) {
       throw new AccessioError(
-        'Request URL is required. Provide a `url` or `baseURL` in the config.',
+        "Request URL is required. Provide a `url` or `baseURL` in the config.",
         AccessioError.ERR_BAD_OPTION,
         mergedConfig,
         null,
@@ -66,20 +66,17 @@ export class Accessio {
     let promise: Promise<any> = Promise.resolve(mergedConfig);
 
     for (const interceptor of requestInterceptors) {
-      promise = promise.then(
-        (value: any) => {
-          if (interceptor.fulfilled) {
-            return interceptor.fulfilled(value);
-          }
-          return value;
-        },
-        interceptor.rejected,
-      );
+      promise = promise.then((value: any) => {
+        if (interceptor.fulfilled) {
+          return interceptor.fulfilled(value);
+        }
+        return value;
+      }, interceptor.rejected);
     }
 
     promise = promise.then((cfg: any) => {
       const fullUrl = buildURL(
-        cfg.url ?? '',
+        cfg.url ?? "",
         cfg.baseURL,
         cfg.params,
         cfg.paramsSerializer,
@@ -88,9 +85,7 @@ export class Accessio {
       logRequest(cfg, fullUrl);
 
       const enrichedCfg =
-        fullUrl !== (cfg.url || '')
-          ? { ...cfg, _builtUrl: fullUrl }
-          : cfg;
+        fullUrl !== (cfg.url || "") ? { ...cfg, _builtUrl: fullUrl } : cfg;
 
       const dispatchFn = cfg.rateLimiter
         ? (config: AccessioRequestConfig) =>
@@ -112,15 +107,12 @@ export class Accessio {
     );
 
     for (const interceptor of responseInterceptors) {
-      promise = promise.then(
-        (value: any) => {
-          if (interceptor.fulfilled) {
-            return interceptor.fulfilled(value);
-          }
-          return value;
-        },
-        interceptor.rejected,
-      );
+      promise = promise.then((value: any) => {
+        if (interceptor.fulfilled) {
+          return interceptor.fulfilled(value);
+        }
+        return value;
+      }, interceptor.rejected);
     }
 
     return promise;
@@ -129,7 +121,7 @@ export class Accessio {
   getUri(config?: AccessioRequestConfig): string {
     const merged = mergeConfig(this.defaults, config);
     return buildURL(
-      merged.url ?? '',
+      merged.url ?? "",
       merged.baseURL,
       merged.params,
       merged.paramsSerializer,
@@ -140,9 +132,7 @@ export class Accessio {
     url: string,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    return this.request<T>(
-      mergeConfig(config || {}, { method: 'get', url }),
-    );
+    return this.request<T>(mergeConfig(config || {}, { method: "get", url }));
   }
 
   delete<T = any>(
@@ -150,7 +140,7 @@ export class Accessio {
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
-      mergeConfig(config || {}, { method: 'delete', url }),
+      mergeConfig(config || {}, { method: "delete", url }),
     );
   }
 
@@ -158,9 +148,7 @@ export class Accessio {
     url: string,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    return this.request<T>(
-      mergeConfig(config || {}, { method: 'head', url }),
-    );
+    return this.request<T>(mergeConfig(config || {}, { method: "head", url }));
   }
 
   options<T = any>(
@@ -168,7 +156,7 @@ export class Accessio {
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
-      mergeConfig(config || {}, { method: 'options', url }),
+      mergeConfig(config || {}, { method: "options", url }),
     );
   }
 
@@ -178,7 +166,7 @@ export class Accessio {
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
-      mergeConfig(config || {}, { method: 'post', url, data }),
+      mergeConfig(config || {}, { method: "post", url, data }),
     );
   }
 
@@ -188,7 +176,7 @@ export class Accessio {
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
-      mergeConfig(config || {}, { method: 'put', url, data }),
+      mergeConfig(config || {}, { method: "put", url, data }),
     );
   }
 
@@ -198,7 +186,7 @@ export class Accessio {
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
-      mergeConfig(config || {}, { method: 'patch', url, data }),
+      mergeConfig(config || {}, { method: "patch", url, data }),
     );
   }
 
@@ -209,10 +197,10 @@ export class Accessio {
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
       mergeConfig(config || {}, {
-        method: 'post',
+        method: "post",
         url,
         data,
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       }),
     );
   }
@@ -224,10 +212,10 @@ export class Accessio {
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
       mergeConfig(config || {}, {
-        method: 'put',
+        method: "put",
         url,
         data,
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       }),
     );
   }
@@ -239,10 +227,10 @@ export class Accessio {
   ): Promise<AccessioResponse<T>> {
     return this.request<T>(
       mergeConfig(config || {}, {
-        method: 'patch',
+        method: "patch",
         url,
         data,
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { "Content-Type": "multipart/form-data" },
       }),
     );
   }

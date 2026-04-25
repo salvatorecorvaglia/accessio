@@ -1,8 +1,5 @@
-import AccessioError from '../core/accessioError';
-import type {
-  TransformFunction,
-  AccessioRequestConfig,
-} from '../types';
+import AccessioError from "../core/accessioError";
+import type { TransformFunction, AccessioRequestConfig } from "../types";
 
 export default function transformData(
   transforms: TransformFunction | TransformFunction[] | undefined,
@@ -17,7 +14,7 @@ export default function transformData(
   let result = data;
 
   for (const transform of transforms) {
-    if (typeof transform === 'function') {
+    if (typeof transform === "function") {
       try {
         result = transform(result, headers);
       } catch (err) {

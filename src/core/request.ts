@@ -1,19 +1,23 @@
-import buildURL from './buildURL';
-import AccessioError from './accessioError';
-import parseHeaders from '../helpers/parseHeaders';
-import transformData from '../helpers/transformData';
-import settle from '../helpers/settle';
-import type { AccessioRequestConfig, AccessioResponse, TransformFunction } from '../types';
+import buildURL from "./buildURL";
+import AccessioError from "./accessioError";
+import parseHeaders from "../helpers/parseHeaders";
+import transformData from "../helpers/transformData";
+import settle from "../helpers/settle";
+import type {
+  AccessioRequestConfig,
+  AccessioResponse,
+  TransformFunction,
+} from "../types";
 
 const METHOD_KEYS = new Set<string>([
-  'common',
-  'delete',
-  'get',
-  'head',
-  'options',
-  'post',
-  'put',
-  'patch',
+  "common",
+  "delete",
+  "get",
+  "head",
+  "options",
+  "post",
+  "put",
+  "patch",
 ]);
 
 type HeadersConfig = Record<string, Record<string, string>>;
@@ -25,10 +29,10 @@ function flattenHeaders(
   if (!headers) return {};
 
   const merged: Record<string, string> = {};
-  const methodLower = (method || 'get').toLowerCase();
+  const methodLower = (method || "get").toLowerCase();
 
-  if (headers['common']) {
-    Object.assign(merged, headers['common']);
+  if (headers["common"]) {
+    Object.assign(merged, headers["common"]);
   }
 
   if (headers[methodLower]) {
@@ -49,7 +53,7 @@ function flattenHeaders(
 
 function removeContentType(headers: Record<string, string>): void {
   const key = Object.keys(headers).find(
-    (k) => k.toLowerCase() === 'content-type',
+    (k) => k.toLowerCase() === "content-type",
   );
   if (key) {
     delete headers[key];
@@ -70,7 +74,7 @@ export default function dispatchRequest(
   const fullURL =
     config._builtUrl ||
     buildURL(
-      config.url ?? '',
+      config.url ?? "",
       config.baseURL,
       config.params as Record<string, unknown> | undefined,
       config.paramsSerializer,
@@ -93,36 +97,36 @@ export default function dispatchRequest(
   if (
     requestData === null ||
     requestData === undefined ||
-    (typeof FormData !== 'undefined' && requestData instanceof FormData)
+    (typeof FormData !== "undefined" && requestData instanceof FormData)
   ) {
     removeContentType(flatHeaders);
   }
 
   if (config.auth) {
-    const username = config.auth.username || '';
-    const password = config.auth.password || '';
+    const username = config.auth.username || "";
+    const password = config.auth.password || "";
     const credentials = `${username}:${password}`;
 
     let encoded: string;
-    if (typeof Buffer !== 'undefined') {
-      encoded = Buffer.from(credentials).toString('base64');
+    if (typeof Buffer !== "undefined") {
+      encoded = Buffer.from(credentials).toString("base64");
     } else {
       const bytes = new TextEncoder().encode(credentials);
-      const binString = Array.from(bytes, (x) =>
-        String.fromCodePoint(x),
-      ).join('');
+      const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join(
+        "",
+      );
       encoded = btoa(binString);
     }
 
-    flatHeaders['Authorization'] = `Basic ${encoded}`;
+    flatHeaders["Authorization"] = `Basic ${encoded}`;
   }
 
   const fetchOptions: RequestInit = {
-    method: (config.method || 'GET').toUpperCase(),
+    method: (config.method || "GET").toUpperCase(),
     headers: flatHeaders,
   };
 
-  const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  const methodsWithBody = ["POST", "PUT", "PATCH", "DELETE"];
   if (
     methodsWithBody.includes(fetchOptions.method!) &&
     requestData !== undefined &&
@@ -132,7 +136,7 @@ export default function dispatchRequest(
   }
 
   if (config.withCredentials) {
-    fetchOptions.credentials = 'include';
+    fetchOptions.credentials = "include";
   }
 
   let abortController: AbortController | null = null;
@@ -157,7 +161,7 @@ export default function dispatchRequest(
     }, config.timeout);
 
     if (config.signal) {
-      if (typeof AbortSignal.any === 'function') {
+      if (typeof AbortSignal.any === "function") {
         fetchOptions.signal = AbortSignal.any([
           config.signal,
           abortController.signal,
@@ -169,7 +173,7 @@ export default function dispatchRequest(
           onUserAbort = () => {
             abortController!.abort(config.signal!.reason);
           };
-          config.signal.addEventListener('abort', onUserAbort, {
+          config.signal.addEventListener("abort", onUserAbort, {
             once: true,
           });
         }
@@ -187,23 +191,23 @@ export default function dispatchRequest(
   return fetch(fullURL, fetchOptions)
     .then(async (fetchResponse) => {
       let responseData: unknown;
-      const responseType = config.responseType || 'json';
+      const responseType = config.responseType || "json";
 
       try {
         switch (responseType) {
-          case 'arraybuffer':
+          case "arraybuffer":
             responseData = await fetchResponse.arrayBuffer();
             break;
-          case 'blob':
+          case "blob":
             responseData = await fetchResponse.blob();
             break;
-          case 'text':
+          case "text":
             responseData = await fetchResponse.text();
             break;
-          case 'stream':
+          case "stream":
             responseData = fetchResponse.body;
             break;
-          case 'json':
+          case "json":
           default:
             responseData = await fetchResponse.text();
             break;
@@ -240,7 +244,12 @@ export default function dispatchRequest(
       };
 
       return new Promise<AccessioResponse>((resolve, reject) => {
-        settle(resolve as (value: AccessioResponse) => void, reject as (reason: AccessioError) => void, response, config);
+        settle(
+          resolve as (value: AccessioResponse) => void,
+          reject as (reason: AccessioError) => void,
+          response,
+          config,
+        );
       });
     })
     .catch((error) => {
@@ -248,7 +257,7 @@ export default function dispatchRequest(
         throw error;
       }
 
-      if (error instanceof Error && error.name === 'AbortError') {
+      if (error instanceof Error && error.name === "AbortError") {
         if (isTimedOut) {
           throw new AccessioError(
             `timeout of ${config.timeout}ms exceeded`,
@@ -259,7 +268,7 @@ export default function dispatchRequest(
           );
         }
         throw new AccessioError(
-          'Request aborted',
+          "Request aborted",
           AccessioError.ERR_CANCELED,
           config,
           null,
@@ -278,7 +287,7 @@ export default function dispatchRequest(
     .finally(() => {
       if (timeoutId) clearTimeout(timeoutId);
       if (config.signal && onUserAbort) {
-        config.signal.removeEventListener('abort', onUserAbort);
+        config.signal.removeEventListener("abort", onUserAbort);
       }
     });
 }

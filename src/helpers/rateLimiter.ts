@@ -2,14 +2,16 @@ import type {
   RateLimiter,
   AccessioRequestConfig,
   AccessioResponse,
-} from '../types';
+} from "../types";
 
 interface QueueItem {
   resolve: () => void;
   reject: (reason: Error) => void;
 }
 
-export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter {
+export function createRateLimiter(
+  maxConcurrent: number = Infinity,
+): RateLimiter {
   if (
     maxConcurrent !== Infinity &&
     (!Number.isInteger(maxConcurrent) || maxConcurrent < 1)
@@ -25,7 +27,7 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
   function acquire(): Promise<void> {
     if (destroyed) {
       return Promise.reject(
-        new Error('[Accessio] Rate limiter has been destroyed'),
+        new Error("[Accessio] Rate limiter has been destroyed"),
       );
     }
 
@@ -56,7 +58,7 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
   function destroy(): void {
     destroyed = true;
     const reason = new Error(
-      '[Accessio] Rate limiter destroyed — pending request cancelled',
+      "[Accessio] Rate limiter destroyed — pending request cancelled",
     );
     while (queue.length > 0) {
       const next = queue.shift();
