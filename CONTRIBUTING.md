@@ -1,165 +1,73 @@
-# Contributing to Accessio
+# Contributing to accessio 🎯
 
-Thank you for your interest in contributing to Accessio! We greatly appreciate all contributions from the community.
+First off, thank you for considering contributing to `accessio`! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
 
-## Getting Started
+## 🌈 How Can I Contribute?
+
+### Reporting Bugs 🐛
+
+Before creating a bug report, please check the [existing issues](https://github.com/salvatorecorvaglia/accessio/issues) to see if the problem has already been reported.
+
+When filing an issue, please include:
+
+- A clear, descriptive title.
+- Steps to reproduce the bug.
+- Expected vs. actual behavior.
+- Environment details (Node.js version, Browser, OS).
+
+### Suggesting Enhancements 💡
+
+We are always looking for ways to improve `accessio`. If you have an idea for a new feature or an improvement to an existing one:
+
+- Check if it's already been suggested in the [issues](https://github.com/salvatorecorvaglia/accessio/issues).
+- Open a new issue with the "enhancement" label.
+- Provide a clear description of the feature and its benefits.
+
+### Pull Requests 🚀
+
+1. **Fork** the repository and create your branch from `main`.
+2. **Install dependencies**: `npm install`.
+3. **Make your changes**. If you're adding a feature or fixing a bug, please include tests.
+4. **Lint and format**: Ensure your code follows the project's style by running `npm run lint` and `npm run format`.
+5. **Run tests**: Make sure all tests pass by running `npm run test`.
+6. **Commit your changes**: Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: add new interceptor logic` or `fix: resolve timeout jitter issue`).
+7. **Submit a Pull Request** to the `main` branch.
+
+## 🛠️ Local Development
 
 ### Prerequisites
 
-- **Node.js** ≥ 18.0.0
-- **npm** (comes with Node.js)
-- **Git**
+- Node.js ≥ 18.0.0
+- npm
 
 ### Setup
 
 ```bash
-# 1. Fork the repository on GitHub
-# https://github.com/salvatorecorvaglia/accessio/fork
-
-# 2. Clone your fork
-git clone https://github.com/<your-username>/accessio.git
+git clone https://github.com/salvatorecorvaglia/accessio.git
 cd accessio
-
-# 3. Install dependencies
 npm install
-
-# 4. Verify everything works
-npm run lint          # Static analysis
-npm test              # Unit tests
-npm run test:browser  # Browser environment tests (requires jsdom)
-npm run test:coverage # Coverage report
-npm run build         # CommonJS build
 ```
 
-## Development Workflow
+### Useful Scripts
 
-1. **Create a branch** from `main`:
+- `npm run build`: Build the project (CJS/ESM).
+- `npm run lint`: Check for linting errors.
+- `npm run lint:fix`: Automatically fix linting errors.
+- `npm run test`: Run the test suite.
+- `npm run test:watch`: Run tests in watch mode.
+- `npm run typecheck`: Run TypeScript type checking.
+- `npm run format`: Format code using Prettier.
 
-   ```bash
-   git checkout -b feat/my-feature   # for features
-   git checkout -b fix/issue-name    # for bug fixes
-   ```
+## 📜 Code of Conduct
 
-2. **Make your changes** — keep the zero-dependency philosophy in mind.
+By participating in this project, you agree to abide by the terms of our [Code of Conduct](CODE_OF_CONDUCT.md) (if applicable) and maintain a respectful environment for everyone.
 
-3. **Write or update tests** — we use [Vitest](https://vitest.dev/). Test files go in `tests/`.
+## 💎 Design Principles
 
-4. **Run the checks locally**:
+- **Zero Dependencies**: Keep the core lightweight.
+- **Modern Standards**: Leverage native `fetch` and modern TypeScript.
+- **Developer Experience**: Focus on a clean, intuitive API.
 
-```bash
-npm run lint         # Must pass
-npm run typecheck   # Must pass
-npm test             # Must pass
-npm run build        # Must succeed
-```
+---
 
-5. **Commit with a clear message** following [Conventional Commits](https://www.conventionalcommits.org/):
-
-   ```bash
-   git commit -m "feat: add request deduplication"
-   git commit -m "fix: handle empty response body"
-   git commit -m "docs: update retry examples"
-   git commit -m "test: add edge case for timeout"
-   ```
-
-6. **Push and open a Pull Request** against `main`:
-   ```bash
-   git push origin feat/my-feature
-   ```
-
-## Project Structure
-
-```
-accessio/
-├── src/                    # Source code (TypeScript)
-│   ├── index.ts            # Public API exports
-│   ├── accessio.ts         # Core Accessio class
-│   ├── types.ts            # TypeScript type definitions
-│   ├── core/               # Request dispatching, URL building, errors, retry
-│   │   ├── request.ts      # Core fetch wrapper
-│   │   ├── mergeConfig.ts  # Config merging utilities
-│   │   ├── buildURL.ts     # URL construction and param serialization
-│   │   ├── retry.ts        # Retry logic with exponential backoff
-│   │   └── accessioError.ts # Custom error class
-│   ├── defaults/           # Default configuration and transforms
-│   ├── helpers/            # Utilities
-│   │   ├── rateLimiter.ts  # Concurrent request rate limiter
-│   │   ├── debug.ts        # Debug logging helpers
-│   │   ├── parseHeaders.ts # Header parsing utilities
-│   │   ├── settle.ts       # Promise resolution logic
-│   │   └── transformData.ts # Request/response data transforms
-│   ├── interceptors/       # Interceptor manager
-│   └── constants/          # Error code constants
-├── cjs/                    # CommonJS build output (generated by tsup)
-├── tests/                  # Unit tests (Vitest, TypeScript)
-├── index.d.ts              # TypeScript type definitions
-├── .github/workflows/      # CI and Release pipelines
-│   ├── ci.yml              # Lint, test, build on push/PR
-│   ├── release.yml         # GitHub Release + publish to GitHub Packages
-│   └── publish-npm.yml     # Manual publish unscoped to npmjs
-├── tsconfig.json           # TypeScript configuration
-├── tsup.config.ts          # CommonJS build configuration
-├── eslint.config.js        # Linting configuration
-├── vitest.config.ts        # Test configuration (Node.js)
-└── vitest.browser.config.ts # Test configuration (browser/jsdom)
-```
-
-## Guidelines
-
-### Code Style
-
-- **Zero production dependencies** — this is a core project principle.
-- Use **ESM** syntax (`import`/`export`) in source files.
-- Follow the existing code patterns and naming conventions.
-- Run `npm run lint` to check — and `npm run lint:fix` to auto-fix.
-
-### Testing
-
-- Every new feature or bug fix should include tests.
-- Use descriptive test names: `it('should retry on 503 status')`.
-- Tests run across **Node.js 18, 20, and 22** in CI.
-- Browser-specific features should include jsdom environment tests.
-- Aim for high coverage (current: ~93%). Run `npm run test:coverage` to check.
-
-### Pull Requests
-
-- Keep PRs focused — one feature or fix per PR.
-- Update documentation if behavior changes.
-- Ensure all CI checks pass before requesting review.
-
-## Reporting Issues
-
-If you find a bug or have a feature request:
-
-1. **Search existing issues** to avoid duplicates.
-2. **Open an issue** with:
-   - A clear title and description
-   - Steps to reproduce (for bugs)
-   - Expected vs actual behavior
-   - Node.js version and OS
-
-## CI Pipeline
-
-When you open a PR, GitHub Actions will automatically run:
-
-| Check     | Command             | What it does                     |
-| --------- | ------------------- | -------------------------------- |
-| Lint      | `npm run lint`      | ESLint static analysis           |
-| TypeCheck | `npm run typecheck` | TypeScript type checking         |
-| Test      | `npm test`          | Vitest across Node.js 18, 20, 22 |
-| Build     | `npm run build`     | CommonJS build via tsup          |
-
-All four must pass before a PR can be merged.
-
-### Additional Checks (Local)
-
-| Check         | Command                 | What it does                  |
-| ------------- | ----------------------- | ----------------------------- |
-| Browser Tests | `npm run test:browser`  | Vitest with jsdom environment |
-| Coverage      | `npm run test:coverage` | v8 coverage report (~93%)     |
-
-## Need Help?
-
-- Open an [Issue](https://github.com/salvatorecorvaglia/accessio/issues) for bugs and feature requests
-
-Thank you for helping make Accessio better! 🙏
+Happy coding! 🐦‍⬛
