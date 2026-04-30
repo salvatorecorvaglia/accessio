@@ -1,10 +1,5 @@
 # Accessio 🎯
 
-[![npm version](https://img.shields.io/npm/v/accessio.svg?style=flat-square&color=007acc)](https://www.npmjs.com/package/accessio)
-[![license](https://img.shields.io/npm/l/accessio.svg?style=flat-square&color=41ad51)](https://github.com/salvatorecorvaglia/accessio/blob/main/LICENSE)
-[![bundle size](https://img.shields.io/bundlephobia/minzip/accessio?style=flat-square&color=6a4cf5)](https://bundlephobia.com/package/accessio)
-[![typescript](https://img.shields.io/badge/TypeScript-5.0+-blue?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-
 **Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free.**
 
 `accessio` is a lightweight, modern HTTP client built on top of the native `fetch` API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining **zero external dependencies**.
