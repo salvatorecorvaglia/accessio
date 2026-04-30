@@ -204,9 +204,17 @@ npm install
 
 ---
 
+## 🤝 Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines on how to get started.
+
+## 🔐 Security
+
+If you discover a security vulnerability, please see our [Security Policy](SECURITY.md) for responsible disclosure instructions.
+
 ## 📝 License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
 
 ---
 
