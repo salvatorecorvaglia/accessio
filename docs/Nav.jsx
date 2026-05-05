@@ -1,5 +1,5 @@
 // Sticky top nav with logo lockup + GitHub button.
-function Nav({ version = '—' }) {
+function Nav() {
   const [scrolled, setScrolled] = React.useState(false);
   React.useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 8);
@@ -78,7 +78,7 @@ function Nav({ version = '—' }) {
               letterSpacing: '0.06em',
             }}
           >
-            v{version}
+            v1.0.0
           </span>
           <Button
             variant="secondary"

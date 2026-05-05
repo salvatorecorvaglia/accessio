@@ -118,7 +118,7 @@ function ErrorTable() {
   );
 }
 
-function Footer({ version = '—' }) {
+function Footer() {
   return (
     <footer style={{ borderTop: '1px solid var(--border)', background: 'var(--ink-900)' }}>
       <div
@@ -158,7 +158,7 @@ function Footer({ version = '—' }) {
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>
-            v{version}
+            v1.0.0
           </span>
         </div>
       </div>

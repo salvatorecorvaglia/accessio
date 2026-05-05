@@ -95,18 +95,9 @@
 
     <script type="text/babel">
       function App() {
-        const [version, setVersion] = React.useState('—');
-
-        React.useEffect(() => {
-          fetch('../package.json')
-            .then((res) => res.json())
-            .then((data) => setVersion(data.version))
-            .catch((err) => console.error('Error fetching version:', err));
-        }, []);
-
         return (
           <>
-            <Nav version={version} />
+            <Nav />
             <main>
               <Hero />
               <Features />
@@ -114,7 +105,7 @@
               <CodeShowcase />
               <ErrorTable />
             </main>
-            <Footer version={version} />
+            <Footer />
           </>
         );
       }
