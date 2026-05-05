@@ -92,9 +92,17 @@
       <p>All 142 tests passing, type-checked clean.</p>
       <div class="pill-row">
         <span class="pill ok">✓ passing</span>
-        <span class="pill">v1.0.0</span>
+        <span class="pill" id="version-tag">v—</span>
         <span class="pill">MIT</span>
       </div>
     </div>
+    <script>
+      fetch('../../package.json')
+        .then((r) => r.json())
+        .then((pkg) => {
+          document.getElementById('version-tag').textContent = `v${pkg.version}`;
+        })
+        .catch(() => {});
+    </script>
   </body>
 </html>

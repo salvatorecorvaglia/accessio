@@ -48,7 +48,7 @@
       </p>
 
       <div class="meta">meta — mono 12</div>
-      <p class="t-meta">v1.0.0 · MIT · Node ≥ 18 · 4.2 KB gzipped</p>
+      <p class="t-meta" id="meta-tag">v— · MIT · Node ≥ 18 · 4.2 KB gzipped</p>
 
       <div class="meta">link inline</div>
       <p class="t-body">
@@ -56,5 +56,14 @@
         <a class="t-link" href="#">source on GitHub</a>.
       </p>
     </div>
+    <script>
+      fetch('../../package.json')
+        .then((r) => r.json())
+        .then((pkg) => {
+          const el = document.getElementById('meta-tag');
+          el.textContent = el.textContent.replace(/v[—\d\.]+/, `v${pkg.version}`);
+        })
+        .catch(() => {});
+    </script>
   </body>
 </html>
