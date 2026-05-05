@@ -23,3 +23,16 @@ coverage/
 
 # Lock files
 yarn.lock
+
+# AI Tools
+.openai/
+.chatgpt/
+gpt-config.json
+openai.config.json
+.anthropic/
+.claude/
+claude.config.json
+claude-settings.json
+.prompts/
+.prompt-cache/
+.ai/
