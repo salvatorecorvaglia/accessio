@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 24px 28px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+      .card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 18px 20px;
+        box-shadow: var(--shadow);
+      }
+      .eyebrow {
+        font: 500 11px/1 var(--font-mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin-bottom: 10px;
+      }
+      h4 {
+        margin: 0 0 6px;
+        font-family: var(--font-sans);
+        font-size: 18px;
+        font-weight: 600;
+      }
+      p {
+        margin: 0;
+        font-size: 13px;
+        color: var(--ink-300);
+        line-height: 1.55;
+      }
+      .pill-row {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        background: var(--ink-700);
+        border: 1px solid var(--border);
+        color: var(--ink-200);
+      }
+      .pill.amber {
+        background: rgba(245, 147, 33, 0.12);
+        color: var(--amber-200);
+        border-color: rgba(245, 147, 33, 0.3);
+      }
+      .pill.ok {
+        background: rgba(70, 201, 127, 0.1);
+        color: var(--ok);
+        border-color: rgba(70, 201, 127, 0.3);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="eyebrow">Feature card</div>
+      <h4>Automatic retries</h4>
+      <p>
+        Network errors and 5xx responses retry with exponential backoff and jitter, out of the box.
+      </p>
+      <div class="pill-row">
+        <span class="pill">retry: 3</span>
+        <span class="pill">retryDelay: 1000</span>
+        <span class="pill amber">jitter ±25%</span>
+      </div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Status card</div>
+      <h4>Build · main</h4>
+      <p>All 142 tests passing, type-checked clean.</p>
+      <div class="pill-row">
+        <span class="pill ok">✓ passing</span>
+        <span class="pill">v1.0.0</span>
+        <span class="pill">MIT</span>
+      </div>
+    </div>
+  </body>
+</html>

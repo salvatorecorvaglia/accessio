@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 22px 28px;
+      }
+      h3 {
+        font: 500 11px/1 var(--font-mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 10px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+      }
+      .swatch {
+        aspect-ratio: 1.2 / 1;
+        border-radius: 8px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 8px 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .role {
+        font: 500 9px/1 var(--font-mono);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        opacity: 0.85;
+      }
+      .name {
+        font-family: var(--font-mono);
+        font-size: 10px;
+      }
+      .hex {
+        font-family: var(--font-mono);
+        font-size: 9px;
+        opacity: 0.75;
+        margin-top: 2px;
+      }
+      .glow {
+        box-shadow:
+          0 0 0 1px rgba(245, 147, 33, 0.4),
+          0 0 24px rgba(245, 147, 33, 0.18);
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Amber accent — the blackbird's eye</h3>
+    <div class="row">
+      <div class="swatch" style="background: #fff6e0; color: #1a0e00">
+        <div class="role">tint</div>
+        <div>
+          <div class="name">amber-50</div>
+          <div class="hex">#FFF6E0</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #ffe6a8; color: #1a0e00">
+        <div class="role">100</div>
+        <div>
+          <div class="name">amber-100</div>
+          <div class="hex">#FFE6A8</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #ffd06a; color: #1a0e00">
+        <div class="role">200</div>
+        <div>
+          <div class="name">amber-200</div>
+          <div class="hex">#FFD06A</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #ffb13b; color: #1a0e00">
+        <div class="role">hover</div>
+        <div>
+          <div class="name">amber-300</div>
+          <div class="hex">#FFB13B</div>
+        </div>
+      </div>
+      <div class="swatch glow" style="background: #f59321; color: #1a0e00">
+        <div class="role">primary</div>
+        <div>
+          <div class="name">amber-400</div>
+          <div class="hex">#F59321</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #d97515; color: #fff6e0">
+        <div class="role">press</div>
+        <div>
+          <div class="name">amber-500</div>
+          <div class="hex">#D97515</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #a8550c; color: #ffe6a8">
+        <div class="role">deep</div>
+        <div>
+          <div class="name">amber-600</div>
+          <div class="hex">#A8550C</div>
+        </div>
+      </div>
+    </div>
+    <div style="height: 14px"></div>
+    <h3>Cyan support — links & info</h3>
+    <div class="row">
+      <div class="swatch" style="background: #c8f0ff; color: #07090d">
+        <div class="role">tint</div>
+        <div>
+          <div class="name">cyan-100</div>
+          <div class="hex">#C8F0FF</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #6cc8e8; color: #07090d">
+        <div class="role">link</div>
+        <div>
+          <div class="name">cyan-300</div>
+          <div class="hex">#6CC8E8</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #3aa8cf; color: #07090d">
+        <div class="role">400</div>
+        <div>
+          <div class="name">cyan-400</div>
+          <div class="hex">#3AA8CF</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #1f86a8; color: #c8f0ff">
+        <div class="role">press</div>
+        <div>
+          <div class="name">cyan-500</div>
+          <div class="hex">#1F86A8</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #12161e; border-color: rgba(255, 255, 255, 0.1)">
+        <div class="role" style="color: var(--fg-muted)">on dark</div>
+        <div>
+          <div class="name" style="color: #6cc8e8">link.t-link</div>
+          <div class="hex" style="color: var(--fg-muted)">cyan-300</div>
+        </div>
+      </div>
+      <div class="swatch" style="background: #fafaf7; color: #07090d">
+        <div class="role">on light</div>
+        <div>
+          <div class="name" style="color: #1f86a8">link</div>
+          <div class="hex" style="color: #5a6377">cyan-500</div>
+        </div>
+      </div>
+      <div
+        class="swatch"
+        style="background: transparent; border: 1px dashed var(--border); color: var(--fg-muted)"
+      >
+        <div class="role">use</div>
+        <div>
+          <div class="name">links</div>
+          <div class="hex">info chips only</div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

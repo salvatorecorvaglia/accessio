@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 24px 28px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      th {
+        text-align: left;
+        font: 500 10px/1 var(--font-mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--fg-muted);
+        padding: 0 12px 10px;
+        border-bottom: 1px solid var(--border);
+      }
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--border);
+        font-family: var(--font-mono);
+        color: var(--ink-200);
+      }
+      td.code {
+        color: var(--ink-100);
+      }
+      td.desc {
+        font-family: var(--font-sans);
+        color: var(--ink-300);
+      }
+      tr:hover td {
+        background: rgba(255, 255, 255, 0.02);
+      }
+    </style>
+  </head>
+  <body>
+    <table>
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Description</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="code">ERR_BAD_REQUEST</td>
+          <td class="desc">4xx status code</td>
+          <td>4xx</td>
+        </tr>
+        <tr>
+          <td class="code">ERR_BAD_RESPONSE</td>
+          <td class="desc">5xx status code</td>
+          <td>5xx</td>
+        </tr>
+        <tr>
+          <td class="code">ERR_NETWORK</td>
+          <td class="desc">Network connectivity issues</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td class="code">ETIMEDOUT</td>
+          <td class="desc">Request exceeded timeout</td>
+          <td>—</td>
+        </tr>
+        <tr>
+          <td class="code">ERR_CANCELED</td>
+          <td class="desc">Request was manually aborted</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

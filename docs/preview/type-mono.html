@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 22px 28px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .label {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--fg-muted);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+      pre {
+        margin: 0;
+      }
+      .kbds {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--fg-muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grid">
+      <div>
+        <div class="label">t-pre — code block</div>
+        <pre class="t-pre"><span style="color:var(--ink-300)">// install</span>
+<span style="color:var(--accent)">npm</span> install accessio
+
+<span style="color:var(--ink-300)">// use</span>
+<span style="color:#c084fc">const</span> { data } = <span style="color:#c084fc">await</span> accessio.<span style="color:var(--cyan-300)">get</span>(<span style="color:var(--ok)">"/users"</span>);</pre>
+      </div>
+      <div>
+        <div class="label">t-code — inline</div>
+        <p class="t-body" style="margin: 0">
+          Pass <code class="t-code">retry: 3</code> to enable backoff. Catch
+          <code class="t-code">AccessioError</code> and inspect
+          <code class="t-code">err.code</code>.
+        </p>
+        <div style="height: 14px"></div>
+        <div class="label">t-kbd — keyboard</div>
+        <div class="kbds">
+          <kbd class="t-kbd">⌘</kbd><kbd class="t-kbd">K</kbd> open command bar
+        </div>
+        <div style="height: 10px"></div>
+        <div class="kbds"><kbd class="t-kbd">/</kbd> focus search</div>
+      </div>
+    </div>
+  </body>
+</html>

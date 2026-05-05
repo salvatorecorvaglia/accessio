@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 28px;
+      }
+      .term {
+        background: #07090d;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: var(--shadow);
+        overflow: hidden;
+      }
+      .bar {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        background: var(--ink-900);
+      }
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+      }
+      .dot.r {
+        background: #f06868;
+      }
+      .dot.y {
+        background: #f5b13b;
+      }
+      .dot.g {
+        background: #46c97f;
+      }
+      .name {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--fg-muted);
+        margin-left: 8px;
+      }
+      pre {
+        font-family: var(--font-mono);
+        font-size: 12.5px;
+        line-height: 1.7;
+        margin: 0;
+        padding: 16px 18px;
+        color: var(--ink-100);
+      }
+      .muted {
+        color: var(--fg-muted);
+      }
+      .ok {
+        color: var(--ok);
+      }
+      .warn {
+        color: var(--warn);
+      }
+      .err {
+        color: var(--err);
+      }
+      .arrow {
+        color: var(--accent);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="term">
+      <div class="bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span
+        ><span class="name">accessio · debug log</span>
+      </div>
+      <pre><span class="muted">🐦‍⬛ [Accessio]</span> <span class="arrow">→</span> GET https://api.example.com/users
+   <span class="muted">Params:</span> {"page":1,"limit":20}
+   <span class="muted">Timeout:</span> 5000ms · <span class="muted">Retry:</span> 3x
+<span class="muted">🐦‍⬛ [Accessio]</span> <span class="arrow">←</span> <span class="ok">✅ 200 OK</span> (142ms)
+   <span class="muted">Size:</span> ~3.2 KB
+<span class="muted">🐦‍⬛ [Accessio]</span> <span class="arrow">←</span> <span class="err">❌ ERROR</span>: timeout of 5000ms exceeded
+   <span class="muted">Code:</span> ETIMEDOUT</pre>
+    </div>
+  </body>
+</html>

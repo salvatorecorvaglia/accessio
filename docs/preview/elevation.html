@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 28px;
+      }
+      h3 {
+        font: 500 11px/1 var(--font-mono);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        margin: 0 0 18px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 22px;
+      }
+      .tile {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        height: 80px;
+      }
+      .sm {
+        box-shadow: var(--shadow-sm);
+      }
+      .md {
+        box-shadow: var(--shadow);
+      }
+      .lg {
+        box-shadow: var(--shadow-lg);
+      }
+      .glow {
+        box-shadow: var(--shadow-glow);
+        border-color: rgba(245, 147, 33, 0.4);
+      }
+      .name {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--fg-muted);
+        margin-top: 10px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Elevation — low, crisp, with inset top highlight</h3>
+    <div class="row">
+      <div>
+        <div class="tile sm"></div>
+        <div class="name">--shadow-sm</div>
+      </div>
+      <div>
+        <div class="tile md"></div>
+        <div class="name">--shadow</div>
+      </div>
+      <div>
+        <div class="tile lg"></div>
+        <div class="name">--shadow-lg</div>
+      </div>
+      <div>
+        <div class="tile glow"></div>
+        <div class="name">--shadow-glow (focus)</div>
+      </div>
+    </div>
+  </body>
+</html>

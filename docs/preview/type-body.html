@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../colors_and_type.css" />
+    <style>
+      html,
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: var(--font-sans);
+      }
+      body {
+        padding: 22px 28px;
+      }
+      .row {
+        display: grid;
+        grid-template-columns: 110px 1fr;
+        gap: 14px 24px;
+        align-items: baseline;
+      }
+      .meta {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        color: var(--fg-muted);
+        letter-spacing: 0.06em;
+      }
+      p {
+        margin: 0;
+        max-width: 460px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="row">
+      <div class="meta">lead — 20/1.45</div>
+      <p class="t-lead">
+        A modern HTTP client built on the native <code class="t-code">fetch</code> API — with
+        interceptors, retries, and a structured debug log.
+      </p>
+
+      <div class="meta">body — 15/1.6</div>
+      <p class="t-body">
+        Accessio gives you a Promise-based API with the conveniences you'd expect — auto-retries
+        with exponential backoff and jitter, a built-in concurrency limiter, and structured
+        per-instance interceptors. Zero runtime dependencies.
+      </p>
+
+      <div class="meta">meta — mono 12</div>
+      <p class="t-meta">v1.0.0 · MIT · Node ≥ 18 · 4.2 KB gzipped</p>
+
+      <div class="meta">link inline</div>
+      <p class="t-body">
+        Read the <a class="t-link" href="#">full API reference</a> or browse the
+        <a class="t-link" href="#">source on GitHub</a>.
+      </p>
+    </div>
+  </body>
+</html>
