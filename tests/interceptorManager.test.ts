@@ -30,7 +30,9 @@ describe('InterceptorManager', () => {
       manager.use(fulfilled, rejected);
 
       let captured: any;
-      manager.forEach((h) => { captured = h; });
+      manager.forEach((h) => {
+        captured = h;
+      });
       expect(captured.fulfilled).toBe(fulfilled);
       expect(captured.rejected).toBe(rejected);
     });
@@ -41,7 +43,9 @@ describe('InterceptorManager', () => {
       manager.use(() => {}, undefined, { synchronous: true, runWhen });
 
       let captured: any;
-      manager.forEach((h) => { captured = h; });
+      manager.forEach((h) => {
+        captured = h;
+      });
       expect(captured.synchronous).toBe(true);
       expect(captured.runWhen).toBe(runWhen);
     });

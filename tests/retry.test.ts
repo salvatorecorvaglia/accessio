@@ -20,14 +20,42 @@ describe('retry.ts', () => {
     });
 
     it('retries on 5xx server errors', () => {
-      const error = new AccessioError('server error', AccessioError.ERR_BAD_RESPONSE, null, null, null);
-      error.response = { status: 503, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
+      const error = new AccessioError(
+        'server error',
+        AccessioError.ERR_BAD_RESPONSE,
+        null,
+        null,
+        null,
+      );
+      error.response = {
+        status: 503,
+        data: null,
+        headers: {},
+        config: {},
+        request: {},
+        duration: 0,
+        statusText: '',
+      };
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
     it('does not retry on 4xx client errors', () => {
-      const error = new AccessioError('client error', AccessioError.ERR_BAD_REQUEST, null, null, null);
-      error.response = { status: 404, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
+      const error = new AccessioError(
+        'client error',
+        AccessioError.ERR_BAD_REQUEST,
+        null,
+        null,
+        null,
+      );
+      error.response = {
+        status: 404,
+        data: null,
+        headers: {},
+        config: {},
+        request: {},
+        duration: 0,
+        statusText: '',
+      };
       expect(defaultRetryCondition(error)).toBe(false);
     });
   });
@@ -67,7 +95,9 @@ describe('retry.ts', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 3) {
-          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null));
+          return Promise.reject(
+            new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null),
+          );
         }
         return Promise.resolve({ status: 200 });
       });
@@ -81,30 +111,32 @@ describe('retry.ts', () => {
 
     it('throws after exhausting retries', async () => {
       const dispatch = vi.fn(() =>
-        Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null))
+        Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null)),
       );
 
       const config = { retry: 2, retryDelay: 1 };
 
       await expect(retryRequest(dispatch, config)).rejects.toMatchObject({
-        code: 'ERR_NETWORK'
+        code: 'ERR_NETWORK',
       });
       expect(dispatch).toHaveBeenCalledTimes(3);
     });
 
     it('does not retry when retryCondition returns false', async () => {
       const dispatch = vi.fn(() =>
-        Promise.reject(new AccessioError('bad request', AccessioError.ERR_BAD_REQUEST, null, null, null))
+        Promise.reject(
+          new AccessioError('bad request', AccessioError.ERR_BAD_REQUEST, null, null, null),
+        ),
       );
 
       const config = {
         retry: 3,
         retryDelay: 1,
-        retryCondition: () => false
+        retryCondition: () => false,
       };
 
       await expect(retryRequest(dispatch, config)).rejects.toMatchObject({
-        code: 'ERR_BAD_REQUEST'
+        code: 'ERR_BAD_REQUEST',
       });
       expect(dispatch).toHaveBeenCalledTimes(1);
     });
@@ -114,7 +146,9 @@ describe('retry.ts', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 3) {
-          return Promise.reject(new AccessioError('net', AccessioError.ERR_NETWORK, null, null, null));
+          return Promise.reject(
+            new AccessioError('net', AccessioError.ERR_NETWORK, null, null, null),
+          );
         }
         return Promise.resolve({ status: 200 });
       });
@@ -133,7 +167,15 @@ describe('retry.ts', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         const error = new AccessioError('error', AccessioError.ERR_BAD_REQUEST, null, null, null);
-        error.response = { status: 429, data: null, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
+        error.response = {
+          status: 429,
+          data: null,
+          headers: {},
+          config: {},
+          request: {},
+          duration: 0,
+          statusText: '',
+        };
         if (attempt < 2) return Promise.reject(error);
         return Promise.resolve({ status: 200 });
       });
@@ -141,7 +183,7 @@ describe('retry.ts', () => {
       const config = {
         retry: 3,
         retryDelay: 1,
-        retryCondition: (error: any) => error.response?.status === 429
+        retryCondition: (error: any) => error.response?.status === 429,
       };
 
       const result = await retryRequest(dispatch, config);
@@ -155,7 +197,9 @@ describe('retry.ts', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         if (attempt < 2) {
-          return Promise.reject(new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null));
+          return Promise.reject(
+            new AccessioError('network', AccessioError.ERR_NETWORK, null, null, null),
+          );
         }
         return Promise.resolve({ status: 200 });
       });
@@ -163,7 +207,7 @@ describe('retry.ts', () => {
       const config = {
         retry: 3,
         retryDelay: 10000,
-        signal: controller.signal
+        signal: controller.signal,
       };
 
       const retryPromise = retryRequest(dispatch, config);

@@ -4,7 +4,15 @@ import AccessioError from '../src/core/accessioError';
 describe('AccessioError', () => {
   it('creates an error with all properties', () => {
     const config = { url: '/test', method: 'get' };
-    const response = { status: 404, data: 'Not Found', headers: {}, config, request: {}, duration: 0, statusText: '' };
+    const response = {
+      status: 404,
+      data: 'Not Found',
+      headers: {},
+      config,
+      request: {},
+      duration: 0,
+      statusText: '',
+    };
     const error = new AccessioError('Not found', 'ERR_BAD_REQUEST', config, null, response);
 
     expect(error).toBeInstanceOf(Error);
@@ -35,7 +43,15 @@ describe('AccessioError', () => {
   describe('toJSON', () => {
     it('returns a serializable object', () => {
       const config = { url: '/test' };
-      const response = { status: 500, data: null, headers: {}, config, request: {}, duration: 0, statusText: '' };
+      const response = {
+        status: 500,
+        data: null,
+        headers: {},
+        config,
+        request: {},
+        duration: 0,
+        statusText: '',
+      };
       const error = new AccessioError('Server error', 'ERR_BAD_RESPONSE', config, null, response);
       const json = error.toJSON();
 
@@ -55,7 +71,13 @@ describe('AccessioError', () => {
   describe('from', () => {
     it('creates a AccessioError from a regular Error', () => {
       const original = new Error('original message');
-      const accessioError = AccessioError.from(original, 'ERR_NETWORK', { url: '/test' }, null, null);
+      const accessioError = AccessioError.from(
+        original,
+        'ERR_NETWORK',
+        { url: '/test' },
+        null,
+        null,
+      );
 
       expect(accessioError).toBeInstanceOf(AccessioError);
       expect(accessioError.message).toBe('original message');

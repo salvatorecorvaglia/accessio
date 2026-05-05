@@ -1,13 +1,6 @@
-export type Method =
-  | "get"
-  | "delete"
-  | "head"
-  | "options"
-  | "post"
-  | "put"
-  | "patch";
+export type Method = 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch';
 
-export type ResponseType = "json" | "text" | "blob" | "arraybuffer" | "stream";
+export type ResponseType = 'json' | 'text' | 'blob' | 'arraybuffer' | 'stream';
 
 export interface AuthConfig {
   username: string;
@@ -16,10 +9,7 @@ export interface AuthConfig {
 
 export type ParamsSerializer = (params: Record<string, unknown>) => string;
 
-export type TransformFunction = (
-  data: unknown,
-  headers: Record<string, string>,
-) => unknown;
+export type TransformFunction = (data: unknown, headers: Record<string, string>) => unknown;
 
 export type RetryConditionFunction = (error: AccessioError) => boolean;
 
@@ -84,7 +74,7 @@ export interface AccessioResponse<T = unknown> {
 }
 
 export interface AccessioError extends Error {
-  name: "AccessioError";
+  name: 'AccessioError';
   code: string | null;
   config: AccessioRequestConfig | null;
   request: unknown;

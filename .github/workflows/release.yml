@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      - 'v*'
 
 permissions:
   contents: write
@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: 'npm'
       - run: npm ci
       - run: npm run lint
       - run: npm test
@@ -59,8 +59,8 @@ jobs:
         with:
           node-version: 20
           registry-url: https://npm.pkg.github.com/
-          scope: "@salvatorecorvaglia"
-          cache: "npm"
+          scope: '@salvatorecorvaglia'
+          cache: 'npm'
       - run: npm ci
       - run: npm run build
       - name: Add scope for GitHub Packages

@@ -25,7 +25,9 @@ describe('createRateLimiter', () => {
     expect(limiter.active).toBe(1);
 
     let resolved = false;
-    const pending = limiter.acquire().then(() => { resolved = true; });
+    const pending = limiter.acquire().then(() => {
+      resolved = true;
+    });
     expect(limiter.pending).toBe(1);
     expect(resolved).toBe(false);
 
@@ -84,9 +86,9 @@ describe('createRateLimiter', () => {
       await limiter.acquire();
 
       const results = [
-        limiter.acquire().catch(e => e.message),
-        limiter.acquire().catch(e => e.message),
-        limiter.acquire().catch(e => e.message),
+        limiter.acquire().catch((e) => e.message),
+        limiter.acquire().catch((e) => e.message),
+        limiter.acquire().catch((e) => e.message),
       ];
 
       expect(limiter.pending).toBe(3);
@@ -128,7 +130,9 @@ describe('createRateLimiter', () => {
 
     it('releases even when dispatch throws', async () => {
       const limiter = createRateLimiter(2);
-      const dispatch = async () => { throw new Error('network error'); };
+      const dispatch = async () => {
+        throw new Error('network error');
+      };
 
       await expect(rateLimitedRequest(dispatch, limiter, {})).rejects.toThrow('network error');
       expect(limiter.active).toBe(0);

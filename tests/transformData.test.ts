@@ -14,10 +14,7 @@ describe('transformData', () => {
   });
 
   it('applies transforms in order (pipeline)', () => {
-    const transforms = [
-      (data: string) => `${data} world`,
-      (data: string) => data.toUpperCase(),
-    ];
+    const transforms = [(data: string) => `${data} world`, (data: string) => data.toUpperCase()];
     expect(transformData(transforms, 'hello')).toBe('HELLO WORLD');
   });
 

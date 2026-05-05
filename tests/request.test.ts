@@ -14,7 +14,7 @@ describe('dispatchRequest (request.ts)', () => {
     const {
       status = 200,
       statusText = 'OK',
-      headers = new Headers({ 'content-type': 'application/json' })
+      headers = new Headers({ 'content-type': 'application/json' }),
     } = options;
 
     const body = typeof data === 'string' ? data : JSON.stringify(data);
@@ -29,7 +29,7 @@ describe('dispatchRequest (request.ts)', () => {
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(8)),
         blob: () => Promise.resolve(new Blob([body])),
         body: null,
-      })
+      }),
     );
   }
 
@@ -96,7 +96,7 @@ describe('dispatchRequest (request.ts)', () => {
         url: 'https://api.test.com/test',
         method: 'get',
         headers: {
-          common: { 'Accept': 'text/html' },
+          common: { Accept: 'text/html' },
           get: {},
         },
       });
@@ -104,8 +104,8 @@ describe('dispatchRequest (request.ts)', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          headers: expect.objectContaining({ 'Accept': 'text/html' })
-        })
+          headers: expect.objectContaining({ Accept: 'text/html' }),
+        }),
       );
     });
 
@@ -123,8 +123,8 @@ describe('dispatchRequest (request.ts)', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          headers: expect.not.objectContaining({ 'Content-Type': 'application/json' })
-        })
+          headers: expect.not.objectContaining({ 'Content-Type': 'application/json' }),
+        }),
       );
     });
   });
@@ -144,9 +144,9 @@ describe('dispatchRequest (request.ts)', () => {
         expect.any(String),
         expect.objectContaining({
           headers: expect.objectContaining({
-            'Authorization': 'Basic dXNlcjpwYXNz'
-          })
-        })
+            Authorization: 'Basic dXNlcjpwYXNz',
+          }),
+        }),
       );
     });
   });
@@ -189,7 +189,7 @@ describe('dispatchRequest (request.ts)', () => {
           method: 'get',
           headers: {},
           validateStatus: (status) => status >= 200 && status < 300,
-        })
+        }),
       ).rejects.toThrow('Request failed with status code 404');
     });
 
@@ -221,8 +221,8 @@ describe('dispatchRequest (request.ts)', () => {
       expect(global.fetch).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          signal: expect.any(AbortSignal)
-        })
+          signal: expect.any(AbortSignal),
+        }),
       );
     });
   });

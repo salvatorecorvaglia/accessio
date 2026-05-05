@@ -11,7 +11,7 @@ We currently support the following versions with security updates.
 
 ## Reporting a Vulnerability
 
-We take the security of this project seriously. 
+We take the security of this project seriously.
 
 Please report any security vulnerabilities by creating a private vulnerability report on GitHub at [https://github.com/salvatorecorvaglia/accessio/security/advisories/new](https://github.com/salvatorecorvaglia/accessio/security/advisories/new) or by reaching out to the maintainers directly.
 

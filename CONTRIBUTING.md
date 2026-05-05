@@ -28,7 +28,7 @@ We are always looking for ways to improve `accessio`. If you have an idea for a 
 1. **Fork** the repository and create your branch from `main`.
 2. **Install dependencies**: `npm install`.
 3. **Make your changes**. If you're adding a feature or fixing a bug, please include tests.
-4. **Lint**: Ensure your code follows the project's style by running `npm run lint`.
+4. **Format & Lint**: Ensure your code follows the project's style by running `npm run format` and `npm run lint`.
 5. **Run tests**: Make sure all tests pass by running `npm run test`.
 6. **Commit your changes**: Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: add new interceptor logic` or `fix: resolve timeout jitter issue`).
 7. **Submit a Pull Request** to the `main` branch.
@@ -53,6 +53,7 @@ npm install
 - `npm run build`: Build the project (CJS/ESM).
 - `npm run lint`: Check for linting errors.
 - `npm run lint:fix`: Automatically fix linting errors.
+- `npm run format`: Format the code using Prettier.
 - `npm run test`: Run the test suite.
 - `npm run test:watch`: Run tests in watch mode.
 - `npm run typecheck`: Run TypeScript type checking.

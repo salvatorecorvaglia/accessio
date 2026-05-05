@@ -15,7 +15,9 @@ describe('buildURL', () => {
   });
 
   it('does not prepend baseURL when url is absolute', () => {
-    expect(buildURL('https://other.com/users', 'https://api.example.com')).toBe('https://other.com/users');
+    expect(buildURL('https://other.com/users', 'https://api.example.com')).toBe(
+      'https://other.com/users',
+    );
   });
 
   it('appends params as query string', () => {
@@ -34,7 +36,8 @@ describe('buildURL', () => {
   });
 
   it('uses custom paramsSerializer', () => {
-    const serializer = (params: Record<string, unknown>) => `custom=${Object.keys(params).join(',')}`;
+    const serializer = (params: Record<string, unknown>) =>
+      `custom=${Object.keys(params).join(',')}`;
     const result = buildURL('/users', undefined, { a: 1, b: 2 }, serializer);
     expect(result).toBe('/users?custom=a,b');
   });

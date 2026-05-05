@@ -5,17 +5,14 @@ describe('mergeConfig', () => {
   it('returns config2 values when both are provided', () => {
     const result = mergeConfig(
       { baseURL: 'https://old.com', timeout: 1000 },
-      { baseURL: 'https://new.com', timeout: 5000 }
+      { baseURL: 'https://new.com', timeout: 5000 },
     );
     expect(result.baseURL).toBe('https://new.com');
     expect(result.timeout).toBe(5000);
   });
 
   it('falls back to config1 when config2 key is undefined', () => {
-    const result = mergeConfig(
-      { baseURL: 'https://api.com', timeout: 3000 },
-      {}
-    );
+    const result = mergeConfig({ baseURL: 'https://api.com', timeout: 3000 }, {});
     expect(result.baseURL).toBe('https://api.com');
     expect(result.timeout).toBe(3000);
   });
@@ -23,7 +20,7 @@ describe('mergeConfig', () => {
   it('takes url, method, data only from config2', () => {
     const result = mergeConfig(
       { url: '/old', method: 'get', data: { old: true } },
-      { url: '/new', method: 'post', data: { new: true } }
+      { url: '/new', method: 'post', data: { new: true } },
     );
     expect(result.url).toBe('/new');
     expect(result.method).toBe('post');
@@ -31,10 +28,7 @@ describe('mergeConfig', () => {
   });
 
   it('ignores url/data from config1 if not in config2 but inherits method', () => {
-    const result = mergeConfig(
-      { url: '/old', method: 'get', data: { a: 1 } },
-      {}
-    );
+    const result = mergeConfig({ url: '/old', method: 'get', data: { a: 1 } }, {});
     expect(result.url).toBeUndefined();
     expect(result.data).toBeUndefined();
     expect(result.method).toBe('get');
@@ -43,7 +37,7 @@ describe('mergeConfig', () => {
   it('deep merges headers', () => {
     const result = mergeConfig(
       { headers: { common: { Accept: 'application/json' }, 'X-Default': 'yes' } },
-      { headers: { common: { Authorization: 'Bearer tok' }, 'X-Custom': 'val' } }
+      { headers: { common: { Authorization: 'Bearer tok' }, 'X-Custom': 'val' } },
     );
     expect((result.headers as any).common.Accept).toBe('application/json');
     expect((result.headers as any).common.Authorization).toBe('Bearer tok');

@@ -3,7 +3,14 @@ import settle from '../src/helpers/settle';
 
 describe('settle', () => {
   it('resolves when validateStatus returns true', () => {
-    const response = { status: 200, statusText: 'OK', headers: {}, config: {}, request: {}, duration: 0 };
+    const response = {
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+      request: {},
+      duration: 0,
+    };
     const config = { validateStatus: (s: number) => s >= 200 && s < 300 };
 
     return new Promise((resolve, reject) => {
@@ -14,7 +21,14 @@ describe('settle', () => {
   });
 
   it('rejects with AccessioError when validateStatus returns false', () => {
-    const response = { status: 404, statusText: 'Not Found', request: {}, headers: {}, config: {}, duration: 0 };
+    const response = {
+      status: 404,
+      statusText: 'Not Found',
+      request: {},
+      headers: {},
+      config: {},
+      duration: 0,
+    };
     const config = { validateStatus: (s: number) => s >= 200 && s < 300 };
 
     return new Promise((resolve, reject) => {
@@ -27,7 +41,14 @@ describe('settle', () => {
   });
 
   it('uses ERR_BAD_REQUEST for 4xx status', () => {
-    const response = { status: 400, request: {}, headers: {}, config: {}, duration: 0, statusText: '' };
+    const response = {
+      status: 400,
+      request: {},
+      headers: {},
+      config: {},
+      duration: 0,
+      statusText: '',
+    };
     const config = { validateStatus: () => false };
 
     return new Promise((resolve, reject) => {
@@ -38,7 +59,14 @@ describe('settle', () => {
   });
 
   it('uses ERR_BAD_RESPONSE for 5xx status', () => {
-    const response = { status: 500, request: {}, headers: {}, config: {}, duration: 0, statusText: '' };
+    const response = {
+      status: 500,
+      request: {},
+      headers: {},
+      config: {},
+      duration: 0,
+      statusText: '',
+    };
     const config = { validateStatus: () => false };
 
     return new Promise((resolve, reject) => {
@@ -49,7 +77,14 @@ describe('settle', () => {
   });
 
   it('resolves when no validateStatus is provided', () => {
-    const response = { status: 500, headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
+    const response = {
+      status: 500,
+      headers: {},
+      config: {},
+      request: {},
+      duration: 0,
+      statusText: '',
+    };
     const config = {};
 
     return new Promise((resolve, reject) => {

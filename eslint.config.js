@@ -1,5 +1,6 @@
 import js from '@eslint/js';
 import globals from 'globals';
+import prettier from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
@@ -24,7 +25,7 @@ export default [
       'no-unsafe-finally': 'error',
 
       // Best practices
-      'eqeqeq': ['error', 'always', { null: 'ignore' }],
+      eqeqeq: ['error', 'always', { null: 'ignore' }],
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-return-assign': 'error',
@@ -45,4 +46,5 @@ export default [
   {
     ignores: ['cjs/', 'node_modules/', 'dist/'],
   },
+  prettier,
 ];

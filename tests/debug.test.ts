@@ -34,7 +34,10 @@ describe('debug.ts', () => {
     });
 
     it('logs params when present', () => {
-      logRequest({ debug: true, method: 'get', url: '/test', params: { q: 'hello' } }, '/test?q=hello');
+      logRequest(
+        { debug: true, method: 'get', url: '/test', params: { q: 'hello' } },
+        '/test?q=hello',
+      );
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('Params');
     });
@@ -94,7 +97,7 @@ describe('debug.ts', () => {
         data: { ok: true },
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
 
       const output = consoleSpy.mock.calls[0][0];
@@ -109,7 +112,7 @@ describe('debug.ts', () => {
         statusText: '',
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('??');
@@ -123,7 +126,7 @@ describe('debug.ts', () => {
         duration: 10,
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('✅');
@@ -137,7 +140,7 @@ describe('debug.ts', () => {
         duration: 10,
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('❌');
@@ -151,7 +154,7 @@ describe('debug.ts', () => {
         duration: 5,
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('⚠️');
@@ -166,7 +169,7 @@ describe('debug.ts', () => {
         data: 'hello world',
         headers: {},
         request: {},
-        config: { debug: true }
+        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('Size');
@@ -175,16 +178,18 @@ describe('debug.ts', () => {
     it('does not crash when data cannot be estimated', () => {
       const circular: any = {};
       circular.self = circular;
-      expect(() => logResponse({
-        config: { debug: true },
-        status: 200,
-        statusText: '',
-        duration: 10,
-        data: circular,
-        headers: {},
-        request: {},
-        config: { debug: true }
-      })).not.toThrow();
+      expect(() =>
+        logResponse({
+          config: { debug: true },
+          status: 200,
+          statusText: '',
+          duration: 10,
+          data: circular,
+          headers: {},
+          request: {},
+          config: { debug: true },
+        }),
+      ).not.toThrow();
     });
   });
 

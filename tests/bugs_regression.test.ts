@@ -17,7 +17,7 @@ describe('Bugs Regression Tests', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/test'),
-        expect.objectContaining({ method: 'POST' })
+        expect.objectContaining({ method: 'POST' }),
       );
     });
   });
@@ -34,11 +34,11 @@ describe('Bugs Regression Tests', () => {
 
       const transformer = vi.fn((data: any) => data.toUpperCase());
       const client = new Accessio();
-      
+
       const response = await client.request({
         url: '/test',
         responseType: 'text',
-        transformResponse: [transformer]
+        transformResponse: [transformer],
       });
 
       expect(transformer).toHaveBeenCalled();

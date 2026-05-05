@@ -43,15 +43,15 @@ pnpm add accessio
 ## 🚀 Quick Start
 
 ```typescript
-import accessio from "accessio";
+import accessio from 'accessio';
 
 // Simple GET request
-const { data } = await accessio.get("https://api.example.com/users");
+const { data } = await accessio.get('https://api.example.com/users');
 
 // POST request with JSON body
-const response = await accessio.post("https://api.example.com/users", {
-  name: "John Doe",
-  role: "Developer",
+const response = await accessio.post('https://api.example.com/users', {
+  name: 'John Doe',
+  role: 'Developer',
 });
 
 console.log(`User created in ${response.duration}ms`);
@@ -108,7 +108,7 @@ Interceptors allow you to transform requests or responses before they are handle
 ```typescript
 // Add a request interceptor
 accessio.interceptors.request.use((config) => {
-  config.headers["Authorization"] = `Bearer ${storage.getToken()}`;
+  config.headers['Authorization'] = `Bearer ${storage.getToken()}`;
   return config;
 });
 
@@ -141,7 +141,7 @@ accessio.interceptors.response.use(
 `accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically.
 
 ```typescript
-const response = await accessio.get("/flaky-endpoint", {
+const response = await accessio.get('/flaky-endpoint', {
   retry: 5,
   retryDelay: 1000, // Delays: 1s, 2s, 4s, 8s, 16s (+/- random jitter)
   onRetry: (attempt, error) => console.log(`Retry #${attempt}...`),
@@ -153,15 +153,15 @@ const response = await accessio.get("/flaky-endpoint", {
 Limit concurrent requests globally or per-instance to prevent overloading APIs.
 
 ```typescript
-import { createRateLimiter } from "accessio";
+import { createRateLimiter } from 'accessio';
 
 const limiter = createRateLimiter(5); // Max 5 concurrent requests
 const api = accessio.create({ rateLimiter: limiter });
 
 // Requests will wait in queue if limit is reached
 const results = await Promise.all([
-  api.get("/req-1"),
-  api.get("/req-2"),
+  api.get('/req-1'),
+  api.get('/req-2'),
   // ...
 ]);
 ```
@@ -195,6 +195,7 @@ npm install
 - `npm run build`: Generate ESM and CommonJS bundles
 - `npm run test`: Run the full test suite with Vitest
 - `npm run lint`: Check for code style issues
+- `npm run format`: Automatically format the codebase with Prettier
 - `npm run typecheck`: Validate TypeScript types
 
 ---

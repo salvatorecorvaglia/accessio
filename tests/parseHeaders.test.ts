@@ -31,7 +31,7 @@ describe('parseHeaders', () => {
       forEach(fn: (value: string, key: string) => void) {
         fn('application/json', 'Content-Type');
         fn('no-cache', 'Cache-Control');
-      }
+      },
     };
     const result = parseHeaders(mockHeaders as any);
     expect(result['content-type']).toBe('application/json');
