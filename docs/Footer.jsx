@@ -158,7 +158,7 @@ function Footer() {
         </div>
         <div style={{ marginLeft: 'auto' }}>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>
-            v1.0.0
+            v1.1.0
           </span>
         </div>
       </div>

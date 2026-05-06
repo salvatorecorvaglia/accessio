@@ -78,7 +78,7 @@ function Nav() {
               letterSpacing: '0.06em',
             }}
           >
-            v1.0.0
+            v1.1.0
           </span>
           <Button
             variant="secondary"
