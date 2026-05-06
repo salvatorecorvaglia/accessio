@@ -7,6 +7,8 @@ function deepMerge(...sources: any[]): Record<string, any> {
     if (!source || typeof source !== 'object') continue;
 
     for (const key of Object.keys(source)) {
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+
       const value = source[key];
 
       if (value && typeof value === 'object' && !Array.isArray(value)) {

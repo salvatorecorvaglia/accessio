@@ -48,9 +48,9 @@ describe('Accessio class', () => {
       expect(typeof accessio.interceptors.response.use).toBe('function');
     });
 
-    it('defaults to empty config when none provided', () => {
+    it('defaults to system defaults when none provided', () => {
       const c = new Accessio();
-      expect(c.defaults).toEqual({});
+      expect(c.defaults).toMatchObject({ method: 'get', timeout: 0 });
     });
   });
 
@@ -92,13 +92,13 @@ describe('Accessio class', () => {
   describe('shorthand methods without body', () => {
     for (const method of ['get', 'delete', 'head', 'options']) {
       it(`${method}() sets correct method and url`, async () => {
-        const res = await accessio[method as keyof typeof accessio]('/endpoint');
+        const res = await (accessio as any)[method]('/endpoint');
         expect(res.config.method).toBe(method);
         expect(res.config.url).toBe('/endpoint');
       });
 
       it(`${method}() merges extra config`, async () => {
-        const res = await accessio[method as keyof typeof accessio]('/endpoint', { timeout: 9999 });
+        const res = await (accessio as any)[method]('/endpoint', { timeout: 9999 });
         expect(res.config.timeout).toBe(9999);
       });
     }
@@ -108,14 +108,14 @@ describe('Accessio class', () => {
     for (const method of ['post', 'put', 'patch']) {
       it(`${method}() sets method, url, and data`, async () => {
         const body = { name: 'test' };
-        const res = await accessio[method as keyof typeof accessio]('/endpoint', body);
+        const res = await (accessio as any)[method]('/endpoint', body);
         expect(res.config.method).toBe(method);
         expect(res.config.url).toBe('/endpoint');
         expect(res.config.data).toEqual(body);
       });
 
       it(`${method}() merges extra config`, async () => {
-        const res = await accessio[method as keyof typeof accessio]('/endpoint', null, {
+        const res = await (accessio as any)[method]('/endpoint', null, {
           timeout: 1234,
         });
         expect(res.config.timeout).toBe(1234);
@@ -128,15 +128,15 @@ describe('Accessio class', () => {
       const formMethod = `${method}Form`;
 
       it(`${formMethod}() sets Content-Type to multipart/form-data`, async () => {
-        const res = await accessio[formMethod as keyof typeof accessio]('/upload', {
+        const res = await (accessio as any)[formMethod]('/upload', {
           file: 'data',
         });
         expect(res.config.headers).toBeDefined();
-        expect(res.config.headers['Content-Type']).toBe('multipart/form-data');
+        expect(res.config.headers!['Content-Type']).toBe('multipart/form-data');
       });
 
       it(`${formMethod}() sets correct method`, async () => {
-        const res = await accessio[formMethod as keyof typeof accessio]('/upload', null);
+        const res = await (accessio as any)[formMethod]('/upload', null);
         expect(res.config.method).toBe(method);
       });
     }
@@ -163,7 +163,7 @@ describe('Accessio class', () => {
       });
 
       const res = await accessio.request({ url: '/test' });
-      expect(res.config.headers['X-Test']).toBe('intercepted');
+      expect(res.config.headers!['X-Test']).toBe('intercepted');
     });
 
     it('response interceptors modify response', async () => {

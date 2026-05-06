@@ -12,13 +12,14 @@ import type {
   Interceptors,
   InterceptorHandler,
 } from './types';
+import defaultsConfig from './defaults/index';
 
 export class Accessio {
   defaults: AccessioRequestConfig;
   interceptors: Interceptors;
 
   constructor(instanceConfig: AccessioRequestConfig = {}) {
-    this.defaults = instanceConfig;
+    this.defaults = mergeConfig(defaultsConfig, instanceConfig);
     this.interceptors = {
       request: new InterceptorManager(),
       response: new InterceptorManager(),

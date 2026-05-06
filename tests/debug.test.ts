@@ -97,7 +97,6 @@ describe('debug.ts', () => {
         data: { ok: true },
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
 
       const output = consoleSpy.mock.calls[0][0];
@@ -112,7 +111,6 @@ describe('debug.ts', () => {
         statusText: '',
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('??');
@@ -126,7 +124,6 @@ describe('debug.ts', () => {
         duration: 10,
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('✅');
@@ -140,7 +137,6 @@ describe('debug.ts', () => {
         duration: 10,
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('❌');
@@ -154,7 +150,6 @@ describe('debug.ts', () => {
         duration: 5,
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('⚠️');
@@ -169,7 +164,6 @@ describe('debug.ts', () => {
         data: 'hello world',
         headers: {},
         request: {},
-        config: { debug: true },
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('Size');
@@ -187,7 +181,6 @@ describe('debug.ts', () => {
           data: circular,
           headers: {},
           request: {},
-          config: { debug: true },
         }),
       ).not.toThrow();
     });

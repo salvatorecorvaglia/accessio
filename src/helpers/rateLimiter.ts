@@ -5,15 +5,25 @@ interface QueueItem {
   reject: (reason: Error) => void;
 }
 
-export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter {
+export function createRateLimiter(
+  maxConcurrent: number = Infinity,
+  maxQueueSize: number = Infinity,
+): RateLimiter {
   if (maxConcurrent !== Infinity && (!Number.isInteger(maxConcurrent) || maxConcurrent < 1)) {
     throw new RangeError(
       `[Accessio] maxConcurrent must be a positive integer or Infinity, got: ${maxConcurrent}`,
     );
   }
+  if (maxQueueSize !== Infinity && (!Number.isInteger(maxQueueSize) || maxQueueSize < 1)) {
+    throw new RangeError(
+      `[Accessio] maxQueueSize must be a positive integer or Infinity, got: ${maxQueueSize}`,
+    );
+  }
   let active = 0;
   let destroyed = false;
-  const queue: QueueItem[] = [];
+  let headIndex = 0;
+  let tailIndex = 0;
+  const queue: Record<number, QueueItem> = {};
 
   function acquire(): Promise<void> {
     if (destroyed) {
@@ -25,8 +35,12 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
       return Promise.resolve();
     }
 
+    if (tailIndex - headIndex >= maxQueueSize) {
+      return Promise.reject(new Error(`[Accessio] Rate limiter queue size exceeded maxQueueSize (${maxQueueSize})`));
+    }
+
     return new Promise((resolve, reject) => {
-      queue.push({ resolve, reject });
+      queue[tailIndex++] = { resolve, reject };
     });
   }
 
@@ -37,9 +51,10 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
 
     active--;
 
-    if (queue.length > 0 && active < maxConcurrent) {
+    if (tailIndex - headIndex > 0 && active < maxConcurrent) {
       active++;
-      const next = queue.shift();
+      const next = queue[headIndex];
+      delete queue[headIndex++];
       next?.resolve();
     }
   }
@@ -47,8 +62,9 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
   function destroy(): void {
     destroyed = true;
     const reason = new Error('[Accessio] Rate limiter destroyed — pending request cancelled');
-    while (queue.length > 0) {
-      const next = queue.shift();
+    while (tailIndex - headIndex > 0) {
+      const next = queue[headIndex];
+      delete queue[headIndex++];
       next?.reject(reason);
     }
   }
@@ -58,7 +74,7 @@ export function createRateLimiter(maxConcurrent: number = Infinity): RateLimiter
     release,
     destroy,
     get pending() {
-      return queue.length;
+      return tailIndex - headIndex;
     },
     get active() {
       return active;

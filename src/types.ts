@@ -1,3 +1,5 @@
+import type InterceptorManager from './interceptors/interceptorManager';
+
 export type Method = 'get' | 'delete' | 'head' | 'options' | 'post' | 'put' | 'patch';
 
 export type ResponseType = 'json' | 'text' | 'blob' | 'arraybuffer' | 'stream';
@@ -84,55 +86,7 @@ export interface AccessioError extends Error {
   toJSON(): Record<string, unknown>;
 }
 
-export class InterceptorManager {
-  handlers: Array<InterceptorHandler | null>;
-  private _activeCount: number;
 
-  constructor() {
-    this.handlers = [];
-    this._activeCount = 0;
-  }
-
-  use(
-    fulfilled: TransformFunction,
-    rejected?: (error: unknown) => unknown,
-    options: InterceptorOptions = {},
-  ): number {
-    this.handlers.push({
-      fulfilled: fulfilled || null,
-      rejected: rejected || null,
-      synchronous: options.synchronous || false,
-      runWhen: options.runWhen || null,
-    });
-
-    this._activeCount++;
-    return this.handlers.length - 1;
-  }
-
-  eject(id: number): void {
-    if (this.handlers[id]) {
-      this.handlers[id] = null;
-      this._activeCount--;
-    }
-  }
-
-  clear(): void {
-    this.handlers = [];
-    this._activeCount = 0;
-  }
-
-  forEach(fn: (handler: InterceptorHandler) => void): void {
-    for (const handler of this.handlers) {
-      if (handler !== null) {
-        fn(handler);
-      }
-    }
-  }
-
-  get size(): number {
-    return this._activeCount;
-  }
-}
 
 export interface RateLimiter {
   acquire: () => Promise<void>;

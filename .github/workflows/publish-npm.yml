@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       publish_tag:
-        description: 'Which tag or branch to publish? (e.g. v1.0.0)'
+        description: 'Which tag or branch to publish?'
         required: true
         default: 'main'
 env:

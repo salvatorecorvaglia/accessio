@@ -59,6 +59,34 @@ function buildTransformArray(
   return [transform];
 }
 
+function setBasicAuth(config: AccessioRequestConfig, headers: Record<string, string>): void {
+  if (!config.auth) return;
+  const username = config.auth.username || '';
+  const password = config.auth.password || '';
+  const credentials = `${username}:${password}`;
+
+  let encoded: string;
+  if (typeof Buffer !== 'undefined') {
+    encoded = Buffer.from(credentials).toString('base64');
+  } else {
+    const bytes = new TextEncoder().encode(credentials);
+    const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
+    encoded = btoa(binString);
+  }
+  headers['Authorization'] = `Basic ${encoded}`;
+}
+
+async function readResponseData(fetchResponse: Response, responseType: string): Promise<unknown> {
+  switch (responseType) {
+    case 'arraybuffer': return await fetchResponse.arrayBuffer();
+    case 'blob': return await fetchResponse.blob();
+    case 'text': return await fetchResponse.text();
+    case 'stream': return fetchResponse.body;
+    case 'json':
+    default: return await fetchResponse.text();
+  }
+}
+
 export default function dispatchRequest(config: AccessioRequestConfig): Promise<AccessioResponse> {
   const fullURL =
     config._builtUrl ||
@@ -83,22 +111,7 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
     removeContentType(flatHeaders);
   }
 
-  if (config.auth) {
-    const username = config.auth.username || '';
-    const password = config.auth.password || '';
-    const credentials = `${username}:${password}`;
-
-    let encoded: string;
-    if (typeof Buffer !== 'undefined') {
-      encoded = Buffer.from(credentials).toString('base64');
-    } else {
-      const bytes = new TextEncoder().encode(credentials);
-      const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
-      encoded = btoa(binString);
-    }
-
-    flatHeaders['Authorization'] = `Basic ${encoded}`;
-  }
+  setBasicAuth(config, flatHeaders);
 
   const fetchOptions: RequestInit = {
     method: (config.method || 'GET').toUpperCase(),
@@ -170,24 +183,7 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
       const responseType = config.responseType || 'json';
 
       try {
-        switch (responseType) {
-          case 'arraybuffer':
-            responseData = await fetchResponse.arrayBuffer();
-            break;
-          case 'blob':
-            responseData = await fetchResponse.blob();
-            break;
-          case 'text':
-            responseData = await fetchResponse.text();
-            break;
-          case 'stream':
-            responseData = fetchResponse.body;
-            break;
-          case 'json':
-          default:
-            responseData = await fetchResponse.text();
-            break;
-        }
+        responseData = await readResponseData(fetchResponse, responseType);
       } catch (readError) {
         throw AccessioError.from(
           readError as Error,
