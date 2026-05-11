@@ -36,3 +36,4 @@ claude-settings.json
 .prompts/
 .prompt-cache/
 .ai/
+CLAUDE.md
