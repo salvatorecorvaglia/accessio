@@ -78,7 +78,7 @@ function Nav() {
               letterSpacing: '0.06em',
             }}
           >
-            v1.1.0
+            v{window.ACCESSIO_CONFIG.version}
           </span>
           <Button
             variant="secondary"
