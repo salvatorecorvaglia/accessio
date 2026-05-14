@@ -45,8 +45,8 @@ function flattenHeaders(
 }
 
 function removeContentType(headers: Record<string, string>): void {
-  const key = Object.keys(headers).find((k) => k.toLowerCase() === 'content-type');
-  if (key) {
+  const keys = Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type');
+  for (const key of keys) {
     delete headers[key];
   }
 }
@@ -69,21 +69,28 @@ function setBasicAuth(config: AccessioRequestConfig, headers: Record<string, str
   if (typeof Buffer !== 'undefined') {
     encoded = Buffer.from(credentials).toString('base64');
   } else {
-    const bytes = new TextEncoder().encode(credentials);
-    const binString = Array.from(bytes, (x) => String.fromCodePoint(x)).join('');
-    encoded = btoa(binString);
+    encoded = btoa(
+      encodeURIComponent(credentials).replace(/%([0-9A-F]{2})/g, (match, p1) => {
+        return String.fromCharCode(parseInt(p1, 16));
+      }),
+    );
   }
   headers['Authorization'] = `Basic ${encoded}`;
 }
 
 async function readResponseData(fetchResponse: Response, responseType: string): Promise<unknown> {
   switch (responseType) {
-    case 'arraybuffer': return await fetchResponse.arrayBuffer();
-    case 'blob': return await fetchResponse.blob();
-    case 'text': return await fetchResponse.text();
-    case 'stream': return fetchResponse.body;
+    case 'arraybuffer':
+      return await fetchResponse.arrayBuffer();
+    case 'blob':
+      return await fetchResponse.blob();
+    case 'text':
+      return await fetchResponse.text();
+    case 'stream':
+      return fetchResponse.body;
     case 'json':
-    default: return await fetchResponse.text();
+    default:
+      return await fetchResponse.text();
   }
 }
 
@@ -131,26 +138,34 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
     fetchOptions.credentials = 'include';
   }
 
+  if (config.dispatcher) {
+    (fetchOptions as any).dispatcher = config.dispatcher;
+  }
+  if (config.agent) {
+    (fetchOptions as any).agent = config.agent;
+  }
+
   let abortController: AbortController | null = null;
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
   let isTimedOut = false;
   let onUserAbort: (() => void) | null = null;
 
-  if (config.timeout && config.timeout > 0) {
+  const timeoutValue = Number(config.timeout);
+  if (!isNaN(timeoutValue) && timeoutValue > 0) {
     abortController = new AbortController();
 
     timeoutId = setTimeout(() => {
       isTimedOut = true;
       abortController!.abort(
         new AccessioError(
-          `timeout of ${config.timeout}ms exceeded`,
+          `timeout of ${timeoutValue}ms exceeded`,
           AccessioError.ETIMEDOUT,
           config,
           null,
           null,
         ),
       );
-    }, config.timeout);
+    }, timeoutValue);
 
     if (config.signal) {
       if (typeof AbortSignal.any === 'function') {
@@ -160,7 +175,9 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
           abortController.abort(config.signal.reason);
         } else {
           onUserAbort = () => {
-            abortController!.abort(config.signal!.reason);
+            if (!isTimedOut && abortController) {
+              abortController.abort(config.signal!.reason);
+            }
           };
           config.signal.addEventListener('abort', onUserAbort, {
             once: true,
@@ -181,6 +198,21 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
     .then(async (fetchResponse) => {
       let responseData: unknown;
       const responseType = config.responseType || 'json';
+
+      const contentLength = fetchResponse.headers.get('content-length');
+      if (
+        contentLength &&
+        config.maxContentLength &&
+        parseInt(contentLength, 10) > config.maxContentLength
+      ) {
+        throw new AccessioError(
+          `maxContentLength size of ${config.maxContentLength} exceeded`,
+          AccessioError.ERR_BAD_RESPONSE,
+          config,
+          fetchResponse,
+          null,
+        );
+      }
 
       try {
         responseData = await readResponseData(fetchResponse, responseType);
@@ -235,6 +267,20 @@ export default function dispatchRequest(config: AccessioRequestConfig): Promise<
           );
         }
         throw new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
+      }
+
+      if (
+        error instanceof TypeError &&
+        (error.message.toLowerCase().includes('url') ||
+          error.message.toLowerCase().includes('fetch'))
+      ) {
+        throw new AccessioError(
+          `Invalid URL: ${fullURL}`,
+          AccessioError.ERR_INVALID_URL,
+          config,
+          null,
+          null,
+        );
       }
 
       throw AccessioError.from(

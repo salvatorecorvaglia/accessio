@@ -23,7 +23,14 @@ export function defaultTransformRequest(data: unknown, headers: Record<string, s
         headers['Content-Type'] = 'application/json';
       }
     }
-    return JSON.stringify(data);
+    try {
+      return JSON.stringify(data);
+    } catch (e: any) {
+      if (e instanceof TypeError && e.message.toLowerCase().includes('circular')) {
+        throw new Error('Accessio: Cannot stringify circular structure in request data');
+      }
+      throw e;
+    }
   }
 
   return data;

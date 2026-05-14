@@ -63,6 +63,9 @@ export interface AccessioRequestConfig {
   debug?: boolean;
   rateLimiter?: RateLimiter;
   _builtUrl?: string;
+  maxContentLength?: number;
+  dispatcher?: unknown;
+  agent?: unknown;
 }
 
 export interface AccessioResponse<T = unknown> {
@@ -85,8 +88,6 @@ export interface AccessioError extends Error {
   cause?: Error;
   toJSON(): Record<string, unknown>;
 }
-
-
 
 export interface RateLimiter {
   acquire: () => Promise<void>;

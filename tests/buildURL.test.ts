@@ -63,7 +63,7 @@ describe('serializeParams', () => {
 
   it('serializes arrays', () => {
     const result = serializeParams({ tags: ['a', 'b'] });
-    expect(result).toBe('tags%5B%5D=a&tags%5B%5D=b');
+    expect(result).toBe('tags=a&tags=b');
   });
 
   it('serializes nested objects', () => {

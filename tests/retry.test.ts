@@ -14,9 +14,9 @@ describe('retry.ts', () => {
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
-    it('retries on ETIMEDOUT', () => {
+    it('does not retry on ETIMEDOUT', () => {
       const error = new AccessioError('timeout', AccessioError.ETIMEDOUT, null, null, null);
-      expect(defaultRetryCondition(error)).toBe(true);
+      expect(defaultRetryCondition(error)).toBe(false);
     });
 
     it('retries on 5xx server errors', () => {
@@ -27,15 +27,17 @@ describe('retry.ts', () => {
         null,
         null,
       );
-      error.response = {
-        status: 503,
-        data: null,
-        headers: {},
-        config: {},
-        request: {},
-        duration: 0,
-        statusText: '',
-      };
+      Object.defineProperty(error, 'response', {
+        value: {
+          status: 503,
+          data: null,
+          headers: {},
+          config: {},
+          request: {},
+          duration: 0,
+          statusText: '',
+        },
+      });
       expect(defaultRetryCondition(error)).toBe(true);
     });
 
@@ -47,15 +49,17 @@ describe('retry.ts', () => {
         null,
         null,
       );
-      error.response = {
-        status: 404,
-        data: null,
-        headers: {},
-        config: {},
-        request: {},
-        duration: 0,
-        statusText: '',
-      };
+      Object.defineProperty(error, 'response', {
+        value: {
+          status: 404,
+          data: null,
+          headers: {},
+          config: {},
+          request: {},
+          duration: 0,
+          statusText: '',
+        },
+      });
       expect(defaultRetryCondition(error)).toBe(false);
     });
   });
@@ -167,15 +171,17 @@ describe('retry.ts', () => {
       const dispatch = vi.fn(() => {
         attempt++;
         const error = new AccessioError('error', AccessioError.ERR_BAD_REQUEST, null, null, null);
-        error.response = {
-          status: 429,
-          data: null,
-          headers: {},
-          config: {},
-          request: {},
-          duration: 0,
-          statusText: '',
-        };
+        Object.defineProperty(error, 'response', {
+          value: {
+            status: 429,
+            data: null,
+            headers: {},
+            config: {},
+            request: {},
+            duration: 0,
+            statusText: '',
+          },
+        });
         if (attempt < 2) return Promise.reject(error);
         return Promise.resolve({ status: 200 });
       });

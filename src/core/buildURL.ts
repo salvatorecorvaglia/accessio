@@ -26,7 +26,7 @@ function serializeParams(
         if (typeof item === 'object' && item !== null) {
           encode(`${prefix}[${index}]`, item);
         } else {
-          encode(`${prefix}[]`, item);
+          encode(prefix, item);
         }
       });
     } else if (typeof value === 'object' && !(value instanceof Date)) {
@@ -64,7 +64,7 @@ function combineURLs(baseURL: string, relativeURL: string): string {
 }
 
 function isAbsoluteURL(url: string): boolean {
-  return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url);
+  return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url) || /^([a-z][a-z\d+\-.]*:)/i.test(url);
 }
 
 export default function buildURL(

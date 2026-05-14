@@ -16,10 +16,6 @@ function defaultRetryCondition(error: any): boolean {
     return true;
   }
 
-  if (error.code === ETIMEDOUT) {
-    return true;
-  }
-
   if (error.response && error.response.status >= 500) {
     return true;
   }
