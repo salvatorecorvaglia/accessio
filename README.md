@@ -1,6 +1,6 @@
 # Accessio 🎯
 
-**Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free.**
+**Fast, flexible HTTP client — simple, modular, and dependency-free.**
 
 `accessio` is a lightweight, modern HTTP client built on top of the native `fetch` API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining **zero external dependencies**.
 

@@ -1,7 +1,7 @@
 {
   "name": "accessio",
   "version": "1.1.0",
-  "description": "Fast, flexible HTTP client for Node.js and browsers — simple, modular, and dependency-free",
+  "description": "Fast, flexible HTTP client — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
   "module": "./src/index.ts",
