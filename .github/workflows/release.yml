@@ -77,11 +77,3 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
 
-  deploy-docs:
-    name: Deploy Documentation
-    needs: [release, publish-gpr]
-    uses: ./.github/workflows/deploy-pages.yml
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
