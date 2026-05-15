@@ -192,8 +192,10 @@ npm install
 
 ### Available Scripts
 
-- `npm run build`: Generate ESM and CommonJS bundles
+- `npm run build`: Generate CommonJS bundles
 - `npm run test`: Run the full test suite with Vitest
+- `npm run test:coverage`: Run tests with coverage report
+- `npm run test:browser`: Run tests in browser environment
 - `npm run lint`: Check for code style issues
 - `npm run format`: Automatically format the codebase with Prettier
 - `npm run typecheck`: Validate TypeScript types

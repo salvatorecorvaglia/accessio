@@ -50,12 +50,14 @@ npm install
 
 ### Useful Scripts
 
-- `npm run build`: Build the project (CJS/ESM).
+- `npm run build`: Build the project (CJS).
 - `npm run lint`: Check for linting errors.
 - `npm run lint:fix`: Automatically fix linting errors.
 - `npm run format`: Format the code using Prettier.
 - `npm run test`: Run the test suite.
 - `npm run test:watch`: Run tests in watch mode.
+- `npm run test:coverage`: Run tests with coverage report.
+- `npm run test:browser`: Run tests in browser environment.
 - `npm run typecheck`: Run TypeScript type checking.
 
 ## 📜 Code of Conduct
