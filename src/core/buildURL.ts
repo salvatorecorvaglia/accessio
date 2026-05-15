@@ -64,7 +64,7 @@ function combineURLs(baseURL: string, relativeURL: string): string {
 }
 
 function isAbsoluteURL(url: string): boolean {
-  return /^([a-z][a-z\d+\-.]*:)?\/\//i.test(url) || /^([a-z][a-z\d+\-.]*:)/i.test(url);
+  return /^([a-z][a-z\d+\-.]*:)/i.test(url);
 }
 
 export default function buildURL(

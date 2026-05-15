@@ -102,7 +102,7 @@ describe('isAbsoluteURL', () => {
   });
 
   it('detects protocol-relative URLs', () => {
-    expect(isAbsoluteURL('//example.com')).toBe(true);
+    expect(isAbsoluteURL('//example.com')).toBe(false);
   });
 
   it('returns false for relative URLs', () => {

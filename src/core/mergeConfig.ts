@@ -1,7 +1,7 @@
 import type { AccessioRequestConfig } from '../types';
 
 function deepMerge(...sources: any[]): Record<string, any> {
-  const result: Record<string, any> = {};
+  const result: Record<string, any> = Object.create(null);
 
   for (const source of sources) {
     if (!source || typeof source !== 'object') continue;
@@ -43,7 +43,7 @@ export default function mergeConfig(
   config1: AccessioRequestConfig = {},
   config2: AccessioRequestConfig = {},
 ): AccessioRequestConfig {
-  const merged: any = {};
+  const merged: any = Object.create(null);
 
   const allKeys = new Set<string>([...Object.keys(config1), ...Object.keys(config2)]);
 

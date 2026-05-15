@@ -30,7 +30,7 @@ describe('dispatchRequest (request.ts)', () => {
         blob: () => Promise.resolve(new Blob([body])),
         body: null,
       }),
-    );
+    ) as any;
   }
 
   describe('basic requests', () => {
@@ -41,7 +41,9 @@ describe('dispatchRequest (request.ts)', () => {
         url: 'https://api.test.com/users',
         method: 'get',
         headers: {},
-        transformResponse: [(data) => JSON.parse(data as string)],
+        transformResponse: [
+          (data: any) => (typeof data === 'string' ? JSON.parse(data as string) : data),
+        ],
       });
 
       expect(response.status).toBe(200);
@@ -82,7 +84,9 @@ describe('dispatchRequest (request.ts)', () => {
         url: 'https://api.test.com/users',
         method: 'get',
         headers: {},
-        transformResponse: [(data) => JSON.parse(data as string)],
+        transformResponse: [
+          (data: any) => (typeof data === 'string' ? JSON.parse(data as string) : data),
+        ],
       });
 
       expect(response.data).toEqual({ users: [] });
@@ -101,12 +105,9 @@ describe('dispatchRequest (request.ts)', () => {
         },
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({ Accept: 'text/html' }),
-        }),
-      );
+      const fetchCall = vi.mocked(global.fetch).mock.calls[0];
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect((fetchOptions.headers as Headers).get('accept')).toBe('text/html');
     });
 
     it('removes Content-Type for FormData', async () => {
@@ -120,12 +121,9 @@ describe('dispatchRequest (request.ts)', () => {
         data: formData,
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.not.objectContaining({ 'Content-Type': 'application/json' }),
-        }),
-      );
+      const fetchCall = vi.mocked(global.fetch).mock.calls[0];
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect((fetchOptions.headers as Headers).has('content-type')).toBe(false);
     });
   });
 
@@ -140,14 +138,9 @@ describe('dispatchRequest (request.ts)', () => {
         auth: { username: 'user', password: 'pass' },
       });
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: 'Basic dXNlcjpwYXNz',
-          }),
-        }),
-      );
+      const fetchCall = vi.mocked(global.fetch).mock.calls[0];
+      const fetchOptions = fetchCall[1] as RequestInit;
+      expect((fetchOptions.headers as Headers).get('authorization')).toBe('Basic dXNlcjpwYXNz');
     });
   });
 
@@ -159,7 +152,9 @@ describe('dispatchRequest (request.ts)', () => {
         url: 'https://api.test.com/test',
         method: 'get',
         headers: {},
-        transformResponse: [(data) => JSON.parse(data as string)],
+        transformResponse: [
+          (data: any) => (typeof data === 'string' ? JSON.parse(data as string) : data),
+        ],
       });
 
       expect(response.data).toEqual({ message: 'hello' });
@@ -188,7 +183,7 @@ describe('dispatchRequest (request.ts)', () => {
           url: 'https://api.test.com/test',
           method: 'get',
           headers: {},
-          validateStatus: (status) => status >= 200 && status < 300,
+          validateStatus: (status: number) => status >= 200 && status < 300,
         }),
       ).rejects.toThrow('Request failed with status code 404');
     });

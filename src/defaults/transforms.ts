@@ -1,4 +1,7 @@
-export function defaultTransformRequest(data: unknown, headers: Record<string, string>): unknown {
+export function defaultTransformRequest(
+  data: unknown,
+  headers: Record<string, string | string[]>,
+): unknown {
   if (data === null || data === undefined) {
     return data;
   }

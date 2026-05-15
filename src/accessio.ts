@@ -52,11 +52,13 @@ export class Accessio {
 
     const requestInterceptors: any[] = [];
     const responseInterceptors: any[] = [];
+    let synchronousRequestInterceptors = true;
 
     this.interceptors.request.forEach((interceptor: InterceptorHandler) => {
       if (interceptor.runWhen && !interceptor.runWhen(mergedConfig)) {
         return;
       }
+      synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
       requestInterceptors.unshift(interceptor);
     });
 
@@ -64,15 +66,51 @@ export class Accessio {
       responseInterceptors.push(interceptor);
     });
 
-    let promise: Promise<any> = Promise.resolve(mergedConfig);
+    let promise: Promise<any>;
 
-    for (const interceptor of requestInterceptors) {
-      promise = promise.then((value: any) => {
-        if (interceptor.fulfilled) {
-          return interceptor.fulfilled(value);
+    if (synchronousRequestInterceptors) {
+      let newConfig = mergedConfig;
+      let rejectReason: any = null;
+      let isRejected = false;
+
+      for (const interceptor of requestInterceptors) {
+        if (!isRejected) {
+          try {
+            if (interceptor.fulfilled) {
+              newConfig = interceptor.fulfilled(newConfig);
+            }
+          } catch (err) {
+            rejectReason = err;
+            isRejected = true;
+          }
+        } else {
+          if (interceptor.rejected) {
+            try {
+              newConfig = interceptor.rejected(rejectReason);
+              isRejected = false;
+            } catch (err) {
+              rejectReason = err;
+              isRejected = true;
+            }
+          }
         }
-        return value;
-      }, interceptor.rejected);
+      }
+
+      if (isRejected) {
+        promise = Promise.reject(rejectReason);
+      } else {
+        promise = Promise.resolve(newConfig);
+      }
+    } else {
+      promise = Promise.resolve(mergedConfig);
+      for (const interceptor of requestInterceptors) {
+        promise = promise.then((value: any) => {
+          if (interceptor.fulfilled) {
+            return interceptor.fulfilled(value);
+          }
+          return value;
+        }, interceptor.rejected);
+      }
     }
 
     promise = promise.then((cfg: any) => {

@@ -21,7 +21,10 @@ export function createRateLimiter(
   }
   let active = 0;
   let destroyed = false;
-  const queue: QueueItem[] = [];
+  let head = 0;
+  let tail = 0;
+  let pendingCount = 0;
+  const queue: Record<number, QueueItem> = {};
 
   function acquire(): Promise<void> {
     if (destroyed) {
@@ -33,14 +36,15 @@ export function createRateLimiter(
       return Promise.resolve();
     }
 
-    if (queue.length >= maxQueueSize) {
+    if (pendingCount >= maxQueueSize) {
       return Promise.reject(
         new Error(`[Accessio] Rate limiter queue size exceeded maxQueueSize (${maxQueueSize})`),
       );
     }
 
     return new Promise((resolve, reject) => {
-      queue.push({ resolve, reject });
+      queue[tail++] = { resolve, reject };
+      pendingCount++;
     });
   }
 
@@ -51,9 +55,12 @@ export function createRateLimiter(
 
     active--;
 
-    if (queue.length > 0 && active < maxConcurrent) {
+    if (pendingCount > 0 && active < maxConcurrent) {
       active++;
-      const next = queue.shift();
+      const next = queue[head];
+      delete queue[head];
+      head++;
+      pendingCount--;
       next?.resolve();
     }
   }
@@ -61,8 +68,11 @@ export function createRateLimiter(
   function destroy(): void {
     destroyed = true;
     const reason = new Error('[Accessio] Rate limiter destroyed — pending request cancelled');
-    while (queue.length > 0) {
-      const next = queue.shift();
+    while (pendingCount > 0) {
+      const next = queue[head];
+      delete queue[head];
+      head++;
+      pendingCount--;
       next?.reject(reason);
     }
   }
@@ -72,7 +82,7 @@ export function createRateLimiter(
     release,
     destroy,
     get pending() {
-      return queue.length;
+      return pendingCount;
     },
     get active() {
       return active;

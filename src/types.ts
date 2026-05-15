@@ -11,7 +11,10 @@ export interface AuthConfig {
 
 export type ParamsSerializer = (params: Record<string, unknown>) => string;
 
-export type TransformFunction = (data: unknown, headers: Record<string, string>) => unknown;
+export type TransformFunction = (
+  data: unknown,
+  headers: Record<string, string | string[]>,
+) => unknown | Promise<unknown>;
 
 export type RetryConditionFunction = (error: AccessioError) => boolean;
 
@@ -47,7 +50,7 @@ export interface AccessioRequestConfig {
   params?: Record<string, unknown>;
   paramsSerializer?: ParamsSerializer;
   data?: unknown;
-  headers?: Record<string, string> | Record<string, Record<string, string>>;
+  headers?: Record<string, string | string[]> | Record<string, Record<string, string | string[]>>;
   auth?: AuthConfig;
   timeout?: number;
   withCredentials?: boolean;
@@ -72,7 +75,7 @@ export interface AccessioResponse<T = unknown> {
   data: T;
   status: number;
   statusText: string;
-  headers: Record<string, string>;
+  headers: Record<string, string | string[]>;
   config: AccessioRequestConfig;
   request: Response;
   duration: number;
