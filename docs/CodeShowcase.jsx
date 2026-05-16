@@ -50,6 +50,20 @@ await Promise.all(
   ids.map((id) => api.get(\`/items/\${id}\`))
 );`,
     },
+    {
+      eyebrow: 'Timeouts',
+      title: 'Built-in cancellation via AbortController.',
+      body: 'Set global or per-request timeouts. Pass your own AbortSignal to cancel requests manually when a user navigates away or a component unmounts.',
+      code: `const controller = new AbortController();
+
+await accessio.get("/long-task", {
+  timeout: 5000,
+  signal: controller.signal,
+});
+
+// Cancel anytime
+controller.abort();`,
+    },
   ];
 
   return (

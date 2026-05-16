@@ -1,4 +1,4 @@
-// 6-up feature grid.
+// 8-up feature grid.
 function Features() {
   const items = [
     {
@@ -22,9 +22,19 @@ function Features() {
       desc: 'Beautiful console logs out of the box: arrows, status icons, timing, payload size.',
     },
     {
+      icon: 'shield',
+      title: 'Security hardened',
+      desc: 'Built-in protection against prototype pollution and hardened config merging.',
+    },
+    {
+      icon: 'clock',
+      title: 'Timeout & Cancellation',
+      desc: 'Native AbortController support for precise request timing and manual aborts.',
+    },
+    {
       icon: 'type',
       title: 'TypeScript-first',
-      desc: 'Full type definitions, generics on responses, structured error union.',
+      desc: 'Full type definitions, generics on responses, and structured error unions.',
     },
     {
       icon: 'globe',
@@ -58,7 +68,7 @@ function Features() {
         className="feature-grid"
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
           gap: 18,
         }}
       >
