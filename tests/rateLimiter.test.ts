@@ -121,7 +121,7 @@ describe('createRateLimiter', () => {
   describe('rateLimitedRequest()', () => {
     it('acquires, dispatches and releases automatically', async () => {
       const limiter = createRateLimiter(2);
-      const dispatch = async (config: any) => ({ status: 200, config });
+      const dispatch = (async (config: any) => ({ status: 200, config })) as any;
 
       const result = await rateLimitedRequest(dispatch, limiter, { url: '/test' });
       expect(result.status).toBe(200);
@@ -130,9 +130,9 @@ describe('createRateLimiter', () => {
 
     it('releases even when dispatch throws', async () => {
       const limiter = createRateLimiter(2);
-      const dispatch = async () => {
+      const dispatch = (async () => {
         throw new Error('network error');
-      };
+      }) as any;
 
       await expect(rateLimitedRequest(dispatch, limiter, {})).rejects.toThrow('network error');
       expect(limiter.active).toBe(0);

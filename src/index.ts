@@ -7,7 +7,7 @@ import InterceptorManager from './interceptors/interceptorManager';
 import { createRateLimiter } from './helpers/rateLimiter';
 import { logRequest, logResponse, logError } from './helpers/debug';
 import { ERR_CANCELED } from './constants/errorCodes';
-import type { AccessioRequestConfig, AccessioResponse } from './types';
+import type { AccessioRequestConfig } from './types';
 
 const PUBLIC_METHODS = [
   'request',
@@ -22,6 +22,9 @@ const PUBLIC_METHODS = [
   'postForm',
   'putForm',
   'patchForm',
+  'stream',
+  'autoPaginate',
+  'gql',
 ];
 
 function createInstance(defaultConfig: AccessioRequestConfig) {

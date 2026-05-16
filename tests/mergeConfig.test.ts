@@ -36,8 +36,8 @@ describe('mergeConfig', () => {
 
   it('deep merges headers', () => {
     const result = mergeConfig(
-      { headers: { common: { Accept: 'application/json' }, 'X-Default': 'yes' } },
-      { headers: { common: { Authorization: 'Bearer tok' }, 'X-Custom': 'val' } },
+      { headers: { common: { Accept: 'application/json' }, 'X-Default': 'yes' } as any },
+      { headers: { common: { Authorization: 'Bearer tok' }, 'X-Custom': 'val' } as any },
     );
     expect((result.headers as any).common.Accept).toBe('application/json');
     expect((result.headers as any).common.Authorization).toBe('Bearer tok');

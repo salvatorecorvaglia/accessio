@@ -6,6 +6,7 @@ import buildURL from './core/buildURL';
 import retryRequest from './core/retry';
 import { logRequest, logResponse, logError } from './helpers/debug';
 import { rateLimitedRequest } from './helpers/rateLimiter';
+import { toFormData } from './helpers/toFormData';
 import type {
   AccessioRequestConfig,
   AccessioResponse,
@@ -201,11 +202,12 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
+    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
     return this.request<T>(
       mergeConfig(config || {}, {
         method: 'post',
         url,
-        data,
+        data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     );
@@ -216,11 +218,12 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
+    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
     return this.request<T>(
       mergeConfig(config || {}, {
         method: 'put',
         url,
-        data,
+        data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     );
@@ -231,14 +234,89 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
+    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
     return this.request<T>(
       mergeConfig(config || {}, {
         method: 'patch',
         url,
-        data,
+        data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     );
+  }
+
+  async *stream<T = any>(
+    url: string,
+    config?: AccessioRequestConfig,
+  ): AsyncGenerator<T, void, unknown> {
+    const response = await this.request<ReadableStream<Uint8Array>>(
+      mergeConfig(config || {}, { method: 'get', url, responseType: 'stream' }),
+    );
+    if (!response.data) return;
+
+    const reader = response.data.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        if (line.trim().startsWith('data:')) {
+          const dataStr = line.replace(/^data:\s*/, '');
+          if (dataStr === '[DONE]') return;
+          try {
+            yield JSON.parse(dataStr);
+          } catch (e) {
+            yield dataStr as any;
+          }
+        } else if (line.trim().startsWith('{') || line.trim().startsWith('[')) {
+          try {
+            yield JSON.parse(line);
+          } catch (e) {
+            // ignore partial json
+          }
+        }
+      }
+    }
+  }
+
+  async *autoPaginate<T = any>(
+    url: string,
+    config?: AccessioRequestConfig,
+  ): AsyncGenerator<T, void, unknown> {
+    let nextUrl: string | null = url;
+    let currentConfig = config || {};
+
+    while (nextUrl) {
+      const response: AccessioResponse<any> = await this.get(nextUrl, currentConfig);
+
+      const items = Array.isArray(response.data) ? response.data : response.data.data;
+      if (Array.isArray(items)) {
+        for (const item of items) {
+          yield item;
+        }
+      }
+
+      nextUrl = response.data.next || response.data.links?.next || null;
+      if (nextUrl) {
+        currentConfig = mergeConfig(currentConfig, { url: nextUrl, params: {} });
+      }
+    }
+  }
+
+  gql<T = any>(
+    url: string,
+    query: string,
+    variables?: Record<string, any>,
+    config?: AccessioRequestConfig,
+  ): Promise<AccessioResponse<T>> {
+    return this.post<T>(url, { query, variables }, config);
   }
 }
 

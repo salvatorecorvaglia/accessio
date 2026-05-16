@@ -29,7 +29,7 @@ We are always looking for ways to improve `accessio`. If you have an idea for a 
 2. **Install dependencies**: `npm install`.
 3. **Make your changes**. If you're adding a feature or fixing a bug, please include tests.
 4. **Format & Lint**: Ensure your code follows the project's style by running `npm run format` and `npm run lint`.
-5. **Run tests**: Make sure all tests pass by running `npm run test`.
+5. **Run tests**: Make sure all tests pass by running `npm run test` and verify coverage with `npm run test:coverage`.
 6. **Commit your changes**: Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: add new interceptor logic` or `fix: resolve timeout jitter issue`).
 7. **Submit a Pull Request** to the `main` branch.
 
@@ -69,6 +69,7 @@ By participating in this project, you agree to abide by the terms of our [Code o
 - **Zero Dependencies**: Keep the core lightweight.
 - **Modern Standards**: Leverage native `fetch` and modern TypeScript.
 - **Developer Experience**: Focus on a clean, intuitive API.
+- **Modularity**: Advanced features (like caching, schema validation, SSE) should integrate seamlessly without breaking the lightweight core.
 
 ---
 

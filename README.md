@@ -22,6 +22,12 @@
 - 🚥 **Rate Limiter** — built-in concurrency control for high-throughput applications
 - 🐞 **Debug Mode** — structured, beautiful console logging for easy development
 - ⏱️ **Duration Tracking** — every response includes precise timing metadata
+- 🧬 **GraphQL Support** — built-in `gql` method for easy querying
+- 📡 **SSE Streaming** — async iterators for Server-Sent Events via `stream`
+- 📚 **Auto-Pagination** — seamlessly iterate through paginated APIs via `autoPaginate`
+- 🛡️ **Schema Validation** — validate responses automatically using Zod or custom schemas
+- 🗂️ **Caching & Deduplication** — prevent redundant requests and cache responses
+- 🪝 **Lifecycle Hooks** — simple hooks for request/response/error events
 
 ---
 
@@ -74,6 +80,11 @@ console.log(`User created in ${response.duration}ms`);
 | `accessio.head(url, config?)`            | HEAD request                            |
 | `accessio.options(url, config?)`         | OPTIONS request                         |
 | `accessio.postForm(url, data?, config?)` | POST request with `multipart/form-data` |
+| `accessio.putForm(url, data?, config?)`  | PUT request with `multipart/form-data`  |
+| `accessio.patchForm(url, data?, config?)`| PATCH request with `multipart/form-data`|
+| `accessio.stream(url, config?)`          | Server-Sent Events (SSE) streaming      |
+| `accessio.autoPaginate(url, config?)`    | Async iterator for paginated endpoints  |
+| `accessio.gql(url, query, vars?, config?)`| GraphQL query/mutation wrapper          |
 
 ### Configuration Options
 
@@ -94,6 +105,17 @@ console.log(`User created in ${response.duration}ms`);
   rateLimiter: limiter,              // Concurrency limiter instance
   validateStatus: (s) => s < 400,    // Resolve/reject predicate
   signal: abortController.signal,    // Custom AbortSignal
+  dedupe: true,                      // Prevent duplicate in-flight requests
+  cache: true,                       // Cache responses (boolean or CacheProvider)
+  cacheTTL: 60000,                   // Cache time-to-live in ms
+  schema: z.object({...}),           // Schema validator (e.g., Zod)
+  fetch: customFetch,                // Custom fetch implementation
+  retryOn429: true,                  // Automatically retry on rate limits
+  hooks: {                           // Lifecycle hooks
+    onBeforeRequest: (config) => {},
+    onRequestResponse: (response) => {},
+    onRequestError: (error) => {}
+  }
 }
 ```
 
@@ -176,6 +198,79 @@ Get beautiful, structured logs in your console by enabling `debug: true`.
 //    Timeout: 5000ms
 // 🐦‍⬛ [accessio] ← ✅ 200 OK (142ms)
 //    Size: ~3.2 KB
+```
+
+### Caching & Deduplication
+
+Prevent duplicate requests and cache responses to improve performance.
+
+```typescript
+const api = accessio.create({
+  dedupe: true, // Prevents identical requests while one is pending
+  cache: true,  // Caches responses in memory
+  cacheTTL: 5 * 60 * 1000, // Cache for 5 minutes
+});
+```
+
+### Schema Validation
+
+Automatically parse and validate responses using libraries like Zod.
+
+```typescript
+import { z } from 'zod';
+
+const userSchema = z.object({ id: z.number(), name: z.string() });
+
+const response = await accessio.get('/user/1', { schema: userSchema });
+// response.data is strictly typed and validated against userSchema
+```
+
+### Server-Sent Events (SSE)
+
+Easily consume SSE streams using async iterators.
+
+```typescript
+for await (const chunk of accessio.stream('/stream')) {
+  console.log(chunk); // Parsed JSON or string data from SSE
+}
+```
+
+### Auto-Pagination
+
+Iterate through paginated endpoints effortlessly.
+
+```typescript
+for await (const user of accessio.autoPaginate('/users')) {
+  console.log(user); // Automatically fetches the next page when needed
+}
+```
+
+### GraphQL
+
+Send GraphQL queries and mutations with ease.
+
+```typescript
+const query = `
+  query GetUser($id: ID!) {
+    user(id: $id) { name, email }
+  }
+`;
+
+const response = await accessio.gql('/graphql', query, { id: '1' });
+```
+
+### Lifecycle Hooks
+
+Use hooks for simple global or request-specific event handling.
+
+```typescript
+accessio.create({
+  hooks: {
+    onBeforeRequest: (config) => console.log('Starting request...'),
+    onRequestResponse: (response) => console.log('Request succeeded!'),
+    onRequestError: (error) => console.error('Request failed!'),
+  }
+});
 ```
 
 ---

@@ -2,7 +2,11 @@ import AccessioError from './accessioError';
 import parseHeaders from '../helpers/parseHeaders';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 
-async function readResponseData(fetchResponse: Response, responseType: string): Promise<unknown> {
+async function readResponseData(
+  fetchResponse: Response,
+  config: AccessioRequestConfig,
+): Promise<unknown> {
+  const responseType = config.responseType || 'json';
   switch (responseType) {
     case 'arraybuffer':
       return await fetchResponse.arrayBuffer();
@@ -94,10 +98,42 @@ export default async function fetchAdapter(
   }
 
   try {
-    const fetchResponse = await fetch(fullURL, fetchOptions);
+    const fetchImpl = config.fetch || fetch;
+    let fetchResponse = await fetchImpl(fullURL, fetchOptions);
+
+    if (config.onDownloadProgress && fetchResponse.body && config.responseType !== 'stream') {
+      const contentLength = fetchResponse.headers.get('content-length');
+      const total = contentLength ? parseInt(contentLength, 10) : 0;
+      let loaded = 0;
+
+      const reader = fetchResponse.body.getReader();
+      const stream = new ReadableStream({
+        async start(controller) {
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) {
+                controller.close();
+                break;
+              }
+              loaded += value.byteLength;
+              config.onDownloadProgress!({ loaded, total });
+              controller.enqueue(value);
+            }
+          } catch (e) {
+            controller.error(e);
+          }
+        },
+      });
+
+      fetchResponse = new Response(stream, {
+        headers: fetchResponse.headers,
+        status: fetchResponse.status,
+        statusText: fetchResponse.statusText,
+      });
+    }
 
     let responseData: unknown;
-    const responseType = config.responseType || 'json';
 
     const contentLength = fetchResponse.headers.get('content-length');
     if (
@@ -115,7 +151,14 @@ export default async function fetchAdapter(
     }
 
     try {
-      responseData = await readResponseData(fetchResponse, responseType);
+      responseData = await readResponseData(fetchResponse, config);
+      if (config.schema) {
+        if (typeof config.schema.parseAsync === 'function') {
+          responseData = await config.schema.parseAsync(responseData);
+        } else {
+          responseData = config.schema.parse(responseData);
+        }
+      }
     } catch (readError) {
       throw AccessioError.from(
         readError as Error,

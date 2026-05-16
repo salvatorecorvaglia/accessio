@@ -1,7 +1,6 @@
-import { ERR_CANCELED, ERR_NETWORK, ETIMEDOUT } from '../constants/errorCodes';
+import { ERR_CANCELED, ERR_NETWORK } from '../constants/errorCodes';
 import type {
   AccessioRequestConfig,
-  AccessioResponse,
   AccessioError,
   RetryConditionFunction,
   OnRetryFunction,
@@ -17,6 +16,10 @@ function defaultRetryCondition(error: any): boolean {
   }
 
   if (error.response && error.response.status >= 500) {
+    return true;
+  }
+
+  if (error.config?.retryOn429 && error.response && error.response.status === 429) {
     return true;
   }
 
@@ -62,7 +65,7 @@ async function retryRequest(
 ): Promise<any> {
   const maxRetries = config.retry ?? 0;
 
-  if (maxRetries <= 0) {
+  if (maxRetries <= 0 && !config.retryOn429) {
     return dispatchFn(config);
   }
 
@@ -70,22 +73,39 @@ async function retryRequest(
   const retryCondition: RetryConditionFunction = config.retryCondition ?? defaultRetryCondition;
 
   let lastError: any;
+  const actualMaxRetries = Math.max(maxRetries, config.retryOn429 ? 3 : 0);
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+  for (let attempt = 0; attempt <= actualMaxRetries; attempt++) {
     try {
       const response = await dispatchFn(config);
       return response;
     } catch (error) {
       lastError = error;
 
-      const isLastAttempt = attempt >= maxRetries;
+      const isLastAttempt = attempt >= actualMaxRetries;
       const shouldRetry = !isLastAttempt && retryCondition(error as AccessioError);
 
       if (!shouldRetry) {
         throw error;
       }
 
-      const delay = calculateDelay(attempt, retryDelay);
+      let delay = calculateDelay(attempt, retryDelay);
+
+      if (config.retryOn429 && (error as any).response?.status === 429) {
+        const headers = (error as any).response?.headers;
+        const retryAfterStr = headers?.['retry-after'] || headers?.['Retry-After'];
+        if (retryAfterStr) {
+          const parsed = parseInt(retryAfterStr, 10);
+          if (!isNaN(parsed)) {
+            delay = parsed * 1000;
+          } else {
+            const date = new Date(retryAfterStr);
+            if (!isNaN(date.getTime())) {
+              delay = Math.max(0, date.getTime() - Date.now());
+            }
+          }
+        }
+      }
 
       if (typeof config.onRetry === 'function') {
         (config.onRetry as OnRetryFunction)(attempt + 1, error as AccessioError, config);

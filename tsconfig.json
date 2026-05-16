@@ -30,12 +30,12 @@
     "declarationMap": false,
     "sourceMap": true,
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": ".",
     "baseUrl": ".",
     "paths": {
       "accessio": ["./src/index.ts"]
     }
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "cjs", "tests"]
+  "include": ["**/*"],
+  "exclude": ["node_modules", "dist", "cjs"]
 }

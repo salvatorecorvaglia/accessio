@@ -29,7 +29,7 @@
     "./core/buildURL": {
       "types": "./index.d.ts",
       "import": "./src/core/buildURL.ts",
-      "require": "./cjs/helpers/buildURL.cjs"
+      "require": "./cjs/core/buildURL.cjs"
     },
     "./core/mergeConfig": {
       "types": "./index.d.ts",
@@ -103,6 +103,7 @@
     "prettier": "^3.8.3",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
+    "typescript-eslint": "^8.59.3",
     "vitest": "^3.1.0"
   }
 }

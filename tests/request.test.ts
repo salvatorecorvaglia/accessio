@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 describe('dispatchRequest (request.ts)', () => {
   let dispatchRequest: any;
@@ -96,7 +96,7 @@ describe('dispatchRequest (request.ts)', () => {
   describe('headers', () => {
     it('merges common headers', async () => {
       mockFetch({});
-      const response = await dispatchRequest({
+      await dispatchRequest({
         url: 'https://api.test.com/test',
         method: 'get',
         headers: {

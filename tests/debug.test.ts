@@ -28,7 +28,7 @@ describe('debug.ts', () => {
     });
 
     it('falls back to config.url when fullUrl is not provided', () => {
-      logRequest({ debug: true, method: 'get', url: '/fallback' });
+      logRequest({ debug: true, method: 'get', url: '/fallback' }, '/fallback');
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('/fallback');
     });
@@ -96,7 +96,7 @@ describe('debug.ts', () => {
         duration: 42,
         data: { ok: true },
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
 
       const output = consoleSpy.mock.calls[0][0];
@@ -110,7 +110,7 @@ describe('debug.ts', () => {
         status: 200,
         statusText: '',
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('??');
@@ -123,7 +123,7 @@ describe('debug.ts', () => {
         statusText: '',
         duration: 10,
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('✅');
@@ -136,7 +136,7 @@ describe('debug.ts', () => {
         statusText: '',
         duration: 10,
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('❌');
@@ -149,7 +149,7 @@ describe('debug.ts', () => {
         statusText: '',
         duration: 5,
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('⚠️');
@@ -163,7 +163,7 @@ describe('debug.ts', () => {
         duration: 10,
         data: 'hello world',
         headers: {},
-        request: {},
+        request: {} as any,
       } as any);
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('Size');
@@ -180,7 +180,7 @@ describe('debug.ts', () => {
           duration: 10,
           data: circular,
           headers: {},
-          request: {},
+          request: {} as any,
         }),
       ).not.toThrow();
     });
@@ -188,12 +188,12 @@ describe('debug.ts', () => {
 
   describe('logError', () => {
     it('does nothing when debug is false', () => {
-      logError(new Error('test'), { debug: false });
+      logError(new Error('test') as any, { debug: false });
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 
     it('does nothing when config is missing', () => {
-      logError(new Error('test'));
+      logError(new Error('test') as any);
       expect(consoleSpy).not.toHaveBeenCalled();
     });
 

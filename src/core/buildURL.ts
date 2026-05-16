@@ -75,7 +75,22 @@ export default function buildURL(
 ): string {
   let fullURL = baseURL && !isAbsoluteURL(url) ? combineURLs(baseURL, url) : url || '';
 
-  const serialized = serializeParams(params as Record<string, unknown>, paramsSerializer);
+  let finalParams = params;
+  if (params && typeof params === 'object') {
+    const unusedParams = { ...params };
+    fullURL = fullURL.replace(/(?::([a-zA-Z0-9_]+))|(?:{([a-zA-Z0-9_]+)})/g, (match, p1, p2) => {
+      const key = p1 || p2;
+      if (key && unusedParams[key] !== undefined) {
+        const val = unusedParams[key];
+        delete unusedParams[key];
+        return encodeURIComponent(String(val));
+      }
+      return match;
+    });
+    finalParams = unusedParams;
+  }
+
+  const serialized = serializeParams(finalParams as Record<string, unknown>, paramsSerializer);
   if (serialized) {
     const hashIndex = fullURL.indexOf('#');
     if (hashIndex !== -1) {

@@ -9,10 +9,10 @@ describe('AccessioError', () => {
       data: 'Not Found',
       headers: {},
       config,
-      request: {},
+      request: {} as any,
       duration: 0,
       statusText: '',
-    };
+    } as any;
     const error = new AccessioError('Not found', 'ERR_BAD_REQUEST', config, null, response);
 
     expect(error).toBeInstanceOf(Error);
@@ -48,10 +48,10 @@ describe('AccessioError', () => {
         data: null,
         headers: {},
         config,
-        request: {},
+        request: {} as any,
         duration: 0,
         statusText: '',
-      };
+      } as any;
       const error = new AccessioError('Server error', 'ERR_BAD_RESPONSE', config, null, response);
       const json = error.toJSON();
 

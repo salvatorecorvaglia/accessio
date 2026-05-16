@@ -20,6 +20,7 @@ export class AccessioError extends Error {
   readonly response: AccessioResponse | null;
   readonly isAccessioError: true;
   cause?: Error;
+  override name = 'AccessioError' as const;
 
   constructor(
     message: string,

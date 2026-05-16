@@ -43,6 +43,24 @@ export interface Interceptors {
   response: InterceptorManager;
 }
 
+export interface AccessioHooks {
+  onBeforeRequest?: (config: AccessioRequestConfig) => void | Promise<void>;
+  onRequestResponse?: (response: AccessioResponse) => void | Promise<void>;
+  onRequestError?: (error: AccessioError) => void | Promise<void>;
+}
+
+export interface CacheProvider {
+  get: (key: string) => Promise<any> | any;
+  set: (key: string, value: any, ttl?: number) => Promise<void> | void;
+  delete: (key: string) => Promise<void> | void;
+  clear: () => Promise<void> | void;
+}
+
+export interface SchemaValidator<T = any> {
+  parse(data: unknown): T;
+  parseAsync?(data: unknown): Promise<T>;
+}
+
 export interface AccessioRequestConfig {
   url?: string;
   baseURL?: string;
@@ -69,6 +87,14 @@ export interface AccessioRequestConfig {
   maxContentLength?: number;
   dispatcher?: unknown;
   agent?: unknown;
+  dedupe?: boolean;
+  cache?: boolean | CacheProvider;
+  cacheTTL?: number;
+  onDownloadProgress?: (progressEvent: { loaded: number; total: number }) => void;
+  hooks?: AccessioHooks;
+  schema?: SchemaValidator;
+  fetch?: typeof fetch;
+  retryOn429?: boolean;
 }
 
 export interface AccessioResponse<T = unknown> {
