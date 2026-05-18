@@ -20,7 +20,8 @@ describe('AccessioError', () => {
     expect(error.name).toBe('AccessioError');
     expect(error.message).toBe('Not found');
     expect(error.code).toBe('ERR_BAD_REQUEST');
-    expect(error.config).toBe(config);
+    expect(error.config).toEqual(config);
+    expect(error.config).not.toBe(config);
     expect(error.request).toBeNull();
     expect(error.response).toBe(response);
     expect(error.isAccessioError).toBe(true);
@@ -59,7 +60,7 @@ describe('AccessioError', () => {
       expect(json.message).toBe('Server error');
       expect(json.code).toBe('ERR_BAD_RESPONSE');
       expect(json.status).toBe(500);
-      expect(json.config).toBe(config);
+      expect(json.config).toEqual(config);
     });
 
     it('returns null status when no response', () => {
@@ -99,6 +100,46 @@ describe('AccessioError', () => {
       expect(AccessioError.ERR_CANCELED).toBe('ERR_CANCELED');
       expect(AccessioError.ERR_NOT_SUPPORT).toBe('ERR_NOT_SUPPORT');
       expect(AccessioError.ERR_INVALID_URL).toBe('ERR_INVALID_URL');
+    });
+  });
+
+  describe('credential redaction', () => {
+    it('strips auth from error.config', () => {
+      const err = new AccessioError(
+        'boom',
+        AccessioError.ERR_BAD_REQUEST,
+        { url: '/x', auth: { username: 'u', password: 'p' } } as any,
+        null,
+        null,
+      );
+      expect((err.config as any).auth).toBeUndefined();
+      expect(err.config?.url).toBe('/x');
+    });
+
+    it('redacts Authorization header (any casing) in error.config', () => {
+      const err = new AccessioError(
+        'boom',
+        AccessioError.ERR_BAD_REQUEST,
+        {
+          url: '/x',
+          headers: { Authorization: 'Bearer s3cret', 'content-type': 'application/json' },
+        } as any,
+        null,
+        null,
+      );
+      expect((err.config?.headers as any).Authorization).toBe('[REDACTED]');
+      expect((err.config?.headers as any)['content-type']).toBe('application/json');
+    });
+
+    it('does not mutate the original config', () => {
+      const original = {
+        url: '/x',
+        auth: { username: 'u', password: 'p' },
+        headers: { authorization: 'Bearer s' },
+      } as any;
+      new AccessioError('boom', AccessioError.ERR_BAD_REQUEST, original, null, null);
+      expect(original.auth).toEqual({ username: 'u', password: 'p' });
+      expect(original.headers.authorization).toBe('Bearer s');
     });
   });
 });

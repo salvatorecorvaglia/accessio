@@ -1,6 +1,32 @@
 import ErrorCodes from '../constants/errorCodes';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 
+function redactHeaders(headers: unknown): unknown {
+  if (!headers || typeof headers !== 'object') return headers;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(headers as Record<string, unknown>)) {
+    const value = (headers as Record<string, unknown>)[key];
+    if (/^authorization$/i.test(key)) {
+      out[key] = '[REDACTED]';
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = redactHeaders(value);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+export function redactConfig(
+  config: AccessioRequestConfig | null,
+): AccessioRequestConfig | null {
+  if (!config) return config;
+  const clone = { ...config } as AccessioRequestConfig & { auth?: unknown };
+  if ('auth' in clone) delete clone.auth;
+  if (clone.headers) clone.headers = redactHeaders(clone.headers) as typeof clone.headers;
+  return clone;
+}
+
 export class AccessioError extends Error {
   static ERR_BAD_OPTION_VALUE: string = ErrorCodes.ERR_BAD_OPTION_VALUE;
   static ERR_BAD_OPTION: string = ErrorCodes.ERR_BAD_OPTION;
@@ -32,7 +58,7 @@ export class AccessioError extends Error {
     super(message);
     this.name = 'AccessioError';
     this.code = code ?? null;
-    this.config = config ?? null;
+    this.config = redactConfig(config ?? null);
     this.request = request ?? null;
     this.response = response ?? null;
     this.isAccessioError = true;

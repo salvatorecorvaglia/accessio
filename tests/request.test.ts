@@ -288,6 +288,19 @@ describe('dispatchRequest (request.ts)', () => {
       expect(res.status).toBe(200);
     });
 
+    it('scrubs auth from response.config', async () => {
+      mockFetch({ ok: true });
+      const res = await dispatchRequest({
+        url: 'https://api.test.com/x',
+        method: 'get',
+        headers: { Authorization: 'Bearer s3cret' },
+        auth: { username: 'u', password: 'p' },
+        transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
+      });
+      expect((res.config as any).auth).toBeUndefined();
+      expect((res.config.headers as any).Authorization).toBe('[REDACTED]');
+    });
+
     it('catches a malicious baseURL scheme', async () => {
       mockFetch({});
       await expect(

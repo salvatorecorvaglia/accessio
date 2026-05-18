@@ -1,5 +1,5 @@
 import buildURL from './buildURL';
-import AccessioError from './accessioError';
+import AccessioError, { redactConfig } from './accessioError';
 import { ERR_BAD_OPTION } from '../constants/errorCodes';
 import transformData from '../helpers/transformData';
 import settle from '../helpers/settle';
@@ -125,6 +125,7 @@ export default async function dispatchRequest(
     const requestStartTime = Date.now();
 
     const response = await fetchAdapter(config, fullURL, fetchOptions, requestStartTime);
+    response.config = redactConfig(response.config) as typeof response.config;
 
     const responseTransforms = buildTransformArray(config.transformResponse);
 
