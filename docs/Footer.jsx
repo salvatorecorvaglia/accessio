@@ -5,9 +5,13 @@ function ErrorTable() {
     ['ERR_BAD_RESPONSE', '5xx status code', '5xx'],
     ['ERR_NETWORK', 'Network connectivity issues', '—'],
     ['ETIMEDOUT', 'Request exceeded timeout', '—'],
+    ['ECONNABORTED', 'Request was aborted/cancelled', '—'],
     ['ERR_CANCELED', 'Request was manually aborted', '—'],
     ['ERR_INVALID_URL', 'The provided URL is malformed', '—'],
     ['ERR_BAD_OPTION', 'Invalid configuration option', '—'],
+    ['ERR_BAD_OPTION_VALUE', 'Invalid value for a config option', '—'],
+    ['ERR_FR_TOO_MANY_REDIRECTS', 'Maximum redirect limit reached', '—'],
+    ['ERR_NOT_SUPPORT', 'Feature not supported in environment', '—'],
   ];
   return (
     <section

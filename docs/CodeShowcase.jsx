@@ -55,7 +55,7 @@ await Promise.all(
       title: 'Built-in cancellation via AbortController.',
       body: 'Set global or per-request timeouts. Pass your own AbortSignal to cancel requests manually when a user navigates away or a component unmounts.',
       code: `const controller = new AbortController();
-
+    
 await accessio.get("/long-task", {
   timeout: 5000,
   signal: controller.signal,
@@ -63,6 +63,28 @@ await accessio.get("/long-task", {
 
 // Cancel anytime
 controller.abort();`,
+    },
+    {
+      eyebrow: 'Auto-pagination',
+      title: 'Iterate over pages without the boilerplate.',
+      body: 'Automatically follows "next" links in response payloads. Works with async generators for memory-efficient processing of large datasets.',
+      code: `// Automatically follows response.next or links.next
+for await (const user of accessio.autoPaginate("/users")) {
+  console.log("Got user:", user.name);
+  if (someCondition) break; // Stops fetching immediately
+}`,
+    },
+    {
+      eyebrow: 'Streaming',
+      title: 'Handle SSE and NDJSON with async iterators.',
+      body: 'Perfect for LLM responses, real-time logs, or large data exports. Parsed JSON objects are yielded as they arrive over the wire.',
+      code: `const stream = accessio.stream("/ai/generate", {
+  params: { prompt: "Hello world" }
+});
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.content || "");
+}`,
     },
   ];
 

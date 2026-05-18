@@ -17,24 +17,24 @@ function Features() {
       desc: 'Built-in concurrency control. Cap parallel requests across one client or many.',
     },
     {
+      icon: 'zap',
+      title: 'Streaming & SSE',
+      desc: 'Async generators for Server-Sent Events and NDJSON. Stream large datasets with ease.',
+    },
+    {
+      icon: 'refresh',
+      title: 'Auto-pagination',
+      desc: 'Native support for link-based pagination. Iterate over entire datasets using async iterators.',
+    },
+    {
+      icon: 'globe',
+      title: 'GraphQL & GQL',
+      desc: 'Lightweight GQL helper for structured queries and variables without heavy clients.',
+    },
+    {
       icon: 'code',
       title: 'Structured debug',
       desc: 'Beautiful console logs out of the box: arrows, status icons, timing, payload size.',
-    },
-    {
-      icon: 'shield',
-      title: 'Security hardened',
-      desc: 'Built-in protection against prototype pollution and hardened config merging.',
-    },
-    {
-      icon: 'clock',
-      title: 'Timeout & Cancellation',
-      desc: 'Native AbortController support for precise request timing and manual aborts.',
-    },
-    {
-      icon: 'type',
-      title: 'TypeScript-first',
-      desc: 'Full type definitions, generics on responses, and structured error unions.',
     },
     {
       icon: 'globe',
