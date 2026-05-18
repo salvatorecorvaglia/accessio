@@ -36,7 +36,11 @@ describe('transformData', () => {
   });
 
   it('wraps failures as ERR_BAD_REQUEST for request transforms by default', async () => {
-    const throwing = [() => { throw new Error('nope'); }];
+    const throwing = [
+      () => {
+        throw new Error('nope');
+      },
+    ];
     await expect(transformData(throwing, 'data', {})).rejects.toMatchObject({
       isAccessioError: true,
       code: AccessioError.ERR_BAD_REQUEST,
@@ -44,10 +48,12 @@ describe('transformData', () => {
   });
 
   it('wraps failures as ERR_BAD_RESPONSE when direction is "response"', async () => {
-    const throwing = [() => { throw new Error('parse fail'); }];
-    await expect(
-      transformData(throwing, 'data', {}, undefined, 'response'),
-    ).rejects.toMatchObject({
+    const throwing = [
+      () => {
+        throw new Error('parse fail');
+      },
+    ];
+    await expect(transformData(throwing, 'data', {}, undefined, 'response')).rejects.toMatchObject({
       isAccessioError: true,
       code: AccessioError.ERR_BAD_RESPONSE,
     });

@@ -17,9 +17,7 @@ function redactHeaders(headers: unknown): unknown {
   return out;
 }
 
-export function redactConfig(
-  config: AccessioRequestConfig | null,
-): AccessioRequestConfig | null {
+export function redactConfig(config: AccessioRequestConfig | null): AccessioRequestConfig | null {
   if (!config) return config;
   const clone = { ...config } as AccessioRequestConfig & { auth?: unknown };
   if ('auth' in clone) delete clone.auth;

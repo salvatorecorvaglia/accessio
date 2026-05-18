@@ -235,7 +235,15 @@ describe('retry.ts', () => {
         null,
       );
       Object.defineProperty(err, 'response', {
-        value: { status: 429, headers, data: null, config: {}, request: {}, duration: 0, statusText: 'Too Many Requests' },
+        value: {
+          status: 429,
+          headers,
+          data: null,
+          config: {},
+          request: {},
+          duration: 0,
+          statusText: 'Too Many Requests',
+        },
       });
       return err;
     }
@@ -260,7 +268,15 @@ describe('retry.ts', () => {
         null,
       );
       Object.defineProperty(err, 'response', {
-        value: { status: 429, headers: {}, data: null, config: {}, request: {}, duration: 0, statusText: '' },
+        value: {
+          status: 429,
+          headers: {},
+          data: null,
+          config: {},
+          request: {},
+          duration: 0,
+          statusText: '',
+        },
       });
       const dispatch = vi.fn().mockRejectedValue(err);
       await expect(retryRequest(dispatch, { retry: 2, retryDelay: 1 })).rejects.toMatchObject({
@@ -315,7 +331,13 @@ describe('retry.ts', () => {
       const dispatch = vi.fn().mockRejectedValue(networkError);
 
       await expect(
-        retryRequest(dispatch, { url: '/x', method: 'POST', data: stream, retry: 3, retryDelay: 1 }),
+        retryRequest(dispatch, {
+          url: '/x',
+          method: 'POST',
+          data: stream,
+          retry: 3,
+          retryDelay: 1,
+        }),
       ).rejects.toMatchObject({
         isAccessioError: true,
         code: AccessioError.ERR_BAD_OPTION,

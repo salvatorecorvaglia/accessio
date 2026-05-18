@@ -373,7 +373,12 @@ describe('dispatchRequest (request.ts)', () => {
         );
       }) as any;
 
-      const base = { url: 'https://api.test.com/same', method: 'get', headers: {}, dedupe: true } as any;
+      const base = {
+        url: 'https://api.test.com/same',
+        method: 'get',
+        headers: {},
+        dedupe: true,
+      } as any;
       const [a, b] = await Promise.all([dispatchRequest(base), dispatchRequest(base)]);
       expect(a.status).toBe(200);
       expect(b.status).toBe(200);
@@ -391,7 +396,12 @@ describe('dispatchRequest (request.ts)', () => {
         return Promise.reject(new TypeError('network down'));
       }) as any;
 
-      const base = { url: 'https://api.test.com/fail', method: 'get', headers: {}, dedupe: true } as any;
+      const base = {
+        url: 'https://api.test.com/fail',
+        method: 'get',
+        headers: {},
+        dedupe: true,
+      } as any;
       await expect(dispatchRequest(base)).rejects.toBeDefined();
       await expect(dispatchRequest(base)).rejects.toBeDefined();
       expect(fetchCalls).toBe(2);
