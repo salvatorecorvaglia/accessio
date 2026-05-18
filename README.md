@@ -69,22 +69,22 @@ console.log(`User created in ${response.duration}ms`);
 
 ### Request Methods
 
-| Method                                   | Description                             |
-| :--------------------------------------- | :-------------------------------------- |
-| `accessio(config)`                       | Generic request using config object     |
-| `accessio.get(url, config?)`             | GET request                             |
-| `accessio.post(url, data?, config?)`     | POST request                            |
-| `accessio.put(url, data?, config?)`      | PUT request                             |
-| `accessio.patch(url, data?, config?)`    | PATCH request                           |
-| `accessio.delete(url, config?)`          | DELETE request                          |
-| `accessio.head(url, config?)`            | HEAD request                            |
-| `accessio.options(url, config?)`         | OPTIONS request                         |
-| `accessio.postForm(url, data?, config?)` | POST request with `multipart/form-data` |
-| `accessio.putForm(url, data?, config?)`  | PUT request with `multipart/form-data`  |
-| `accessio.patchForm(url, data?, config?)`| PATCH request with `multipart/form-data`|
-| `accessio.stream(url, config?)`          | Server-Sent Events (SSE) streaming      |
-| `accessio.autoPaginate(url, config?)`    | Async iterator for paginated endpoints  |
-| `accessio.gql(url, query, vars?, config?)`| GraphQL query/mutation wrapper          |
+| Method                                     | Description                              |
+| :----------------------------------------- | :--------------------------------------- |
+| `accessio(config)`                         | Generic request using config object      |
+| `accessio.get(url, config?)`               | GET request                              |
+| `accessio.post(url, data?, config?)`       | POST request                             |
+| `accessio.put(url, data?, config?)`        | PUT request                              |
+| `accessio.patch(url, data?, config?)`      | PATCH request                            |
+| `accessio.delete(url, config?)`            | DELETE request                           |
+| `accessio.head(url, config?)`              | HEAD request                             |
+| `accessio.options(url, config?)`           | OPTIONS request                          |
+| `accessio.postForm(url, data?, config?)`   | POST request with `multipart/form-data`  |
+| `accessio.putForm(url, data?, config?)`    | PUT request with `multipart/form-data`   |
+| `accessio.patchForm(url, data?, config?)`  | PATCH request with `multipart/form-data` |
+| `accessio.stream(url, config?)`            | Server-Sent Events (SSE) streaming       |
+| `accessio.autoPaginate(url, config?)`      | Async iterator for paginated endpoints   |
+| `accessio.gql(url, query, vars?, config?)` | GraphQL query/mutation wrapper           |
 
 ### Configuration Options
 
@@ -207,7 +207,7 @@ Prevent duplicate requests and cache responses to improve performance.
 ```typescript
 const api = accessio.create({
   dedupe: true, // Prevents identical requests while one is pending
-  cache: true,  // Caches responses in memory
+  cache: true, // Caches responses in memory
   cacheTTL: 5 * 60 * 1000, // Cache for 5 minutes
 });
 ```
@@ -269,7 +269,7 @@ accessio.create({
     onBeforeRequest: (config) => console.log('Starting request...'),
     onRequestResponse: (response) => console.log('Request succeeded!'),
     onRequestError: (error) => console.error('Request failed!'),
-  }
+  },
 });
 ```
 
