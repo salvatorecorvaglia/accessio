@@ -1,10 +1,17 @@
-import { ERR_CANCELED, ERR_NETWORK } from '../constants/errorCodes';
+import { ERR_BAD_OPTION, ERR_CANCELED, ERR_NETWORK } from '../constants/errorCodes';
+import AccessioErrorClass from './accessioError';
 import type {
   AccessioRequestConfig,
   AccessioError,
   RetryConditionFunction,
   OnRetryFunction,
 } from '../types';
+
+function isUnretriableBody(data: unknown): boolean {
+  if (data == null) return false;
+  if (typeof ReadableStream !== 'undefined' && data instanceof ReadableStream) return true;
+  return false;
+}
 
 function defaultRetryCondition(error: any): boolean {
   if (error.code === ERR_CANCELED) {
@@ -87,6 +94,17 @@ async function retryRequest(
 
       if (!shouldRetry) {
         throw error;
+      }
+
+      if (isUnretriableBody(config.data)) {
+        throw new AccessioErrorClass(
+          'Request body is a ReadableStream and cannot be retried after consumption. ' +
+            'Buffer the stream upstream or set retry: 0 for this call.',
+          ERR_BAD_OPTION,
+          config,
+          null,
+          (error as AccessioError).response ?? null,
+        );
       }
 
       let delay = calculateDelay(attempt, retryDelay);

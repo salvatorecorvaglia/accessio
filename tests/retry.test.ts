@@ -224,4 +224,59 @@ describe('retry.ts', () => {
       expect(dispatch).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('unretriable bodies', () => {
+    it('refuses to retry when data is a ReadableStream and surfaces ERR_BAD_OPTION', async () => {
+      const stream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('payload'));
+          controller.close();
+        },
+      });
+
+      const networkError = new AccessioError(
+        'network down',
+        AccessioError.ERR_NETWORK,
+        null,
+        null,
+        null,
+      );
+      const dispatch = vi.fn().mockRejectedValue(networkError);
+
+      await expect(
+        retryRequest(dispatch, { url: '/x', method: 'POST', data: stream, retry: 3, retryDelay: 1 }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: AccessioError.ERR_BAD_OPTION,
+        message: expect.stringContaining('ReadableStream'),
+      });
+
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('still retries when body is a plain object', async () => {
+      const networkError = new AccessioError(
+        'network down',
+        AccessioError.ERR_NETWORK,
+        null,
+        null,
+        null,
+      );
+      const dispatch = vi
+        .fn()
+        .mockRejectedValueOnce(networkError)
+        .mockResolvedValueOnce({ status: 200, data: 'ok' });
+
+      const result = await retryRequest(dispatch, {
+        url: '/x',
+        method: 'POST',
+        data: { hello: 'world' },
+        retry: 2,
+        retryDelay: 1,
+      });
+
+      expect(result).toEqual({ status: 200, data: 'ok' });
+      expect(dispatch).toHaveBeenCalledTimes(2);
+    });
+  });
 });
