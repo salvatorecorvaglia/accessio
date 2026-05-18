@@ -55,6 +55,13 @@ export interface AccessioRequestConfig {
   /** Include credentials in cross-site requests */
   withCredentials?: boolean;
 
+  /**
+   * URL protocols accepted by the client. Defaults to `["http:", "https:"]`.
+   * Pass an extended array to allow more (e.g. `["http:", "https:", "ws:"]`),
+   * or `null` to disable the check entirely.
+   */
+  allowedProtocols?: string[] | null;
+
   /** Expected response data type */
   responseType?: "json" | "text" | "blob" | "arraybuffer" | "stream";
 

@@ -85,6 +85,7 @@ export interface AccessioRequestConfig {
   rateLimiter?: RateLimiter;
   _builtUrl?: string;
   maxContentLength?: number;
+  allowedProtocols?: string[] | null;
   dispatcher?: unknown;
   agent?: unknown;
   dedupe?: boolean;

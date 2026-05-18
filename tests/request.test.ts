@@ -221,4 +221,83 @@ describe('dispatchRequest (request.ts)', () => {
       );
     });
   });
+
+  describe('protocol allow-list', () => {
+    it('rejects file: URLs by default', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({ url: 'file:///etc/passwd', method: 'get', headers: {} }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_BAD_OPTION',
+        message: expect.stringContaining('file:'),
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects javascript: URLs by default', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({ url: 'javascript:alert(1)', method: 'get', headers: {} }),
+      ).rejects.toMatchObject({ code: 'ERR_BAD_OPTION' });
+    });
+
+    it('allows http and https by default', async () => {
+      mockFetch({ ok: true });
+      const res = await dispatchRequest({
+        url: 'http://api.test.com/x',
+        method: 'get',
+        headers: {},
+        transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('allows opting into additional protocols', async () => {
+      mockFetch({ ok: true });
+      const res = await dispatchRequest({
+        url: 'ws://api.test.com/x',
+        method: 'get',
+        headers: {},
+        allowedProtocols: ['http:', 'https:', 'ws:'],
+        transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('disables the check when allowedProtocols is null', async () => {
+      mockFetch({ ok: true });
+      const res = await dispatchRequest({
+        url: 'file:///tmp/x',
+        method: 'get',
+        headers: {},
+        allowedProtocols: null,
+        transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('allows scheme-less (relative) URLs', async () => {
+      mockFetch({ ok: true });
+      const res = await dispatchRequest({
+        url: '/api/x',
+        method: 'get',
+        headers: {},
+        transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
+      });
+      expect(res.status).toBe(200);
+    });
+
+    it('catches a malicious baseURL scheme', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({
+          baseURL: 'file://etc',
+          url: 'passwd',
+          method: 'get',
+          headers: {},
+        }),
+      ).rejects.toMatchObject({ code: 'ERR_BAD_OPTION' });
+    });
+  });
 });

@@ -1,5 +1,6 @@
 import buildURL from './buildURL';
 import AccessioError from './accessioError';
+import { ERR_BAD_OPTION } from '../constants/errorCodes';
 import transformData from '../helpers/transformData';
 import settle from '../helpers/settle';
 import { flattenHeaders, removeContentType, buildFetchHeaders } from '../helpers/flattenHeaders';
@@ -18,6 +19,29 @@ function buildTransformArray(
   return [transform];
 }
 
+const DEFAULT_ALLOWED_PROTOCOLS = ['http:', 'https:'];
+
+function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): void {
+  if (config.allowedProtocols === null) return;
+  const allowed = config.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
+
+  let scheme: string | null = null;
+  const match = /^([a-z][a-z\d+\-.]*):/i.exec(fullURL);
+  if (match) scheme = match[1].toLowerCase() + ':';
+  if (!scheme) return;
+
+  if (!allowed.includes(scheme)) {
+    throw new AccessioError(
+      `URL protocol "${scheme}" is not allowed. Allowed: ${allowed.join(', ')}. ` +
+        'Set config.allowedProtocols to extend, or null to disable the check.',
+      ERR_BAD_OPTION,
+      config,
+      null,
+      null,
+    );
+  }
+}
+
 const activeRequests = new Map<string, Promise<AccessioResponse>>();
 
 export default async function dispatchRequest(
@@ -31,6 +55,8 @@ export default async function dispatchRequest(
       config.params as Record<string, unknown> | undefined,
       config.paramsSerializer,
     );
+
+  assertAllowedProtocol(fullURL, config);
 
   if (config.hooks?.onBeforeRequest) {
     await config.hooks.onBeforeRequest(config);
