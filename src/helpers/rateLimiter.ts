@@ -21,10 +21,7 @@ export function createRateLimiter(
   }
   let active = 0;
   let destroyed = false;
-  let head = 0;
-  let tail = 0;
-  let pendingCount = 0;
-  const queue: Record<number, QueueItem> = {};
+  const queue: QueueItem[] = [];
 
   function acquire(): Promise<void> {
     if (destroyed) {
@@ -36,44 +33,34 @@ export function createRateLimiter(
       return Promise.resolve();
     }
 
-    if (pendingCount >= maxQueueSize) {
+    if (queue.length >= maxQueueSize) {
       return Promise.reject(
         new Error(`[Accessio] Rate limiter queue size exceeded maxQueueSize (${maxQueueSize})`),
       );
     }
 
     return new Promise((resolve, reject) => {
-      queue[tail++] = { resolve, reject };
-      pendingCount++;
+      queue.push({ resolve, reject });
     });
   }
 
   function release(): void {
     if (destroyed) return;
-
     if (active <= 0) return;
 
-    active--;
-
-    if (pendingCount > 0 && active < maxConcurrent) {
-      active++;
-      const next = queue[head];
-      delete queue[head];
-      head++;
-      pendingCount--;
-      next?.resolve();
+    const next = queue.shift();
+    if (next) {
+      next.resolve();
+      return;
     }
+    active--;
   }
 
   function destroy(): void {
     destroyed = true;
     const reason = new Error('[Accessio] Rate limiter destroyed — pending request cancelled');
-    while (pendingCount > 0) {
-      const next = queue[head];
-      delete queue[head];
-      head++;
-      pendingCount--;
-      next?.reject(reason);
+    while (queue.length > 0) {
+      queue.shift()!.reject(reason);
     }
   }
 
@@ -82,7 +69,7 @@ export function createRateLimiter(
     release,
     destroy,
     get pending() {
-      return pendingCount;
+      return queue.length;
     },
     get active() {
       return active;

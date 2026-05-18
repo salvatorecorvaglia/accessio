@@ -69,6 +69,51 @@ describe('createRateLimiter', () => {
     expect(limiter.pending).toBe(0);
   });
 
+  it('promotes queued waiters in FIFO order', async () => {
+    const limiter = createRateLimiter(1);
+    await limiter.acquire();
+
+    const order: number[] = [];
+    const p1 = limiter.acquire().then(() => order.push(1));
+    const p2 = limiter.acquire().then(() => order.push(2));
+    const p3 = limiter.acquire().then(() => order.push(3));
+    expect(limiter.pending).toBe(3);
+
+    limiter.release();
+    await p1;
+    limiter.release();
+    await p2;
+    limiter.release();
+    await p3;
+
+    expect(order).toEqual([1, 2, 3]);
+    expect(limiter.pending).toBe(0);
+    expect(limiter.active).toBe(1);
+  });
+
+  it('rejects when maxQueueSize is exceeded', async () => {
+    const limiter = createRateLimiter(1, 2);
+    await limiter.acquire();
+    const a = limiter.acquire();
+    const b = limiter.acquire();
+    await expect(limiter.acquire()).rejects.toThrow('maxQueueSize');
+    expect(limiter.pending).toBe(2);
+    limiter.release();
+    await a;
+    limiter.release();
+    await b;
+  });
+
+  it('handles long churn without leaking queue entries', async () => {
+    const limiter = createRateLimiter(4);
+    for (let i = 0; i < 5000; i++) {
+      await limiter.acquire();
+      limiter.release();
+    }
+    expect(limiter.active).toBe(0);
+    expect(limiter.pending).toBe(0);
+  });
+
   describe('destroy()', () => {
     it('starts as not destroyed', () => {
       const limiter = createRateLimiter(2);
