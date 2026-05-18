@@ -225,6 +225,77 @@ describe('retry.ts', () => {
     });
   });
 
+  describe('retryOn429', () => {
+    function make429(headers: Record<string, string> = {}) {
+      const err = new AccessioError(
+        'rate limited',
+        AccessioError.ERR_BAD_REQUEST,
+        { retryOn429: true } as any,
+        null,
+        null,
+      );
+      Object.defineProperty(err, 'response', {
+        value: { status: 429, headers, data: null, config: {}, request: {}, duration: 0, statusText: 'Too Many Requests' },
+      });
+      return err;
+    }
+
+    it('retries a 429 when retryOn429 is true', async () => {
+      const dispatch = vi
+        .fn()
+        .mockRejectedValueOnce(make429({ 'retry-after': '0' }))
+        .mockResolvedValueOnce({ status: 200, data: 'ok' });
+
+      const res = await retryRequest(dispatch, { retryOn429: true, retryDelay: 1 });
+      expect(res).toEqual({ status: 200, data: 'ok' });
+      expect(dispatch).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not retry a 429 when retryOn429 is false', async () => {
+      const err = new AccessioError(
+        'rate limited',
+        AccessioError.ERR_BAD_REQUEST,
+        { retryOn429: false } as any,
+        null,
+        null,
+      );
+      Object.defineProperty(err, 'response', {
+        value: { status: 429, headers: {}, data: null, config: {}, request: {}, duration: 0, statusText: '' },
+      });
+      const dispatch = vi.fn().mockRejectedValue(err);
+      await expect(retryRequest(dispatch, { retry: 2, retryDelay: 1 })).rejects.toMatchObject({
+        code: AccessioError.ERR_BAD_REQUEST,
+      });
+      expect(dispatch).toHaveBeenCalledTimes(1);
+    });
+
+    it('honors numeric Retry-After (seconds)', async () => {
+      const dispatch = vi
+        .fn()
+        .mockRejectedValueOnce(make429({ 'retry-after': '1' }))
+        .mockResolvedValueOnce({ status: 200 });
+
+      const start = Date.now();
+      await retryRequest(dispatch, { retryOn429: true, retryDelay: 1 });
+      const elapsed = Date.now() - start;
+      expect(elapsed).toBeGreaterThanOrEqual(900);
+    }, 5000);
+
+    it('honors HTTP-date Retry-After', async () => {
+      // HTTP-date is second-precision; pad with 2s so the rounded value stays in the future.
+      const future = new Date(Date.now() + 2000).toUTCString();
+      const dispatch = vi
+        .fn()
+        .mockRejectedValueOnce(make429({ 'retry-after': future }))
+        .mockResolvedValueOnce({ status: 200 });
+
+      const start = Date.now();
+      await retryRequest(dispatch, { retryOn429: true, retryDelay: 1 });
+      const elapsed = Date.now() - start;
+      expect(elapsed).toBeGreaterThanOrEqual(500);
+    }, 5000);
+  });
+
   describe('unretriable bodies', () => {
     it('refuses to retry when data is a ReadableStream and surfaces ERR_BAD_OPTION', async () => {
       const stream = new ReadableStream({

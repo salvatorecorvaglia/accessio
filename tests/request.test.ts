@@ -288,6 +288,33 @@ describe('dispatchRequest (request.ts)', () => {
       expect(res.status).toBe(200);
     });
 
+    it('rejects header values containing CRLF', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({
+          url: 'https://api.test.com/x',
+          method: 'get',
+          headers: { 'X-Custom': 'foo\r\nInjected: yes' },
+        }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_BAD_OPTION',
+        message: expect.stringContaining('CR, LF and NUL'),
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('rejects header names containing CRLF or NUL', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({
+          url: 'https://api.test.com/x',
+          method: 'get',
+          headers: { 'X-Bad\nName': 'safe' },
+        }),
+      ).rejects.toMatchObject({ code: 'ERR_BAD_OPTION' });
+    });
+
     it('scrubs auth from response.config', async () => {
       mockFetch({ ok: true });
       const res = await dispatchRequest({
@@ -299,6 +326,75 @@ describe('dispatchRequest (request.ts)', () => {
       });
       expect((res.config as any).auth).toBeUndefined();
       expect((res.config.headers as any).Authorization).toBe('[REDACTED]');
+    });
+
+    it('preserves raw body in error when JSON parse fails', async () => {
+      global.fetch = vi.fn(() =>
+        Promise.resolve({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          text: () => Promise.resolve('not-json-{'),
+          json: () => Promise.reject(new SyntaxError('Unexpected token')),
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          body: null,
+        } as any),
+      ) as any;
+
+      await expect(
+        dispatchRequest({ url: 'https://api.test.com/bad', method: 'get', headers: {} }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_BAD_RESPONSE',
+        message: expect.stringContaining('not-json-{'),
+      });
+    });
+
+    it('dedupes concurrent GETs and clears the entry on settle', async () => {
+      let fetchCalls = 0;
+      global.fetch = vi.fn(() => {
+        fetchCalls++;
+        return new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                status: 200,
+                statusText: 'OK',
+                headers: new Headers({ 'content-type': 'application/json' }),
+                text: () => Promise.resolve('{"ok":true}'),
+                json: () => Promise.resolve({ ok: true }),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+                blob: () => Promise.resolve(new Blob()),
+                body: null,
+              } as any),
+            5,
+          ),
+        );
+      }) as any;
+
+      const base = { url: 'https://api.test.com/same', method: 'get', headers: {}, dedupe: true } as any;
+      const [a, b] = await Promise.all([dispatchRequest(base), dispatchRequest(base)]);
+      expect(a.status).toBe(200);
+      expect(b.status).toBe(200);
+      expect(fetchCalls).toBe(1);
+
+      // Subsequent identical request after settle must trigger a fresh fetch (entry cleaned up).
+      await dispatchRequest(base);
+      expect(fetchCalls).toBe(2);
+    });
+
+    it('clears dedupe entry on rejection', async () => {
+      let fetchCalls = 0;
+      global.fetch = vi.fn(() => {
+        fetchCalls++;
+        return Promise.reject(new TypeError('network down'));
+      }) as any;
+
+      const base = { url: 'https://api.test.com/fail', method: 'get', headers: {}, dedupe: true } as any;
+      await expect(dispatchRequest(base)).rejects.toBeDefined();
+      await expect(dispatchRequest(base)).rejects.toBeDefined();
+      expect(fetchCalls).toBe(2);
     });
 
     it('catches a malicious baseURL scheme', async () => {

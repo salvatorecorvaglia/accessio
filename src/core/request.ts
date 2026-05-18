@@ -134,6 +134,7 @@ export default async function dispatchRequest(
       response.data,
       response.headers,
       config,
+      'response',
     );
 
     return new Promise<AccessioResponse>((resolve, reject) => {
@@ -150,9 +151,10 @@ export default async function dispatchRequest(
 
   if (isGet && config.dedupe) {
     activeRequests.set(cacheKey, promise);
-    promise.finally(() => {
+    const cleanup = () => {
       activeRequests.delete(cacheKey);
-    });
+    };
+    promise.then(cleanup, cleanup);
   }
 
   try {

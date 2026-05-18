@@ -18,12 +18,20 @@ async function readResponseData(
     default: {
       const contentType = fetchResponse.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
-        if (typeof fetchResponse.clone === 'function') {
-          const text = await fetchResponse.clone().text();
-          return text ? await fetchResponse.json() : '';
-        } else {
-          const text = await fetchResponse.text();
-          return text ? JSON.parse(text) : '';
+        const text = await fetchResponse.text();
+        if (!text) return '';
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          throw new AccessioError(
+            `Failed to parse JSON response: ${(err as Error).message}. Raw body: ${
+              text.length > 500 ? text.slice(0, 500) + '…' : text
+            }`,
+            AccessioError.ERR_BAD_RESPONSE,
+            config,
+            fetchResponse,
+            null,
+          );
         }
       }
       return await fetchResponse.text();
@@ -160,6 +168,7 @@ export default async function fetchAdapter(
         }
       }
     } catch (readError) {
+      if (readError instanceof AccessioError) throw readError;
       throw AccessioError.from(
         readError as Error,
         AccessioError.ERR_BAD_RESPONSE,

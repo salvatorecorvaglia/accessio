@@ -6,6 +6,7 @@ export default async function transformData(
   data: unknown,
   headers: Record<string, string | string[]>,
   config?: AccessioRequestConfig,
+  direction: 'request' | 'response' = 'request',
 ): Promise<unknown> {
   if (!transforms || !Array.isArray(transforms)) {
     return data;
@@ -20,7 +21,9 @@ export default async function transformData(
       } catch (err) {
         throw AccessioError.from(
           err instanceof Error ? err : new Error(String(err)),
-          AccessioError.ERR_BAD_REQUEST,
+          direction === 'response'
+            ? AccessioError.ERR_BAD_RESPONSE
+            : AccessioError.ERR_BAD_REQUEST,
           config ?? null,
           null,
           null,

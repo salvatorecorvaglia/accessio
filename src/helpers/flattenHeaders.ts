@@ -1,3 +1,32 @@
+import AccessioError from '../core/accessioError';
+import { ERR_BAD_OPTION } from '../constants/errorCodes';
+
+const HEADER_FORBIDDEN_CHAR = /[\r\n\0]/;
+
+function assertSafeHeader(name: string, value: string | string[]): void {
+  if (typeof name !== 'string' || HEADER_FORBIDDEN_CHAR.test(name)) {
+    throw new AccessioError(
+      `Invalid header name "${String(name)}": CR, LF and NUL are not allowed`,
+      ERR_BAD_OPTION,
+      null,
+      null,
+      null,
+    );
+  }
+  const values = Array.isArray(value) ? value : [value];
+  for (const v of values) {
+    if (typeof v === 'string' && HEADER_FORBIDDEN_CHAR.test(v)) {
+      throw new AccessioError(
+        `Invalid value for header "${name}": CR, LF and NUL are not allowed`,
+        ERR_BAD_OPTION,
+        null,
+        null,
+        null,
+      );
+    }
+  }
+}
+
 const METHOD_KEYS = new Set<string>([
   'common',
   'delete',
@@ -47,6 +76,7 @@ export function removeContentType(headers: Record<string, string | string[]>): v
 export function buildFetchHeaders(headers: Record<string, string | string[]>): Headers {
   const fetchHeaders = new Headers();
   for (const [key, value] of Object.entries(headers)) {
+    assertSafeHeader(key, value);
     if (Array.isArray(value)) {
       for (const v of value) {
         fetchHeaders.append(key, v);
