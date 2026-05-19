@@ -86,6 +86,57 @@ for await (const chunk of stream) {
   process.stdout.write(chunk.content || "");
 }`,
     },
+    {
+      eyebrow: 'Caching & Dedupe',
+      title: 'Store responses. Prevent duplicate requests.',
+      body: 'Reduce database load and network overhead. Automatically caches GET responses in-memory with custom TTLs and deduplicates in-flight requests.',
+      code: `const api = accessio.create({
+  dedupe: true,            // Deduplicate matching in-flight GETs
+  cache: true,             // Cache responses in memory
+  cacheTTL: 5 * 60 * 1000, // TTL of 5 minutes (in ms)
+});
+
+// Only 1 network request is made, cached response is reused
+const [res1, res2] = await Promise.all([
+  api.get("/users/current"),
+  api.get("/users/current"),
+]);`,
+    },
+    {
+      eyebrow: 'Lifecycle hooks',
+      title: 'Hook into the request lifecycle.',
+      body: 'Monitor and intercept requests, responses, and errors at specific lifecycle stages. Ideal for custom analytics, logging, or dynamic header injections.',
+      code: `const api = accessio.create({
+  hooks: {
+    onBeforeRequest: async (config) => {
+      console.log(\`Starting request to \${config.url}\`);
+    },
+    onRequestResponse: async (response) => {
+      console.log(\`Request succeeded: \${response.status}\`);
+    },
+    onRequestError: async (error) => {
+      console.error(\`Request failed: \${error.message}\`);
+    },
+  },
+});`,
+    },
+    {
+      eyebrow: 'Schema validation',
+      title: 'Type-safe responses with schema parsing.',
+      body: 'Ensure response bodies match your application types. Automatically validate and parse API payloads using Zod or custom schema parsers.',
+      code: `import { z } from "zod";
+
+const UserSchema = z.object({
+  id: z.number(),
+  name: z.string(),
+  email: z.string().email(),
+});
+
+// response.data is fully parsed and type-safe
+const { data } = await accessio.get("/user/profile", {
+  schema: UserSchema,
+});`,
+    },
   ];
 
   return (

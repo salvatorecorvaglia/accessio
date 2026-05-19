@@ -1,4 +1,4 @@
-// 8-up feature grid.
+// 12-up feature grid.
 function Features() {
   const items = [
     {
@@ -17,12 +17,27 @@ function Features() {
       desc: 'Built-in concurrency control. Cap parallel requests across one client or many.',
     },
     {
+      icon: 'copy',
+      title: 'Caching & Dedupe',
+      desc: 'Prevent duplicate in-flight requests and cache responses in-memory with custom TTL.',
+    },
+    {
+      icon: 'clock',
+      title: 'Lifecycle hooks',
+      desc: 'Tap into request events with simple onBeforeRequest, onRequestResponse, and onRequestError hooks.',
+    },
+    {
+      icon: 'type',
+      title: 'Schema validation',
+      desc: 'Validate responses automatically against Zod or custom schemas for type-safety.',
+    },
+    {
       icon: 'zap',
       title: 'Streaming & SSE',
       desc: 'Async generators for Server-Sent Events and NDJSON. Stream large datasets with ease.',
     },
     {
-      icon: 'refresh',
+      icon: 'arrow',
       title: 'Auto-pagination',
       desc: 'Native support for link-based pagination. Iterate over entire datasets using async iterators.',
     },
@@ -40,6 +55,11 @@ function Features() {
       icon: 'globe',
       title: 'Isomorphic',
       desc: 'Same API in Node ≥ 18 and the browser. Built on the native fetch primitive.',
+    },
+    {
+      icon: 'shield',
+      title: 'Security hardening',
+      desc: 'Configurable URL protocol validation and automatic redaction of sensitive credentials.',
     },
   ];
 
