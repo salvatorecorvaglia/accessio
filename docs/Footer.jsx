@@ -155,7 +155,12 @@ function Footer() {
           </svg>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--fg-muted)' }}>
             accessio · MIT · built by{' '}
-            <a className="t-link" href="https://github.com/salvatorecorvaglia">
+            <a
+              className="t-link"
+              href="https://github.com/salvatorecorvaglia"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               @salvatorecorvaglia
             </a>
           </span>

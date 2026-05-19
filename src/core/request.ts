@@ -27,7 +27,7 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
 
   let scheme: string | null = null;
   const match = /^([a-z][a-z\d+\-.]*):/i.exec(fullURL);
-  if (match) scheme = match[1].toLowerCase() + ':';
+  if (match) scheme = `${match[1].toLowerCase()}:`;
   if (!scheme) return;
 
   if (!allowed.includes(scheme)) {

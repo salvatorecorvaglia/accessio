@@ -25,7 +25,7 @@ async function readResponseData(
         } catch (err) {
           throw new AccessioError(
             `Failed to parse JSON response: ${(err as Error).message}. Raw body: ${
-              text.length > 500 ? text.slice(0, 500) + '…' : text
+              text.length > 500 ? `${text.slice(0, 500)}…` : text
             }`,
             AccessioError.ERR_BAD_RESPONSE,
             config,
