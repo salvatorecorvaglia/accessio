@@ -38,12 +38,46 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+      - name: Extract Changelog Section
+        id: extract_changelog
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const tag = process.env.TAG_NAME || '';
+            const version = tag.startsWith('v') ? tag.slice(1) : tag;
+            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+            const lines = changelog.split(/\r?\n/);
+            let startIdx = -1;
+            let endIdx = -1;
+            for (let i = 0; i < lines.length; i++) {
+              if (lines[i].startsWith('## [' + version + ']')) {
+                startIdx = i;
+                continue;
+              }
+              if (startIdx !== -1 && lines[i].startsWith('## [')) {
+                endIdx = i;
+                break;
+              }
+            }
+            let body = '';
+            if (startIdx !== -1) {
+              const sectionLines = lines.slice(startIdx + 1, endIdx !== -1 ? endIdx : lines.length);
+              body = sectionLines.join('\n').trim();
+            } else {
+              body = 'Release notes for version ' + tag;
+            }
+            const fsOutput = process.env.GITHUB_OUTPUT;
+            const delimiter = 'EOF_CHANGELOG';
+            fs.appendFileSync(fsOutput, 'body<<' + delimiter + '\n' + body + '\n' + delimiter + '\n');
+          "
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          generate_release_notes: true
+          name: Accessio ${{ github.ref_name }}
+          body: ${{ steps.extract_changelog.outputs.body }}
           draft: false
           prerelease: false
 
