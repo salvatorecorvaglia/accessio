@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-05-19
+
+### Added
+
+- Added URL protocol allow-list validation with configurable `allowedProtocols` option.
+- Implemented redaction of sensitive credentials and headers in request configurations.
+- Improved request handling with header validation, improved error reporting for JSON parsing, and robust deduplication logic.
+
+### Fixed
+
+- Prevented retry of `ReadableStream` request bodies to avoid consumption errors.
+
+### Changed
+
+- Simplified rate limiter queue implementation by replacing object-based map with array-based FIFO queue.
+- Cleaned up ESLint configuration syntax and refined documentation formatting.
+- Refactored and cleaned up function signatures and consistent code formatting across source and test files.
+
 ## [1.2.0] - 2026-05-18
 
 ### Added
@@ -48,10 +66,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- First implementation of Accessio.
 - Initial stable release published to npm
-
-## [0.0.1] - 2026-04-21
-
-### Added
-
-- First implementation of accessio.

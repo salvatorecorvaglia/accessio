@@ -2,7 +2,7 @@
 
 **Fast, flexible HTTP client — simple, modular, and dependency-free.**
 
-`accessio` is a lightweight, modern HTTP client built on top of the native `fetch` API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining **zero external dependencies**.
+`Accessio` is a lightweight, modern HTTP client built on top of the native `fetch` API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining **zero external dependencies**.
 
 ---
 
@@ -146,7 +146,7 @@ accessio.interceptors.response.use(
 
 ### Error Handling
 
-`accessio` provides a structured error object with specific codes to help you handle failures gracefully.
+`Accessio` provides a structured error object with specific codes to help you handle failures gracefully.
 
 | Code               | Description                   |
 | :----------------- | :---------------------------- |
@@ -160,7 +160,7 @@ accessio.interceptors.response.use(
 
 ### Automatic Retries
 
-`accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically.
+`Accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically.
 
 ```typescript
 const response = await accessio.get('/flaky-endpoint', {
