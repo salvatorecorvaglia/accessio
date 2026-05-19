@@ -85,6 +85,8 @@ function Nav() {
             size="md"
             icon="github"
             href="https://github.com/salvatorecorvaglia/accessio"
+            target="_blank"
+            rel="noopener noreferrer"
           >
             Star on GitHub
           </Button>

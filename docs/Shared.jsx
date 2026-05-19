@@ -110,6 +110,7 @@ function Button({
   onClick,
   icon,
   trailingArrow,
+  ...props
 }) {
   const base = {
     display: 'inline-flex',
@@ -142,6 +143,7 @@ function Button({
       onClick={onClick}
       style={{ ...base, ...variants[variant] }}
       className={`btn btn-${variant}`}
+      {...props}
     >
       {icon ? <Icon name={icon} size={16} /> : null}
       {children}
