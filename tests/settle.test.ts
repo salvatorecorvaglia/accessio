@@ -94,12 +94,41 @@ describe('settle', () => {
     });
   });
 
-  it('resolves when response has no status', () => {
-    const response = { headers: {}, config: {}, request: {}, duration: 0, statusText: '' };
-    const config = { validateStatus: () => false };
+  it('rejects when status is 0 and validateStatus rejects it (M4)', () => {
+    const response = {
+      status: 0,
+      headers: {},
+      config: {},
+      request: {},
+      duration: 0,
+      statusText: '',
+    };
+    const config = { validateStatus: (s: number) => s >= 200 && s < 300 };
 
     return new Promise((resolve, reject) => {
       settle(resolve as any, reject, response as any, config as any);
+    }).then(
+      () => {
+        throw new Error('expected rejection');
+      },
+      (error: any) => {
+        expect(error.isAccessioError).toBe(true);
+        expect(error.response).toBe(response);
+      },
+    );
+  });
+
+  it('still resolves status=0 when no validateStatus is configured', () => {
+    const response = {
+      status: 0,
+      headers: {},
+      config: {},
+      request: {},
+      duration: 0,
+      statusText: '',
+    };
+    return new Promise((resolve, reject) => {
+      settle(resolve as any, reject, response as any, {} as any);
     }).then((res: any) => {
       expect(res).toBe(response);
     });

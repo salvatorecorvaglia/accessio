@@ -222,6 +222,80 @@ describe('dispatchRequest (request.ts)', () => {
     });
   });
 
+  describe('abort classification (M1)', () => {
+    it('classifies user-abort with non-AbortError reason as ERR_CANCELED', async () => {
+      global.fetch = vi.fn((_url, init: any) => {
+        return new Promise((_resolve, reject) => {
+          const fail = () => {
+            const err = new Error('user cancelled');
+            err.name = 'CustomCancel';
+            reject(err);
+          };
+          if (init.signal?.aborted) {
+            queueMicrotask(fail);
+            return;
+          }
+          init.signal?.addEventListener('abort', fail, { once: true });
+        });
+      }) as any;
+
+      const controller = new AbortController();
+      const p = dispatchRequest({
+        url: 'https://api.test.com/slow',
+        method: 'get',
+        headers: {},
+        signal: controller.signal,
+        timeout: 10_000,
+      });
+      controller.abort(new Error('user cancelled'));
+      await expect(p).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_CANCELED',
+      });
+    });
+
+    it('still classifies timeout as ETIMEDOUT', async () => {
+      global.fetch = vi.fn((_url, init: any) => {
+        return new Promise((_resolve, reject) => {
+          init.signal?.addEventListener('abort', () => {
+            const err = new Error('aborted');
+            err.name = 'AbortError';
+            reject(err);
+          });
+        });
+      }) as any;
+
+      await expect(
+        dispatchRequest({
+          url: 'https://api.test.com/slow',
+          method: 'get',
+          headers: {},
+          timeout: 5,
+        }),
+      ).rejects.toMatchObject({ code: 'ETIMEDOUT' });
+    });
+  });
+
+  describe('invalid URL classification (M3)', () => {
+    it('throws ERR_INVALID_URL up front for malformed URLs', async () => {
+      mockFetch({});
+      await expect(
+        dispatchRequest({ url: 'http://exa mple.com/x', method: 'get', headers: {} }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_INVALID_URL',
+      });
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+
+    it('TypeError "fetch failed" from network layer is ERR_NETWORK, not ERR_INVALID_URL', async () => {
+      global.fetch = vi.fn(() => Promise.reject(new TypeError('fetch failed'))) as any;
+      await expect(
+        dispatchRequest({ url: 'https://api.test.com/x', method: 'get', headers: {} }),
+      ).rejects.toMatchObject({ code: 'ERR_NETWORK' });
+    });
+  });
+
   describe('protocol allow-list', () => {
     it('rejects file: URLs by default', async () => {
       mockFetch({});

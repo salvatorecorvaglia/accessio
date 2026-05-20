@@ -9,7 +9,7 @@ export default function settle(
 ): void {
   const validateStatus = config.validateStatus;
 
-  if (!response.status || !validateStatus || validateStatus(response.status)) {
+  if (!validateStatus || validateStatus(response.status)) {
     resolve(response);
   } else {
     const error = new AccessioError(

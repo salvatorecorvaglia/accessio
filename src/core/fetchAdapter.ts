@@ -50,6 +50,20 @@ export default async function fetchAdapter(
   let isTimedOut = false;
   let onUserAbort: (() => void) | null = null;
 
+  if (fullURL && /^[a-z][a-z\d+\-.]*:/i.test(fullURL)) {
+    try {
+      new URL(fullURL);
+    } catch {
+      throw new AccessioError(
+        `Invalid URL: ${fullURL}`,
+        AccessioError.ERR_INVALID_URL,
+        config,
+        null,
+        null,
+      );
+    }
+  }
+
   if (
     config.timeout !== undefined &&
     (typeof config.timeout !== 'number' || isNaN(config.timeout) || config.timeout < 0)
@@ -194,30 +208,20 @@ export default async function fetchAdapter(
       throw error;
     }
 
-    if (error instanceof Error && error.name === 'AbortError') {
-      if (isTimedOut) {
-        throw new AccessioError(
-          `timeout of ${config.timeout}ms exceeded`,
-          AccessioError.ETIMEDOUT,
-          config,
-          null,
-          null,
-        );
-      }
-      throw new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
-    }
-
-    if (
-      error instanceof TypeError &&
-      (error.message.toLowerCase().includes('url') || error.message.toLowerCase().includes('fetch'))
-    ) {
+    if (isTimedOut) {
       throw new AccessioError(
-        `Invalid URL: ${fullURL}`,
-        AccessioError.ERR_INVALID_URL,
+        `timeout of ${config.timeout}ms exceeded`,
+        AccessioError.ETIMEDOUT,
         config,
         null,
         null,
       );
+    }
+
+    const isAbort =
+      (error instanceof Error && error.name === 'AbortError') || !!config.signal?.aborted;
+    if (isAbort) {
+      throw new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
     }
 
     throw AccessioError.from(
