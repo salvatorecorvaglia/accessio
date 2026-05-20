@@ -68,6 +68,22 @@ describe('InterceptorManager', () => {
       expect(manager.size).toBe(1);
     });
 
+    it('does not grow internal storage with ejected entries (M8)', () => {
+      const mgr = new InterceptorManager();
+      const ids: number[] = [];
+      for (let i = 0; i < 10_000; i++) ids.push(mgr.use(((v: any) => v) as any));
+      for (const id of ids) mgr.eject(id);
+      expect(mgr.size).toBe(0);
+      const liveId = mgr.use(((v: any) => v) as any);
+      let visits = 0;
+      mgr.forEach(() => visits++);
+      expect(visits).toBe(1);
+      expect(liveId).toBeGreaterThanOrEqual(10_000);
+      mgr.eject(liveId);
+      const nextId = mgr.use(((v: any) => v) as any);
+      expect(nextId).toBeGreaterThan(liveId);
+    });
+
     it('skips ejected handlers in forEach', () => {
       const manager = new InterceptorManager();
       const results: string[] = [];

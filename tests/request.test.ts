@@ -589,6 +589,26 @@ describe('dispatchRequest (request.ts)', () => {
       expect(fetchCalls).toBe(2);
     });
 
+    it('caps the dedupe registry to prevent unbounded growth on hung requests (M9)', async () => {
+      const { __activeRequestsSize } = await import('../src/core/request');
+      // Use a fetch that never settles so cleanup-on-settle never fires.
+      global.fetch = vi.fn(() => new Promise(() => {})) as any;
+
+      const before = __activeRequestsSize();
+      // 1500 > MAX_ACTIVE_REQUESTS (1024). Unique URLs ⇒ unique dedupe keys.
+      for (let i = 0; i < 1500; i++) {
+        // Fire-and-forget — the promises never settle.
+        void dispatchRequest({
+          url: `https://api.test.com/hang/${i}`,
+          method: 'get',
+          headers: {},
+          dedupe: true,
+        } as any).catch(() => {});
+      }
+      const after = __activeRequestsSize();
+      expect(after - before).toBeLessThanOrEqual(1024);
+    });
+
     it('catches a malicious baseURL scheme', async () => {
       mockFetch({});
       await expect(

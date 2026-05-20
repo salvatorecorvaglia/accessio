@@ -68,6 +68,21 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
 }
 
 const activeRequests = new Map<string, Promise<AccessioResponse>>();
+const MAX_ACTIVE_REQUESTS = 1024;
+
+export function __activeRequestsSize(): number {
+  return activeRequests.size;
+}
+
+function trackActiveRequest(key: string, promise: Promise<AccessioResponse>): void {
+  activeRequests.set(key, promise);
+  // Evict the oldest entry if we've grown past the cap. Map preserves insertion order.
+  while (activeRequests.size > MAX_ACTIVE_REQUESTS) {
+    const oldest = activeRequests.keys().next().value;
+    if (oldest === undefined || oldest === key) break;
+    activeRequests.delete(oldest);
+  }
+}
 
 export default async function dispatchRequest(
   config: AccessioRequestConfig,
@@ -171,7 +186,7 @@ export default async function dispatchRequest(
   const promise = performRequest();
 
   if (isGet && config.dedupe) {
-    activeRequests.set(cacheKey, promise);
+    trackActiveRequest(cacheKey, promise);
     const cleanup = () => {
       if (activeRequests.get(cacheKey) === promise) {
         activeRequests.delete(cacheKey);

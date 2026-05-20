@@ -1,12 +1,12 @@
 import type { TransformFunction, InterceptorHandler, InterceptorOptions } from '../types';
 
 export class InterceptorManager {
-  handlers: Array<InterceptorHandler | null>;
-  private _activeCount: number;
+  private _handlers: Map<number, InterceptorHandler>;
+  private _nextId: number;
 
   constructor() {
-    this.handlers = [];
-    this._activeCount = 0;
+    this._handlers = new Map();
+    this._nextId = 0;
   }
 
   use(
@@ -14,39 +14,46 @@ export class InterceptorManager {
     rejected?: ((error: unknown) => unknown) | null,
     options: InterceptorOptions = {},
   ): number {
-    this.handlers.push({
+    const id = this._nextId++;
+    this._handlers.set(id, {
       fulfilled: fulfilled || null,
       rejected: rejected || null,
       synchronous: options.synchronous || false,
       runWhen: options.runWhen || null,
     });
-
-    this._activeCount++;
-    return this.handlers.length - 1;
+    return id;
   }
 
   eject(id: number): void {
-    if (this.handlers[id]) {
-      this.handlers[id] = null;
-      this._activeCount--;
-    }
+    this._handlers.delete(id);
   }
 
   clear(): void {
-    this.handlers = [];
-    this._activeCount = 0;
+    this._handlers.clear();
   }
 
   forEach(fn: (handler: InterceptorHandler) => void): void {
-    for (const handler of this.handlers) {
-      if (handler !== null) {
-        fn(handler);
-      }
+    for (const handler of this._handlers.values()) {
+      fn(handler);
     }
   }
 
   get size(): number {
-    return this._activeCount;
+    return this._handlers.size;
+  }
+
+  /**
+   * Snapshot view for backward-compat introspection. Slot index = interceptor ID;
+   * ejected IDs appear as `null`. Reading this builds a fresh array each time —
+   * prefer `forEach`/`size` in hot paths.
+   */
+  get handlers(): Array<InterceptorHandler | null> {
+    const max = this._nextId;
+    const out: Array<InterceptorHandler | null> = new Array(max);
+    for (let i = 0; i < max; i++) {
+      out[i] = this._handlers.get(i) ?? null;
+    }
+    return out;
   }
 }
 
