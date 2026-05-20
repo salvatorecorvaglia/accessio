@@ -6,12 +6,36 @@ function redactHeaders(headers: unknown): unknown {
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(headers as Record<string, unknown>)) {
     const value = (headers as Record<string, unknown>)[key];
-    if (/^authorization$/i.test(key)) {
+    if (/^authorization$/i.test(key) || /^cookie$/i.test(key) || /^set-cookie$/i.test(key)) {
       out[key] = '[REDACTED]';
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
       out[key] = redactHeaders(value);
     } else {
       out[key] = value;
+    }
+  }
+  return out;
+}
+
+const SENSITIVE_BODY_KEY = /^(password|passwd|pwd|token|access_token|refresh_token|id_token|authorization|api[_-]?key|secret|client[_-]?secret|cookie|set[_-]?cookie|private[_-]?key|session)$/i;
+
+export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
+  if (value === null || typeof value !== 'object') return value;
+  const visited = seen ?? new WeakSet<object>();
+  if (visited.has(value as object)) return '[Circular]';
+  visited.add(value as object);
+
+  if (Array.isArray(value)) {
+    return value.map((item) => redactBody(item, visited));
+  }
+
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(value as Record<string, unknown>)) {
+    const v = (value as Record<string, unknown>)[key];
+    if (SENSITIVE_BODY_KEY.test(key)) {
+      out[key] = '[REDACTED]';
+    } else {
+      out[key] = redactBody(v, visited);
     }
   }
   return out;

@@ -75,6 +75,41 @@ describe('debug.ts', () => {
       const output = consoleSpy.mock.calls[0][0];
       expect(output).toContain('GET');
     });
+
+    it('redacts sensitive fields in the body', () => {
+      logRequest(
+        {
+          debug: true,
+          method: 'post',
+          url: '/login',
+          data: {
+            username: 'alice',
+            password: 'hunter2',
+            token: 'abc',
+            nested: { api_key: 'k', refresh_token: 'r' },
+          },
+        },
+        '/login',
+      );
+      const output = consoleSpy.mock.calls[0][0];
+      expect(output).toContain('alice');
+      expect(output).not.toContain('hunter2');
+      expect(output).not.toContain('abc');
+      expect(output).not.toContain('"k"');
+      expect(output).not.toContain('"r"');
+      expect(output).toContain('[REDACTED]');
+    });
+
+    it('does not crash on circular bodies', () => {
+      const circular: any = { password: 'x' };
+      circular.self = circular;
+      expect(() =>
+        logRequest({ debug: true, method: 'post', url: '/t', data: circular }, '/t'),
+      ).not.toThrow();
+      const output = consoleSpy.mock.calls[0][0];
+      expect(output).toContain('[REDACTED]');
+      expect(output).not.toContain('"x"');
+    });
   });
 
   describe('logResponse', () => {

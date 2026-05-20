@@ -1,5 +1,5 @@
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
-import AccessioError from '../core/accessioError';
+import AccessioError, { redactBody } from '../core/accessioError';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -35,7 +35,12 @@ export function logRequest(config: AccessioRequestConfig, fullUrl: string): void
   }
 
   if (config.data && typeof config.data === 'object') {
-    const preview = JSON.stringify(config.data);
+    let preview: string;
+    try {
+      preview = JSON.stringify(redactBody(config.data));
+    } catch {
+      preview = '[unserializable body]';
+    }
     const truncated = preview.length > 200 ? `${preview.substring(0, 200)}...` : preview;
     parts.push(`   Body: ${truncated}`);
   }
