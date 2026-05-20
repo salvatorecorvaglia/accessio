@@ -6,18 +6,43 @@
  * Avoids ambiguous intersection of Record<string, string> & { common?, get?, ... }
  * which TypeScript accepts but can confuse type consumers.
  */
+export type HeaderValue = string | string[];
+
 export type AccessioHeaders = {
-  common?: Record<string, string>;
-  get?: Record<string, string>;
-  post?: Record<string, string>;
-  put?: Record<string, string>;
-  patch?: Record<string, string>;
-  delete?: Record<string, string>;
-  head?: Record<string, string>;
-  options?: Record<string, string>;
-  /** Any additional custom headers */
-  [key: string]: string | number | boolean | Record<string, string> | undefined;
+  common?: Record<string, HeaderValue>;
+  get?: Record<string, HeaderValue>;
+  post?: Record<string, HeaderValue>;
+  put?: Record<string, HeaderValue>;
+  patch?: Record<string, HeaderValue>;
+  delete?: Record<string, HeaderValue>;
+  head?: Record<string, HeaderValue>;
+  options?: Record<string, HeaderValue>;
+  /** Any additional custom headers (flat or per-method-nested) */
+  [key: string]: HeaderValue | Record<string, HeaderValue> | undefined;
 };
+
+export interface AccessioHooks {
+  onBeforeRequest?: (config: AccessioRequestConfig) => void | Promise<void>;
+  onRequestResponse?: (response: AccessioResponse) => void | Promise<void>;
+  onRequestError?: (error: AccessioError) => void | Promise<void>;
+}
+
+export interface CacheProvider {
+  get(key: string): Promise<any> | any;
+  set(key: string, value: any, ttl?: number): Promise<void> | void;
+  delete(key: string): Promise<void> | void;
+  clear(): Promise<void> | void;
+}
+
+export interface SchemaValidator<T = any> {
+  parse(data: unknown): T;
+  parseAsync?(data: unknown): Promise<T>;
+}
+
+export type TransformFunction = (
+  data: any,
+  headers: Record<string, HeaderValue>,
+) => any | Promise<any>;
 
 export interface AccessioRequestConfig {
   /** Request URL (path or full URL) */
@@ -66,17 +91,13 @@ export interface AccessioRequestConfig {
   responseType?: "json" | "text" | "blob" | "arraybuffer" | "stream";
 
   /** Transform functions applied to request data */
-  transformRequest?: Array<
-    (data: any, headers?: Record<string, string>) => any
-  >;
+  transformRequest?: TransformFunction | TransformFunction[];
 
   /** Transform functions applied to response data */
-  transformResponse?: Array<
-    (data: any, headers?: Record<string, string>) => any
-  >;
+  transformResponse?: TransformFunction | TransformFunction[];
 
-  /** Function to determine if a status code should resolve or reject */
-  validateStatus?: (status: number) => boolean;
+  /** Function to determine if a status code should resolve or reject. Pass `null` to disable. */
+  validateStatus?: ((status: number) => boolean) | null;
 
   /** AbortSignal for request cancellation */
   signal?: AbortSignal;
@@ -105,6 +126,9 @@ export interface AccessioRequestConfig {
     config: AccessioRequestConfig,
   ) => void;
 
+  /** Retry on HTTP 429 (Too Many Requests), honoring Retry-After when present */
+  retryOn429?: boolean;
+
   // ── Debug ──────────────────────────────────────────
 
   /** Enable debug logging for this request */
@@ -114,6 +138,43 @@ export interface AccessioRequestConfig {
 
   /** Rate limiter instance to control concurrent requests */
   rateLimiter?: RateLimiter;
+
+  // ── Caching / dedupe ───────────────────────────────
+
+  /** Dedupe in-flight identical GETs (cache/dedupe key is per fullURL+auth+accept+responseType+withCredentials) */
+  dedupe?: boolean;
+
+  /** Enable response caching for GETs. `true` uses the default in-memory cache; pass a provider to customize. */
+  cache?: boolean | CacheProvider;
+
+  /** TTL in ms for cached responses (when supported by the provider) */
+  cacheTTL?: number;
+
+  // ── Response handling ──────────────────────────────
+
+  /** Maximum allowed response Content-Length in bytes */
+  maxContentLength?: number;
+
+  /** Schema validator applied to response data (Zod-compatible: `parse` / `parseAsync`) */
+  schema?: SchemaValidator;
+
+  /** Progress callback for downloads. Wraps the response body in a passthrough ReadableStream. */
+  onDownloadProgress?: (progressEvent: { loaded: number; total: number }) => void;
+
+  // ── Lifecycle hooks ────────────────────────────────
+
+  hooks?: AccessioHooks;
+
+  // ── Adapter / runtime ──────────────────────────────
+
+  /** Custom fetch implementation (defaults to global `fetch`) */
+  fetch?: typeof fetch;
+
+  /** Undici dispatcher (Node.js) */
+  dispatcher?: unknown;
+
+  /** Node.js http(s).Agent */
+  agent?: unknown;
 
   /** Allow any additional custom properties */
   [key: string]: any;
@@ -129,8 +190,8 @@ export interface AccessioResponse<T = any> {
   /** HTTP status text */
   statusText: string;
 
-  /** Response headers (lowercased keys) */
-  headers: Record<string, string>;
+  /** Response headers (lowercased keys; repeated headers become string arrays) */
+  headers: Record<string, HeaderValue>;
 
   /** The config used for this request */
   config: AccessioRequestConfig;
@@ -458,4 +519,4 @@ export const createRateLimiter: (maxConcurrent?: number) => RateLimiter;
 
 export function logRequest(config: AccessioRequestConfig, fullUrl: string): void;
 export function logResponse(response: AccessioResponse): void;
-export function logError(error: Error, config?: AccessioRequestConfig): void;
+export function logError(error: AccessioError, config?: AccessioRequestConfig): void;
