@@ -30,9 +30,21 @@ describe('buildURL', () => {
     expect(result).toBe('/users?sort=name&page=1');
   });
 
-  it('strips hash before appending params', () => {
-    const result = buildURL('/users#section', undefined, { page: 1 });
-    expect(result).toBe('/users?page=1');
+  it('preserves the URL fragment when appending params (M2)', () => {
+    expect(buildURL('/users#section', undefined, { page: 1 })).toBe('/users?page=1#section');
+    expect(buildURL('/users?sort=name#top', undefined, { page: 1 })).toBe(
+      '/users?sort=name&page=1#top',
+    );
+  });
+
+  it('ignores prototype-polluting param keys in path templates (M6)', () => {
+    const polluted = JSON.parse('{"__proto__":"evil","id":"42"}');
+    expect(buildURL('/users/{id}/{__proto__}', undefined, polluted)).toBe(
+      '/users/42/{__proto__}',
+    );
+    expect(buildURL('/users/:constructor', undefined, JSON.parse('{"constructor":"x"}'))).toBe(
+      '/users/:constructor',
+    );
   });
 
   it('uses custom paramsSerializer', () => {

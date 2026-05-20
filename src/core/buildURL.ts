@@ -76,11 +76,19 @@ export default function buildURL(
   let fullURL = baseURL && !isAbsoluteURL(url) ? combineURLs(baseURL, url) : url || '';
 
   let finalParams = params;
-  if (params && typeof params === 'object') {
-    const unusedParams = { ...params };
+  if (params && typeof params === 'object' && !(params instanceof URLSearchParams)) {
+    const unusedParams: Record<string, unknown> = {};
+    for (const key of Object.keys(params)) {
+      if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
+      unusedParams[key] = (params as Record<string, unknown>)[key];
+    }
     fullURL = fullURL.replace(/(?::([a-zA-Z0-9_]+))|(?:{([a-zA-Z0-9_]+)})/g, (match, p1, p2) => {
       const key = p1 || p2;
-      if (key && unusedParams[key] !== undefined) {
+      if (
+        key &&
+        Object.prototype.hasOwnProperty.call(unusedParams, key) &&
+        unusedParams[key] !== undefined
+      ) {
         const val = unusedParams[key];
         delete unusedParams[key];
         return encodeURIComponent(String(val));
@@ -93,10 +101,12 @@ export default function buildURL(
   const serialized = serializeParams(finalParams as Record<string, unknown>, paramsSerializer);
   if (serialized) {
     const hashIndex = fullURL.indexOf('#');
+    let fragment = '';
     if (hashIndex !== -1) {
+      fragment = fullURL.slice(hashIndex);
       fullURL = fullURL.slice(0, hashIndex);
     }
-    fullURL += (fullURL.indexOf('?') === -1 ? '?' : '&') + serialized;
+    fullURL += (fullURL.indexOf('?') === -1 ? '?' : '&') + serialized + fragment;
   }
 
   return fullURL;
