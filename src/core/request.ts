@@ -10,6 +10,31 @@ import { defaultMemoryCache } from '../helpers/memoryCache';
 import type { AccessioRequestConfig, AccessioResponse, TransformFunction } from '../types';
 
 type HeadersConfig = Record<string, Record<string, string | string[]>>;
+type FlatHeaders = Record<string, string | string[]>;
+
+function lookupHeader(headers: FlatHeaders, name: string): string {
+  const target = name.toLowerCase();
+  for (const k of Object.keys(headers)) {
+    if (k.toLowerCase() === target) {
+      const v = headers[k];
+      return Array.isArray(v) ? v.join(',') : (v ?? '');
+    }
+  }
+  return '';
+}
+
+function buildCacheKey(
+  config: AccessioRequestConfig,
+  fullURL: string,
+  flatHeaders: FlatHeaders,
+): string {
+  const method = (config.method || 'GET').toUpperCase();
+  const auth = lookupHeader(flatHeaders, 'authorization');
+  const accept = lookupHeader(flatHeaders, 'accept');
+  const withCreds = config.withCredentials ? '1' : '0';
+  const respType = config.responseType || 'json';
+  return `${method}:${fullURL}|a=${auth}|x=${accept}|c=${withCreds}|t=${respType}`;
+}
 
 function buildTransformArray(
   transform: TransformFunction | TransformFunction[] | undefined,
@@ -62,28 +87,36 @@ export default async function dispatchRequest(
     await config.hooks.onBeforeRequest(config);
   }
 
+  const flatHeaders = flattenHeaders(config.headers as HeadersConfig | undefined, config.method);
+  setBasicAuth(config, flatHeaders);
+
   const isGet = (config.method || 'GET').toUpperCase() === 'GET';
-  const cacheKey = isGet ? `GET:${fullURL}` : '';
+  const cacheKey = isGet ? buildCacheKey(config, fullURL, flatHeaders) : '';
 
   if (isGet && config.cache) {
     const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
     const cached = await cacheProvider.get(cacheKey);
     if (cached) {
+      const cachedView: AccessioResponse = {
+        ...cached,
+        config: redactConfig(config) as typeof cached.config,
+      };
       if (config.hooks?.onRequestResponse) {
-        await config.hooks.onRequestResponse(cached);
+        await config.hooks.onRequestResponse(cachedView);
       }
-      return cached;
+      return cachedView;
     }
   }
 
   if (isGet && config.dedupe) {
-    if (activeRequests.has(cacheKey)) {
-      return activeRequests.get(cacheKey)!;
+    const inflight = activeRequests.get(cacheKey);
+    if (inflight) {
+      const shared = await inflight;
+      return finalizeResponse(shared, config);
     }
   }
 
-  const performRequest = async () => {
-    const flatHeaders = flattenHeaders(config.headers as HeadersConfig | undefined, config.method);
+  const performRequest = async (): Promise<AccessioResponse> => {
     const requestTransforms = buildTransformArray(config.transformRequest);
     const requestData = await transformData(requestTransforms, config.data, flatHeaders, config);
 
@@ -94,8 +127,6 @@ export default async function dispatchRequest(
     ) {
       removeContentType(flatHeaders);
     }
-
-    setBasicAuth(config, flatHeaders);
 
     const fetchOptions: RequestInit = {
       method: (config.method || 'GET').toUpperCase(),
@@ -123,12 +154,9 @@ export default async function dispatchRequest(
     }
 
     const requestStartTime = Date.now();
-
     const response = await fetchAdapter(config, fullURL, fetchOptions, requestStartTime);
-    response.config = redactConfig(response.config) as typeof response.config;
 
     const responseTransforms = buildTransformArray(config.transformResponse);
-
     response.data = await transformData(
       responseTransforms,
       response.data,
@@ -137,14 +165,7 @@ export default async function dispatchRequest(
       'response',
     );
 
-    return new Promise<AccessioResponse>((resolve, reject) => {
-      settle(
-        resolve as (value: AccessioResponse) => void,
-        reject as (reason: AccessioError) => void,
-        response,
-        config,
-      );
-    });
+    return response;
   };
 
   const promise = performRequest();
@@ -152,28 +173,50 @@ export default async function dispatchRequest(
   if (isGet && config.dedupe) {
     activeRequests.set(cacheKey, promise);
     const cleanup = () => {
-      activeRequests.delete(cacheKey);
+      if (activeRequests.get(cacheKey) === promise) {
+        activeRequests.delete(cacheKey);
+      }
     };
     promise.then(cleanup, cleanup);
   }
 
   try {
-    const response = await promise;
+    const shared = await promise;
+    const response = finalizeResponse(shared, config);
 
     if (isGet && config.cache) {
       const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
-      await cacheProvider.set(cacheKey, response, config.cacheTTL);
+      await cacheProvider.set(cacheKey, shared, config.cacheTTL);
     }
+
+    const settled = await new Promise<AccessioResponse>((resolve, reject) => {
+      settle(
+        resolve as (value: AccessioResponse) => void,
+        reject as (reason: AccessioError) => void,
+        response,
+        config,
+      );
+    });
 
     if (config.hooks?.onRequestResponse) {
-      await config.hooks.onRequestResponse(response);
+      await config.hooks.onRequestResponse(settled);
     }
 
-    return response;
+    return settled;
   } catch (error) {
     if (config.hooks?.onRequestError && error instanceof AccessioError) {
       await config.hooks.onRequestError(error);
     }
     throw error;
   }
+}
+
+function finalizeResponse(
+  shared: AccessioResponse,
+  config: AccessioRequestConfig,
+): AccessioResponse {
+  return {
+    ...shared,
+    config: redactConfig(config) as typeof shared.config,
+  };
 }

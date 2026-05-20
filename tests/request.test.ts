@@ -389,6 +389,114 @@ describe('dispatchRequest (request.ts)', () => {
       expect(fetchCalls).toBe(2);
     });
 
+    it('does not share dedupe slot across different Authorization headers (H1)', async () => {
+      let fetchCalls = 0;
+      global.fetch = vi.fn(() => {
+        fetchCalls++;
+        return new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                status: 200,
+                statusText: 'OK',
+                headers: new Headers({ 'content-type': 'application/json' }),
+                text: () => Promise.resolve('{"ok":true}'),
+                json: () => Promise.resolve({ ok: true }),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+                blob: () => Promise.resolve(new Blob()),
+                body: null,
+              } as any),
+            5,
+          ),
+        );
+      }) as any;
+
+      const base = {
+        url: 'https://api.test.com/me',
+        method: 'get',
+        dedupe: true,
+      } as any;
+      await Promise.all([
+        dispatchRequest({ ...base, headers: { Authorization: 'Bearer alice' } }),
+        dispatchRequest({ ...base, headers: { Authorization: 'Bearer bob' } }),
+      ]);
+      expect(fetchCalls).toBe(2);
+    });
+
+    it('does not share cache entry across different Accept headers (H1)', async () => {
+      const cache = new Map<string, any>();
+      const provider = {
+        get: (k: string) => cache.get(k),
+        set: (k: string, v: any) => cache.set(k, v),
+      };
+      let fetchCalls = 0;
+      global.fetch = vi.fn(() => {
+        fetchCalls++;
+        return Promise.resolve({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          text: () => Promise.resolve('{"ok":true}'),
+          json: () => Promise.resolve({ ok: true }),
+          arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+          blob: () => Promise.resolve(new Blob()),
+          body: null,
+        } as any);
+      }) as any;
+
+      const base = {
+        url: 'https://api.test.com/thing',
+        method: 'get',
+        cache: provider,
+      } as any;
+      await dispatchRequest({ ...base, headers: { Accept: 'application/json' } });
+      await dispatchRequest({ ...base, headers: { Accept: 'application/xml' } });
+      expect(fetchCalls).toBe(2);
+    });
+
+    it('gives each dedupe consumer an independent config view (H2)', async () => {
+      global.fetch = vi.fn(() =>
+        new Promise((resolve) =>
+          setTimeout(
+            () =>
+              resolve({
+                status: 200,
+                statusText: 'OK',
+                headers: new Headers({ 'content-type': 'application/json' }),
+                text: () => Promise.resolve('{"ok":true}'),
+                json: () => Promise.resolve({ ok: true }),
+                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+                blob: () => Promise.resolve(new Blob()),
+                body: null,
+              } as any),
+            5,
+          ),
+        ),
+      ) as any;
+
+      const baseUrl = 'https://api.test.com/shared';
+      const a = dispatchRequest({
+        url: baseUrl,
+        method: 'get',
+        dedupe: true,
+        headers: { Authorization: 'Bearer X' },
+        meta: { caller: 'A' },
+      } as any);
+      const b = dispatchRequest({
+        url: baseUrl,
+        method: 'get',
+        dedupe: true,
+        headers: { Authorization: 'Bearer X' },
+        meta: { caller: 'B' },
+      } as any);
+      const [respA, respB] = await Promise.all([a, b]);
+
+      expect(respA).not.toBe(respB);
+      expect((respA.config as any).meta.caller).toBe('A');
+      expect((respB.config as any).meta.caller).toBe('B');
+      expect((respA.config as any).headers.Authorization).toBe('[REDACTED]');
+    });
+
     it('clears dedupe entry on rejection', async () => {
       let fetchCalls = 0;
       global.fetch = vi.fn(() => {
