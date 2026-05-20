@@ -39,31 +39,27 @@ async function readResponseData(
   }
 }
 
-export default async function fetchAdapter(
-  config: AccessioRequestConfig,
-  fullURL: string,
-  fetchOptions: RequestInit,
-  requestStartTime: number,
-): Promise<AccessioResponse> {
-  let abortController: AbortController | null = null;
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let isTimedOut = false;
-  let onUserAbort: (() => void) | null = null;
-
-  if (fullURL && /^[a-z][a-z\d+\-.]*:/i.test(fullURL)) {
-    try {
-      new URL(fullURL);
-    } catch {
-      throw new AccessioError(
-        `Invalid URL: ${fullURL}`,
-        AccessioError.ERR_INVALID_URL,
-        config,
-        null,
-        null,
-      );
-    }
+function assertValidURL(fullURL: string, config: AccessioRequestConfig): void {
+  if (!fullURL || !/^[a-z][a-z\d+\-.]*:/i.test(fullURL)) return;
+  try {
+    new URL(fullURL);
+  } catch {
+    throw new AccessioError(
+      `Invalid URL: ${fullURL}`,
+      AccessioError.ERR_INVALID_URL,
+      config,
+      null,
+      null,
+    );
   }
+}
 
+interface AbortWiring {
+  isTimedOut: () => boolean;
+  cleanup: () => void;
+}
+
+function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): AbortWiring {
   if (
     config.timeout !== undefined &&
     (typeof config.timeout !== 'number' || isNaN(config.timeout) || config.timeout < 0)
@@ -78,84 +74,141 @@ export default async function fetchAdapter(
   }
 
   const timeoutValue = Number(config.timeout);
-  if (!isNaN(timeoutValue) && timeoutValue > 0) {
-    abortController = new AbortController();
+  const hasTimeout = !isNaN(timeoutValue) && timeoutValue > 0;
 
-    timeoutId = setTimeout(() => {
-      isTimedOut = true;
-      abortController!.abort(
-        new AccessioError(
-          `timeout of ${timeoutValue}ms exceeded`,
-          AccessioError.ETIMEDOUT,
-          config,
-          null,
-          null,
-        ),
-      );
-    }, timeoutValue);
+  if (!hasTimeout) {
+    if (config.signal) fetchOptions.signal = config.signal;
+    return { isTimedOut: () => false, cleanup: () => {} };
+  }
 
-    if (config.signal) {
-      if (typeof AbortSignal.any === 'function') {
-        fetchOptions.signal = AbortSignal.any([config.signal, abortController.signal]);
-      } else {
-        if (config.signal.aborted) {
-          abortController.abort(config.signal.reason);
-        } else {
-          onUserAbort = () => {
-            if (!isTimedOut && abortController) {
-              abortController.abort(config.signal!.reason);
-            }
-          };
-          config.signal.addEventListener('abort', onUserAbort, {
-            once: true,
-          });
-        }
-        fetchOptions.signal = abortController.signal;
-      }
+  let timedOut = false;
+  const abortController = new AbortController();
+  const timeoutId = setTimeout(() => {
+    timedOut = true;
+    abortController.abort(
+      new AccessioError(
+        `timeout of ${timeoutValue}ms exceeded`,
+        AccessioError.ETIMEDOUT,
+        config,
+        null,
+        null,
+      ),
+    );
+  }, timeoutValue);
+
+  let onUserAbort: (() => void) | null = null;
+
+  if (config.signal) {
+    if (typeof AbortSignal.any === 'function') {
+      fetchOptions.signal = AbortSignal.any([config.signal, abortController.signal]);
     } else {
+      if (config.signal.aborted) {
+        abortController.abort(config.signal.reason);
+      } else {
+        onUserAbort = () => {
+          if (!timedOut) abortController.abort(config.signal!.reason);
+        };
+        config.signal.addEventListener('abort', onUserAbort, { once: true });
+      }
       fetchOptions.signal = abortController.signal;
     }
-  } else if (config.signal) {
-    fetchOptions.signal = config.signal;
+  } else {
+    fetchOptions.signal = abortController.signal;
   }
+
+  return {
+    isTimedOut: () => timedOut,
+    cleanup: () => {
+      clearTimeout(timeoutId);
+      if (onUserAbort && config.signal) {
+        config.signal.removeEventListener('abort', onUserAbort);
+      }
+    },
+  };
+}
+
+function wrapDownloadProgress(fetchResponse: Response, config: AccessioRequestConfig): Response {
+  if (!config.onDownloadProgress || !fetchResponse.body || config.responseType === 'stream') {
+    return fetchResponse;
+  }
+
+  const contentLength = fetchResponse.headers.get('content-length');
+  const total = contentLength ? parseInt(contentLength, 10) : 0;
+  let loaded = 0;
+
+  const reader = fetchResponse.body.getReader();
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) {
+            controller.close();
+            break;
+          }
+          loaded += value.byteLength;
+          config.onDownloadProgress!({ loaded, total });
+          controller.enqueue(value);
+        }
+      } catch (e) {
+        controller.error(e);
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: fetchResponse.headers,
+    status: fetchResponse.status,
+    statusText: fetchResponse.statusText,
+  });
+}
+
+function classifyFetchError(
+  error: unknown,
+  config: AccessioRequestConfig,
+  isTimedOut: boolean,
+): AccessioError {
+  if (error instanceof AccessioError) return error;
+
+  if (isTimedOut) {
+    return new AccessioError(
+      `timeout of ${config.timeout}ms exceeded`,
+      AccessioError.ETIMEDOUT,
+      config,
+      null,
+      null,
+    );
+  }
+
+  const isAbort =
+    (error instanceof Error && error.name === 'AbortError') || !!config.signal?.aborted;
+  if (isAbort) {
+    return new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
+  }
+
+  return AccessioError.from(
+    error instanceof Error ? error : new Error(String(error)),
+    AccessioError.ERR_NETWORK,
+    config,
+    null,
+    null,
+  );
+}
+
+export default async function fetchAdapter(
+  config: AccessioRequestConfig,
+  fullURL: string,
+  fetchOptions: RequestInit,
+  requestStartTime: number,
+): Promise<AccessioResponse> {
+  assertValidURL(fullURL, config);
+
+  const abort = setupAbort(config, fetchOptions);
 
   try {
     const fetchImpl = config.fetch || fetch;
-    let fetchResponse = await fetchImpl(fullURL, fetchOptions);
-
-    if (config.onDownloadProgress && fetchResponse.body && config.responseType !== 'stream') {
-      const contentLength = fetchResponse.headers.get('content-length');
-      const total = contentLength ? parseInt(contentLength, 10) : 0;
-      let loaded = 0;
-
-      const reader = fetchResponse.body.getReader();
-      const stream = new ReadableStream({
-        async start(controller) {
-          try {
-            while (true) {
-              const { done, value } = await reader.read();
-              if (done) {
-                controller.close();
-                break;
-              }
-              loaded += value.byteLength;
-              config.onDownloadProgress!({ loaded, total });
-              controller.enqueue(value);
-            }
-          } catch (e) {
-            controller.error(e);
-          }
-        },
-      });
-
-      fetchResponse = new Response(stream, {
-        headers: fetchResponse.headers,
-        status: fetchResponse.status,
-        statusText: fetchResponse.statusText,
-      });
-    }
-
-    let responseData: unknown;
+    const rawResponse = await fetchImpl(fullURL, fetchOptions);
+    const fetchResponse = wrapDownloadProgress(rawResponse, config);
 
     const contentLength = fetchResponse.headers.get('content-length');
     if (
@@ -172,6 +225,7 @@ export default async function fetchAdapter(
       );
     }
 
+    let responseData: unknown;
     try {
       responseData = await readResponseData(fetchResponse, config);
       if (config.schema) {
@@ -192,49 +246,18 @@ export default async function fetchAdapter(
       );
     }
 
-    const responseHeaders = parseHeaders(fetchResponse.headers);
-
     return {
       data: responseData,
       status: fetchResponse.status,
       statusText: fetchResponse.statusText,
-      headers: responseHeaders,
-      config: config,
+      headers: parseHeaders(fetchResponse.headers),
+      config,
       request: fetchResponse,
       duration: Date.now() - requestStartTime,
     };
   } catch (error) {
-    if (error instanceof AccessioError) {
-      throw error;
-    }
-
-    if (isTimedOut) {
-      throw new AccessioError(
-        `timeout of ${config.timeout}ms exceeded`,
-        AccessioError.ETIMEDOUT,
-        config,
-        null,
-        null,
-      );
-    }
-
-    const isAbort =
-      (error instanceof Error && error.name === 'AbortError') || !!config.signal?.aborted;
-    if (isAbort) {
-      throw new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
-    }
-
-    throw AccessioError.from(
-      error instanceof Error ? error : new Error(String(error)),
-      AccessioError.ERR_NETWORK,
-      config,
-      null,
-      null,
-    );
+    throw classifyFetchError(error, config, abort.isTimedOut());
   } finally {
-    if (timeoutId) clearTimeout(timeoutId);
-    if (config.signal && onUserAbort) {
-      config.signal.removeEventListener('abort', onUserAbort);
-    }
+    abort.cleanup();
   }
 }

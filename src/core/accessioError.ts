@@ -17,7 +17,8 @@ function redactHeaders(headers: unknown): unknown {
   return out;
 }
 
-const SENSITIVE_BODY_KEY = /^(password|passwd|pwd|token|access_token|refresh_token|id_token|authorization|api[_-]?key|secret|client[_-]?secret|cookie|set[_-]?cookie|private[_-]?key|session)$/i;
+const SENSITIVE_BODY_KEY =
+  /^(password|passwd|pwd|token|access_token|refresh_token|id_token|authorization|api[_-]?key|secret|client[_-]?secret|cookie|set[_-]?cookie|private[_-]?key|session)$/i;
 
 export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
   if (value === null || typeof value !== 'object') return value;

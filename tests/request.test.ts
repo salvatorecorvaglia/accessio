@@ -529,23 +529,24 @@ describe('dispatchRequest (request.ts)', () => {
     });
 
     it('gives each dedupe consumer an independent config view (H2)', async () => {
-      global.fetch = vi.fn(() =>
-        new Promise((resolve) =>
-          setTimeout(
-            () =>
-              resolve({
-                status: 200,
-                statusText: 'OK',
-                headers: new Headers({ 'content-type': 'application/json' }),
-                text: () => Promise.resolve('{"ok":true}'),
-                json: () => Promise.resolve({ ok: true }),
-                arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
-                blob: () => Promise.resolve(new Blob()),
-                body: null,
-              } as any),
-            5,
+      global.fetch = vi.fn(
+        () =>
+          new Promise((resolve) =>
+            setTimeout(
+              () =>
+                resolve({
+                  status: 200,
+                  statusText: 'OK',
+                  headers: new Headers({ 'content-type': 'application/json' }),
+                  text: () => Promise.resolve('{"ok":true}'),
+                  json: () => Promise.resolve({ ok: true }),
+                  arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+                  blob: () => Promise.resolve(new Blob()),
+                  body: null,
+                } as any),
+              5,
+            ),
           ),
-        ),
       ) as any;
 
       const baseUrl = 'https://api.test.com/shared';

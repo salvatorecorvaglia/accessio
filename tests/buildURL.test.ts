@@ -39,9 +39,7 @@ describe('buildURL', () => {
 
   it('ignores prototype-polluting param keys in path templates (M6)', () => {
     const polluted = JSON.parse('{"__proto__":"evil","id":"42"}');
-    expect(buildURL('/users/{id}/{__proto__}', undefined, polluted)).toBe(
-      '/users/42/{__proto__}',
-    );
+    expect(buildURL('/users/{id}/{__proto__}', undefined, polluted)).toBe('/users/42/{__proto__}');
     expect(buildURL('/users/:constructor', undefined, JSON.parse('{"constructor":"x"}'))).toBe(
       '/users/:constructor',
     );

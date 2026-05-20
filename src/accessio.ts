@@ -15,6 +15,66 @@ import type {
 } from './types';
 import defaultsConfig from './defaults/index';
 
+function runRequestInterceptorsSync(
+  startConfig: AccessioRequestConfig,
+  interceptors: InterceptorHandler[],
+): Promise<AccessioRequestConfig> {
+  let cfg = startConfig;
+  let rejectReason: any = null;
+  let isRejected = false;
+
+  for (const interceptor of interceptors) {
+    if (!isRejected) {
+      try {
+        if (interceptor.fulfilled) {
+          cfg = (interceptor.fulfilled as any)(cfg) as AccessioRequestConfig;
+        }
+      } catch (err) {
+        rejectReason = err;
+        isRejected = true;
+      }
+    } else if (interceptor.rejected) {
+      try {
+        cfg = interceptor.rejected(rejectReason) as AccessioRequestConfig;
+        isRejected = false;
+      } catch (err) {
+        rejectReason = err;
+        isRejected = true;
+      }
+    }
+  }
+
+  return isRejected ? Promise.reject(rejectReason) : Promise.resolve(cfg);
+}
+
+function runRequestInterceptorsAsync(
+  startConfig: AccessioRequestConfig,
+  interceptors: InterceptorHandler[],
+): Promise<AccessioRequestConfig> {
+  let promise: Promise<any> = Promise.resolve(startConfig);
+  for (const interceptor of interceptors) {
+    promise = promise.then(
+      (value: any) => (interceptor.fulfilled ? (interceptor.fulfilled as any)(value) : value),
+      interceptor.rejected ?? undefined,
+    );
+  }
+  return promise as Promise<AccessioRequestConfig>;
+}
+
+function dispatchAndRetry(cfg: AccessioRequestConfig): Promise<AccessioResponse> {
+  const fullUrl = buildURL(cfg.url ?? '', cfg.baseURL, cfg.params, cfg.paramsSerializer);
+  logRequest(cfg, fullUrl);
+
+  const enrichedCfg = fullUrl !== (cfg.url || '') ? { ...cfg, _builtUrl: fullUrl } : cfg;
+
+  const dispatchFn = cfg.rateLimiter
+    ? (config: AccessioRequestConfig) =>
+        rateLimitedRequest(dispatchRequest, config.rateLimiter!, config)
+    : dispatchRequest;
+
+  return retryRequest(dispatchFn, enrichedCfg);
+}
+
 export class Accessio {
   defaults: AccessioRequestConfig;
   interceptors: Interceptors;
@@ -51,86 +111,17 @@ export class Accessio {
       );
     }
 
-    const requestInterceptors: any[] = [];
-    const responseInterceptors: any[] = [];
-    let synchronousRequestInterceptors = true;
+    const { requestInterceptors, responseInterceptors, synchronous } =
+      this.collectInterceptors(mergedConfig);
 
-    this.interceptors.request.forEach((interceptor: InterceptorHandler) => {
-      if (interceptor.runWhen && !interceptor.runWhen(mergedConfig)) {
-        return;
-      }
-      synchronousRequestInterceptors = synchronousRequestInterceptors && interceptor.synchronous;
-      requestInterceptors.unshift(interceptor);
-    });
+    let promise: Promise<any> = synchronous
+      ? runRequestInterceptorsSync(mergedConfig, requestInterceptors)
+      : runRequestInterceptorsAsync(mergedConfig, requestInterceptors);
 
-    this.interceptors.response.forEach((interceptor: InterceptorHandler) => {
-      responseInterceptors.push(interceptor);
-    });
-
-    let promise: Promise<any>;
-
-    if (synchronousRequestInterceptors) {
-      let newConfig = mergedConfig;
-      let rejectReason: any = null;
-      let isRejected = false;
-
-      for (const interceptor of requestInterceptors) {
-        if (!isRejected) {
-          try {
-            if (interceptor.fulfilled) {
-              newConfig = interceptor.fulfilled(newConfig);
-            }
-          } catch (err) {
-            rejectReason = err;
-            isRejected = true;
-          }
-        } else {
-          if (interceptor.rejected) {
-            try {
-              newConfig = interceptor.rejected(rejectReason);
-              isRejected = false;
-            } catch (err) {
-              rejectReason = err;
-              isRejected = true;
-            }
-          }
-        }
-      }
-
-      if (isRejected) {
-        promise = Promise.reject(rejectReason);
-      } else {
-        promise = Promise.resolve(newConfig);
-      }
-    } else {
-      promise = Promise.resolve(mergedConfig);
-      for (const interceptor of requestInterceptors) {
-        promise = promise.then((value: any) => {
-          if (interceptor.fulfilled) {
-            return interceptor.fulfilled(value);
-          }
-          return value;
-        }, interceptor.rejected);
-      }
-    }
-
-    promise = promise.then((cfg: any) => {
-      const fullUrl = buildURL(cfg.url ?? '', cfg.baseURL, cfg.params, cfg.paramsSerializer);
-
-      logRequest(cfg, fullUrl);
-
-      const enrichedCfg = fullUrl !== (cfg.url || '') ? { ...cfg, _builtUrl: fullUrl } : cfg;
-
-      const dispatchFn = cfg.rateLimiter
-        ? (config: AccessioRequestConfig) =>
-            rateLimitedRequest(dispatchRequest, config.rateLimiter!, config)
-        : dispatchRequest;
-
-      return retryRequest(dispatchFn, enrichedCfg);
-    });
+    promise = promise.then((cfg: AccessioRequestConfig) => dispatchAndRetry(cfg));
 
     promise = promise.then(
-      (value: any) => {
+      (value: AccessioResponse) => {
         logResponse(value);
         return value;
       },
@@ -143,13 +134,35 @@ export class Accessio {
     for (const interceptor of responseInterceptors) {
       promise = promise.then((value: any) => {
         if (interceptor.fulfilled) {
-          return interceptor.fulfilled(value);
+          return (interceptor.fulfilled as any)(value);
         }
         return value;
-      }, interceptor.rejected);
+      }, interceptor.rejected ?? undefined);
     }
 
     return promise;
+  }
+
+  private collectInterceptors(mergedConfig: AccessioRequestConfig): {
+    requestInterceptors: InterceptorHandler[];
+    responseInterceptors: InterceptorHandler[];
+    synchronous: boolean;
+  } {
+    const requestInterceptors: InterceptorHandler[] = [];
+    const responseInterceptors: InterceptorHandler[] = [];
+    let synchronous = true;
+
+    this.interceptors.request.forEach((interceptor: InterceptorHandler) => {
+      if (interceptor.runWhen && !interceptor.runWhen(mergedConfig)) return;
+      synchronous = synchronous && interceptor.synchronous;
+      requestInterceptors.unshift(interceptor);
+    });
+
+    this.interceptors.response.forEach((interceptor: InterceptorHandler) => {
+      responseInterceptors.push(interceptor);
+    });
+
+    return { requestInterceptors, responseInterceptors, synchronous };
   }
 
   getUri(config?: AccessioRequestConfig): string {
@@ -197,7 +210,8 @@ export class Accessio {
     return this.request<T>(mergeConfig(config || {}, { method: 'patch', url, data }));
   }
 
-  postForm<T = any>(
+  private formRequest<T = any>(
+    method: 'post' | 'put' | 'patch',
     url: string,
     data?: any,
     config?: AccessioRequestConfig,
@@ -205,12 +219,20 @@ export class Accessio {
     const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
     return this.request<T>(
       mergeConfig(config || {}, {
-        method: 'post',
+        method,
         url,
         data: formData,
         headers: { 'Content-Type': 'multipart/form-data' },
       }),
     );
+  }
+
+  postForm<T = any>(
+    url: string,
+    data?: any,
+    config?: AccessioRequestConfig,
+  ): Promise<AccessioResponse<T>> {
+    return this.formRequest<T>('post', url, data, config);
   }
 
   putForm<T = any>(
@@ -218,15 +240,7 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
-    return this.request<T>(
-      mergeConfig(config || {}, {
-        method: 'put',
-        url,
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }),
-    );
+    return this.formRequest<T>('put', url, data, config);
   }
 
   patchForm<T = any>(
@@ -234,15 +248,7 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
-    return this.request<T>(
-      mergeConfig(config || {}, {
-        method: 'patch',
-        url,
-        data: formData,
-        headers: { 'Content-Type': 'multipart/form-data' },
-      }),
-    );
+    return this.formRequest<T>('patch', url, data, config);
   }
 
   async *stream<T = any>(
