@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-05-21
+
+### Added
+
+- Added request body redaction to filter sensitive credentials and headers in debug logs and error objects.
+- Added request capacity limiting (active request limit and deduplication registry capacity) to prevent resource depletion.
+- Added caching support with TTL, custom providers, and header-aware cache keys.
+- Added request deduplication to prevent redundant concurrent requests.
+- Added lifecycle hooks: `onBeforeRequest`, `onRequestResponse`, and `onRequestError`.
+- Added schema validation support for request/response configurations.
+
+### Fixed
+
+- Fixed prototype pollution risk in configuration merging and parameter serialization by guarding prototypes.
+- Fixed URL fragment preservation during parameter serialization.
+- Fixed handling of response status 0 (e.g. CORS/network errors) in the settle helper.
+
+### Changed
+
+- Refactored `InterceptorManager` to use `Map` for memory-efficient storage and compacted handler execution.
+- Consolidated form request helpers (`postForm`, `putForm`, `patchForm`) directly in the `Accessio` class.
+- Improved TypeScript type definitions and aligned `index.d.ts` with `src/types.ts`.
+
 ## [1.3.0] - 2026-05-19
 
 ### Added
