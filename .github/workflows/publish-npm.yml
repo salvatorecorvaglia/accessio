@@ -43,11 +43,8 @@ jobs:
           ref: ${{ github.event.inputs.publish_tag }}
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24
           cache: 'npm'
-          registry-url: 'https://registry.npmjs.org/'
       - run: npm ci
       - run: npm run build
       - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
