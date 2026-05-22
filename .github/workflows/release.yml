@@ -11,6 +11,7 @@ permissions:
   contents: write
   packages: write
   id-token: write
+  actions: write
 
 jobs:
   ci:
@@ -81,32 +82,30 @@ jobs:
           draft: false
           prerelease: false
 
-  publish-gpr:
-    name: Publish to GitHub Packages
+  publish-npm:
+    name: Publish unscoped to npmjs
     needs: [ci, release]
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
-          registry-url: https://npm.pkg.github.com/
-          scope: '@salvatorecorvaglia'
+          node-version: 24
           cache: 'npm'
       - run: npm ci
       - run: npm run build
-      - name: Add scope for GitHub Packages
-        run: |
-          node -e "
-            const fs = require('fs');
-            const pkg = JSON.parse(fs.readFileSync('package.json', 'utf-8'));
-            pkg.name = '@salvatorecorvaglia/' + pkg.name;
-            fs.writeFileSync('package.json', JSON.stringify(pkg, null, 2));
-          "
-      - run: npm publish --provenance
+      - run: npm publish --access public --provenance
+
+  deploy-pages:
+    name: Deploy Pages
+    needs: publish-npm
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Trigger Pages Deployment on Main
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run deploy-pages.yml --ref main

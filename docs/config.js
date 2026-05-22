@@ -1,4 +1,4 @@
 window.ACCESSIO_CONFIG = {
-  version: '1.4.0',
+  version: '__ACCESSIO_VERSION__',
   repository: 'https://github.com/salvatorecorvaglia/accessio',
 };
