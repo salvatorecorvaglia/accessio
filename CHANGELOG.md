@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-05-22
+
+### Added
+
+- Added abort/signal support in `RateLimiter.acquire(signal)` to eject queued requests immediately and reclaim queue capacity.
+- Supported configuring `maxRetryDelay` in the request retry configuration options.
+
+### Fixed
+
+- Fixed rate-limiting retry mechanism to retry HTTP 429 requests up to 3 times by default, even if the primary `retry` config option is set to 0.
+- Fixed error configuration redaction to mask sensitive query parameters and inline credentials in URLs.
+- Fixed SSE stream reader in Node/native environment to process the remaining buffer correctly upon stream completion, ensure stream cancellation on failure, and handle non-object responses gracefully.
+- Fixed custom `toFormData` helper to avoid throwing `ReferenceError` in environments without global `File` or `Blob` (e.g. Node/SSR).
+- Fixed `flattenHeaders` to skip `null` or `undefined` header values.
+- Propagated standard stream cancellation to internal Reader stream in fetchAdapter.
+- Avoided retrying Node streams containing a `.pipe` method in retry request utility.
+
+### Changed
+
+- Migrated package publishing to npmjs and implemented automated GitHub Pages deployment workflow.
+
 ## [1.4.0] - 2026-05-21
 
 ### Added
