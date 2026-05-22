@@ -76,10 +76,13 @@ export function removeContentType(headers: Record<string, string | string[]>): v
 export function buildFetchHeaders(headers: Record<string, string | string[]>): Headers {
   const fetchHeaders = new Headers();
   for (const [key, value] of Object.entries(headers)) {
+    if (value === undefined || value === null) continue;
     assertSafeHeader(key, value);
     if (Array.isArray(value)) {
       for (const v of value) {
-        fetchHeaders.append(key, v);
+        if (v !== undefined && v !== null) {
+          fetchHeaders.append(key, v);
+        }
       }
     } else {
       fetchHeaders.set(key, value);

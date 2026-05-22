@@ -42,11 +42,42 @@ export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
   return out;
 }
 
+function redactParams(params: unknown): unknown {
+  if (!params || typeof params !== 'object') return params;
+  const out: Record<string, unknown> = {};
+  for (const key of Object.keys(params as Record<string, unknown>)) {
+    const value = (params as Record<string, unknown>)[key];
+    if (SENSITIVE_BODY_KEY.test(key)) {
+      out[key] = '[REDACTED]';
+    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+      out[key] = redactParams(value);
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
+function redactURL(url: string | undefined): string | undefined {
+  if (!url) return url;
+  // Match inline credentials: http://user:pass@host
+  return url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (match, protocol, userInfo) => {
+    const parts = userInfo.split(':');
+    if (parts.length > 1) {
+      return `${protocol}${parts[0]}:[REDACTED]@`;
+    }
+    return `${protocol}[REDACTED]@`;
+  });
+}
+
 export function redactConfig(config: AccessioRequestConfig | null): AccessioRequestConfig | null {
   if (!config) return config;
   const clone = { ...config } as AccessioRequestConfig & { auth?: unknown };
   if ('auth' in clone) delete clone.auth;
   if (clone.headers) clone.headers = redactHeaders(clone.headers) as typeof clone.headers;
+  if (clone.params) clone.params = redactParams(clone.params) as typeof clone.params;
+  if (clone.url) clone.url = redactURL(clone.url);
+  if (clone._builtUrl) clone._builtUrl = redactURL(clone._builtUrl);
   return clone;
 }
 

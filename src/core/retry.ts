@@ -10,6 +10,7 @@ import type {
 function isUnretriableBody(data: unknown): boolean {
   if (data == null) return false;
   if (typeof ReadableStream !== 'undefined' && data instanceof ReadableStream) return true;
+  if (data && typeof (data as any).pipe === 'function') return true;
   return false;
 }
 
@@ -33,10 +34,11 @@ function defaultRetryCondition(error: any): boolean {
   return false;
 }
 
-function calculateDelay(attempt: number, baseDelay: number): number {
+function calculateDelay(attempt: number, baseDelay: number, maxDelay: number = 30000): number {
   const exponentialDelay = baseDelay * Math.pow(2, attempt);
   const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
-  return Math.round(exponentialDelay + jitter);
+  const calculated = Math.round(exponentialDelay + jitter);
+  return Math.min(calculated, maxDelay);
 }
 
 function sleep(ms: number, options?: { signal?: AbortSignal }): Promise<void> {
@@ -89,8 +91,9 @@ async function retryRequest(
     } catch (error) {
       lastError = error;
 
-      const isLastAttempt = attempt >= actualMaxRetries;
-      const shouldRetry = !isLastAttempt && retryCondition(error as AccessioError);
+      const is429 = (error as any).response?.status === 429;
+      const attemptLimit = is429 && config.retryOn429 ? Math.max(maxRetries, 3) : maxRetries;
+      const shouldRetry = attempt < attemptLimit && retryCondition(error as AccessioError);
 
       if (!shouldRetry) {
         throw error;
@@ -107,7 +110,7 @@ async function retryRequest(
         );
       }
 
-      let delay = calculateDelay(attempt, retryDelay);
+      let delay = calculateDelay(attempt, retryDelay, config.maxRetryDelay ?? 30000);
 
       if (config.retryOn429 && (error as any).response?.status === 429) {
         const headers = (error as any).response?.headers;

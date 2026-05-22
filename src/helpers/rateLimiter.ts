@@ -23,9 +23,13 @@ export function createRateLimiter(
   let destroyed = false;
   const queue: QueueItem[] = [];
 
-  function acquire(): Promise<void> {
+  function acquire(signal?: AbortSignal): Promise<void> {
     if (destroyed) {
       return Promise.reject(new Error('[Accessio] Rate limiter has been destroyed'));
+    }
+
+    if (signal?.aborted) {
+      return Promise.reject(signal.reason || new Error('Request aborted'));
     }
 
     if (active < maxConcurrent) {
@@ -40,7 +44,35 @@ export function createRateLimiter(
     }
 
     return new Promise((resolve, reject) => {
-      queue.push({ resolve, reject });
+      let onAbort: (() => void) | undefined;
+
+      const item = {
+        resolve: () => {
+          if (signal && onAbort) {
+            signal.removeEventListener('abort', onAbort);
+          }
+          resolve();
+        },
+        reject: (err: Error) => {
+          if (signal && onAbort) {
+            signal.removeEventListener('abort', onAbort);
+          }
+          reject(err);
+        },
+      };
+
+      queue.push(item);
+
+      if (signal) {
+        onAbort = () => {
+          const index = queue.indexOf(item);
+          if (index !== -1) {
+            queue.splice(index, 1);
+          }
+          reject(signal.reason || new Error('Request aborted'));
+        };
+        signal.addEventListener('abort', onAbort, { once: true });
+      }
     });
   }
 
@@ -85,7 +117,7 @@ export async function rateLimitedRequest<T = unknown>(
   limiter: RateLimiter,
   config: AccessioRequestConfig,
 ): Promise<AccessioResponse<T>> {
-  await limiter.acquire();
+  await limiter.acquire(config.signal);
   try {
     return await dispatchFn(config);
   } finally {

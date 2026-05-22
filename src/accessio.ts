@@ -261,19 +261,13 @@ export class Accessio {
     if (!response.data) return;
 
     const reader = response.data.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
+    try {
+      const decoder = new TextDecoder();
+      let buffer = '';
 
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop() || '';
-
-      for (const line of lines) {
-        if (line.trim().startsWith('data:')) {
+      const processLine = function* (line: string) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith('data:')) {
           const dataStr = line.replace(/^data:\s*/, '');
           if (dataStr === '[DONE]') return;
           try {
@@ -281,14 +275,39 @@ export class Accessio {
           } catch (e) {
             yield dataStr as any;
           }
-        } else if (line.trim().startsWith('{') || line.trim().startsWith('[')) {
+        } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
           try {
             yield JSON.parse(line);
           } catch (e) {
             // ignore partial json
           }
         }
+      };
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          yield* processLine(line);
+        }
       }
+
+      buffer += decoder.decode(new Uint8Array(), { stream: false });
+      if (buffer.trim()) {
+        yield* processLine(buffer);
+      }
+    } finally {
+      try {
+        await reader.cancel();
+      } catch {
+        // ignore errors on cancel
+      }
+      reader.releaseLock();
     }
   }
 
@@ -302,14 +321,24 @@ export class Accessio {
     while (nextUrl) {
       const response: AccessioResponse<any> = await this.get(nextUrl, currentConfig);
 
-      const items = Array.isArray(response.data) ? response.data : response.data.data;
+      const data = response.data;
+      const items = Array.isArray(data)
+        ? data
+        : data && typeof data === 'object'
+          ? (data as any).data
+          : null;
+
       if (Array.isArray(items)) {
         for (const item of items) {
           yield item;
         }
       }
 
-      nextUrl = response.data.next || response.data.links?.next || null;
+      nextUrl =
+        data && typeof data === 'object'
+          ? (data as any).next || (data as any).links?.next || null
+          : null;
+
       if (nextUrl) {
         currentConfig = mergeConfig(currentConfig, { url: nextUrl, params: {} });
       }

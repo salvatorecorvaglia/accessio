@@ -8,7 +8,11 @@ export function toFormData(obj: any, form?: FormData, namespace?: string): FormD
 
   if (obj instanceof Date) {
     fd.append(namespace || '', obj.toISOString());
-  } else if (typeof obj === 'object' && !(obj instanceof File) && !(obj instanceof Blob)) {
+  } else if (
+    typeof obj === 'object' &&
+    !(typeof File !== 'undefined' && obj instanceof File) &&
+    !(typeof Blob !== 'undefined' && obj instanceof Blob)
+  ) {
     Object.keys(obj).forEach((key) => {
       if (Array.isArray(obj)) {
         formKey = namespace ? `${namespace}[${key}]` : key;

@@ -96,6 +96,7 @@ export interface AccessioRequestConfig {
   schema?: SchemaValidator;
   fetch?: typeof fetch;
   retryOn429?: boolean;
+  maxRetryDelay?: number;
 }
 
 export interface AccessioResponse<T = unknown> {
@@ -120,7 +121,7 @@ export interface AccessioError extends Error {
 }
 
 export interface RateLimiter {
-  acquire: () => Promise<void>;
+  acquire: (signal?: AbortSignal) => Promise<void>;
   release: () => void;
   destroy: () => void;
   pending: number;

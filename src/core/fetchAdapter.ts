@@ -154,6 +154,9 @@ function wrapDownloadProgress(fetchResponse: Response, config: AccessioRequestCo
         controller.error(e);
       }
     },
+    cancel(reason) {
+      reader.cancel(reason).catch(() => {});
+    },
   });
 
   return new Response(stream, {
