@@ -95,12 +95,19 @@ console.log(`User created in ${response.duration}ms`);
   method: 'get',                     // HTTP method (default: get)
   headers: { 'X-Custom': 'val' },    // Custom headers
   params: { id: 123 },               // URL query parameters
+  paramsSerializer: (params) => {},  // Custom query parameter serializer
   data: { name: 'John' },            // Request body (JSON/FormData/etc)
   timeout: 5000,                     // Timeout in ms (default: 0)
   responseType: 'json',              // Expected response: 'json', 'text', 'blob', 'stream'
   auth: { username: '', password: '' }, // Basic auth credentials
   retry: 3,                          // Max retry attempts
   retryDelay: 1000,                  // Base delay for exponential backoff
+  maxRetryDelay: 30000,              // Max delay between retries in ms (default: 30000)
+  retryOn429: true,                  // Automatically retry on rate limits
+  allowedProtocols: ['http:', 'https:'], // Allowed URL protocols (default: ['http:', 'https:'], set to null to disable checks)
+  maxContentLength: 10 * 1024 * 1024, // Max allowed content length in bytes
+  transformRequest: [(data, headers) => data],  // Transform request data/headers before sending
+  transformResponse: [(data, headers) => data], // Transform response data/headers before resolving
   debug: true,                       // Enable structured logging
   rateLimiter: limiter,              // Concurrency limiter instance
   validateStatus: (s) => s < 400,    // Resolve/reject predicate
@@ -110,7 +117,7 @@ console.log(`User created in ${response.duration}ms`);
   cacheTTL: 60000,                   // Cache time-to-live in ms
   schema: z.object({...}),           // Schema validator (e.g., Zod)
   fetch: customFetch,                // Custom fetch implementation
-  retryOn429: true,                  // Automatically retry on rate limits
+  onDownloadProgress: ({ loaded, total }) => {}, // Track download progress (supported on length-based stream responses)
   hooks: {                           // Lifecycle hooks
     onBeforeRequest: (config) => {},
     onRequestResponse: (response) => {},
@@ -160,32 +167,39 @@ accessio.interceptors.response.use(
 
 ### Automatic Retries
 
-`Accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically.
+`Accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically. You can configure the number of retries, base delay, and cap the max delay with `maxRetryDelay`.
 
 ```typescript
 const response = await accessio.get('/flaky-endpoint', {
   retry: 5,
-  retryDelay: 1000, // Delays: 1s, 2s, 4s, 8s, 16s (+/- random jitter)
+  retryDelay: 1000, // Base delay: 1000ms
+  maxRetryDelay: 10000, // Cap delay between attempts at 10 seconds (default: 30000ms)
+  retryOn429: true, // Automatically retry on 429 status code using Retry-After header or backoff
   onRetry: (attempt, error) => console.log(`Retry #${attempt}...`),
 });
 ```
 
 ### Rate Limiting
 
-Limit concurrent requests globally or per-instance to prevent overloading APIs.
+Limit concurrent requests globally or per-instance to prevent overloading APIs. You can configure the maximum number of concurrent requests and the maximum queue capacity. Aborting a rate-limited request will immediately eject it from the queue and reclaim capacity.
 
 ```typescript
 import { createRateLimiter } from 'accessio';
 
-const limiter = createRateLimiter(5); // Max 5 concurrent requests
+// Max 5 concurrent requests, and max queue size of 50
+const limiter = createRateLimiter(5, 50);
 const api = accessio.create({ rateLimiter: limiter });
 
-// Requests will wait in queue if limit is reached
-const results = await Promise.all([
-  api.get('/req-1'),
-  api.get('/req-2'),
-  // ...
-]);
+const controller = new AbortController();
+
+// If the queue is full (exceeds 50), new requests reject immediately.
+// You can pass an AbortSignal to eject pending requests:
+api
+  .get('/heavy-endpoint', { signal: controller.signal })
+  .catch((err) => console.log('Aborted request ejected from queue.'));
+
+// Cancel/eject the queued request immediately
+controller.abort();
 ```
 
 ### Debug Mode
@@ -202,13 +216,26 @@ Get beautiful, structured logs in your console by enabling `debug: true`.
 
 ### Caching & Deduplication
 
-Prevent duplicate requests and cache responses to improve performance.
+Prevent duplicate requests and cache responses to improve performance. Caching can be enabled with a simple boolean or customized using a custom `CacheProvider` implementation.
 
 ```typescript
+import { type CacheProvider } from 'accessio';
+
+// Custom cache provider (e.g. LocalStorage, Redis, custom store)
+const myCacheProvider: CacheProvider = {
+  get: (key) => {
+    const val = localStorage.getItem(key);
+    return val ? JSON.parse(val) : null;
+  },
+  set: (key, val, ttl) => localStorage.setItem(key, JSON.stringify(val)),
+  delete: (key) => localStorage.removeItem(key),
+  clear: () => localStorage.clear(),
+};
+
 const api = accessio.create({
-  dedupe: true, // Prevents identical requests while one is pending
-  cache: true, // Caches responses in memory
-  cacheTTL: 5 * 60 * 1000, // Cache for 5 minutes
+  dedupe: true, // Prevents duplicate concurrent in-flight requests
+  cache: myCacheProvider, // Custom cache provider (or true for default in-memory cache)
+  cacheTTL: 5 * 60 * 1000, // Cache TTL in ms (5 minutes)
 });
 ```
 

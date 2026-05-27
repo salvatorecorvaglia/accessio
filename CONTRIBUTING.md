@@ -60,10 +60,6 @@ npm install
 - `npm run test:browser`: Run tests in browser environment.
 - `npm run typecheck`: Run TypeScript type checking.
 
-## 📜 Code of Conduct
-
-By participating in this project, you agree to abide by the terms of our [Code of Conduct](CODE_OF_CONDUCT.md) (if applicable) and maintain a respectful environment for everyone.
-
 ## 💎 Design Principles
 
 - **Zero Dependencies**: Keep the core lightweight.
