@@ -71,6 +71,10 @@ By participating in this project, you agree to abide by the terms of our [Code o
 - **Developer Experience**: Focus on a clean, intuitive API.
 - **Modularity**: Advanced features (like caching, schema validation, SSE) should integrate seamlessly without breaking the lightweight core.
 
+## 📜 Code of Conduct
+
+Please maintain a respectful and professional tone in all communications.
+
 ---
 
-Happy coding! 🐦‍⬛
+Happy coding! 🌑
