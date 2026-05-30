@@ -5,14 +5,16 @@ export default function parseHeaders(headers: any): Record<string, string | stri
 
   const addHeader = (key: string, value: string) => {
     const k = key.toLowerCase();
-    if (parsed[k]) {
-      if (Array.isArray(parsed[k])) {
-        (parsed[k] as string[]).push(value);
+    if (k === '__proto__' || k === 'constructor' || k === 'prototype') return;
+    const existing = Reflect.get(parsed, k);
+    if (existing) {
+      if (Array.isArray(existing)) {
+        (existing as string[]).push(value);
       } else {
-        parsed[k] = [parsed[k] as string, value];
+        Reflect.set(parsed, k, [existing as string, value]);
       }
     } else {
-      parsed[k] = value;
+      Reflect.set(parsed, k, value);
     }
   };
 
@@ -37,7 +39,8 @@ export default function parseHeaders(headers: any): Record<string, string | stri
 
   if (typeof headers === 'object') {
     Object.keys(headers).forEach((key) => {
-      addHeader(key, headers[key]);
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') return;
+      addHeader(key, Reflect.get(headers, key));
     });
     return parsed;
   }

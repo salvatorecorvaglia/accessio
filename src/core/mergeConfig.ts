@@ -9,7 +9,7 @@ function deepMerge(...sources: any[]): Record<string, any> {
     for (const key of Object.keys(source)) {
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
 
-      const value = source[key];
+      const value = Reflect.get(source, key);
 
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         if (
@@ -21,14 +21,18 @@ function deepMerge(...sources: any[]): Record<string, any> {
           (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) ||
           (typeof Blob !== 'undefined' && value instanceof Blob)
         ) {
-          result[key] = value;
-        } else if (result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])) {
-          result[key] = deepMerge(result[key], value);
+          Reflect.set(result, key, value);
+        } else if (
+          Reflect.get(result, key) &&
+          typeof Reflect.get(result, key) === 'object' &&
+          !Array.isArray(Reflect.get(result, key))
+        ) {
+          Reflect.set(result, key, deepMerge(Reflect.get(result, key), value));
         } else {
-          result[key] = deepMerge(value);
+          Reflect.set(result, key, deepMerge(value));
         }
       } else if (value !== undefined) {
-        result[key] = value;
+        Reflect.set(result, key, value);
       }
     }
   }
@@ -48,17 +52,18 @@ export default function mergeConfig(
   const allKeys = new Set<string>([...Object.keys(config1), ...Object.keys(config2)]);
 
   for (const key of allKeys) {
-    const val1 = config1[key as keyof AccessioRequestConfig];
-    const val2 = config2[key as keyof AccessioRequestConfig];
+    if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
+    const val1 = Reflect.get(config1, key);
+    const val2 = Reflect.get(config2, key);
 
     if (requestOnlyKeys.has(key)) {
       if (val2 !== undefined) {
-        merged[key] = val2;
+        Reflect.set(merged, key, val2);
       }
     } else if (deepMergeKeys.has(key)) {
-      merged[key] = deepMerge(val1 || {}, val2 || {});
+      Reflect.set(merged, key, deepMerge(val1 || {}, val2 || {}));
     } else {
-      merged[key] = val2 !== undefined ? val2 : val1;
+      Reflect.set(merged, key, val2 !== undefined ? val2 : val1);
     }
   }
 

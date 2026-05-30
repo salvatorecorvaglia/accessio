@@ -3,17 +3,6 @@
 
 // --- Icon: tiny line-icon library (Lucide-style, inlined) ---
 function Icon({ name, size = 18, stroke = 1.5, style }) {
-  const common = {
-    width: size,
-    height: size,
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: stroke,
-    strokeLinecap: 'round',
-    strokeLinejoin: 'round',
-    style,
-  };
   const paths = {
     arrow: (
       <>
@@ -98,7 +87,22 @@ function Icon({ name, size = 18, stroke = 1.5, style }) {
       </>
     ),
   };
-  return <svg {...common}>{paths[name] || null}</svg>;
+  const hasPath = Object.prototype.hasOwnProperty.call(paths, name);
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={stroke}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      style={style}
+    >
+      {hasPath ? paths[name] : null}
+    </svg>
+  );
 }
 
 // --- Button ---
@@ -110,7 +114,8 @@ function Button({
   onClick,
   icon,
   trailingArrow,
-  ...props
+  target,
+  rel,
 }) {
   const base = {
     display: 'inline-flex',
@@ -141,9 +146,10 @@ function Button({
     <Tag
       href={href}
       onClick={onClick}
-      style={{ ...base, ...variants[variant] }}
+      style={{ ...base, ...Reflect.get(variants, variant) }}
       className={`btn btn-${variant}`}
-      {...props}
+      target={target}
+      rel={rel}
     >
       {icon ? <Icon name={icon} size={16} /> : null}
       {children}
@@ -180,6 +186,7 @@ function Pill({ tone = 'neutral', children, dot }) {
       border: '1px solid rgba(58,168,207,0.3)',
     },
   };
+
   return (
     <span
       style={{
@@ -190,7 +197,7 @@ function Pill({ tone = 'neutral', children, dot }) {
         borderRadius: 999,
         fontFamily: 'var(--font-mono)',
         fontSize: 11,
-        ...tones[tone],
+        ...Reflect.get(tones, tone),
       }}
     >
       {dot ? (

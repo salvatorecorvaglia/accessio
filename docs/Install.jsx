@@ -76,7 +76,7 @@ console.log(\`Created user in \${res.duration}ms\`);`;
               </button>
             ))}
           </div>
-          <CodeBlock language={tab}>{`$ ${cmds[tab]}`}</CodeBlock>
+          <CodeBlock language={tab}>{`$ ${Reflect.get(cmds, tab)}`}</CodeBlock>
         </div>
         <div>
           <div className="t-eyebrow" style={{ marginBottom: 14 }}></div>

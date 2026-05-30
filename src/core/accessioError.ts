@@ -5,13 +5,14 @@ function redactHeaders(headers: unknown): unknown {
   if (!headers || typeof headers !== 'object') return headers;
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(headers as Record<string, unknown>)) {
-    const value = (headers as Record<string, unknown>)[key];
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+    const value = Reflect.get(headers as Record<string, unknown>, key);
     if (/^authorization$/i.test(key) || /^cookie$/i.test(key) || /^set-cookie$/i.test(key)) {
-      out[key] = '[REDACTED]';
+      Reflect.set(out, key, '[REDACTED]');
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactHeaders(value);
+      Reflect.set(out, key, redactHeaders(value));
     } else {
-      out[key] = value;
+      Reflect.set(out, key, value);
     }
   }
   return out;
@@ -32,11 +33,12 @@ export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
 
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(value as Record<string, unknown>)) {
-    const v = (value as Record<string, unknown>)[key];
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+    const v = Reflect.get(value as Record<string, unknown>, key);
     if (SENSITIVE_BODY_KEY.test(key)) {
-      out[key] = '[REDACTED]';
+      Reflect.set(out, key, '[REDACTED]');
     } else {
-      out[key] = redactBody(v, visited);
+      Reflect.set(out, key, redactBody(v, visited));
     }
   }
   return out;
@@ -46,13 +48,14 @@ function redactParams(params: unknown): unknown {
   if (!params || typeof params !== 'object') return params;
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(params as Record<string, unknown>)) {
-    const value = (params as Record<string, unknown>)[key];
+    if (key === '__proto__' || key === 'constructor' || key === 'prototype') continue;
+    const value = Reflect.get(params as Record<string, unknown>, key);
     if (SENSITIVE_BODY_KEY.test(key)) {
-      out[key] = '[REDACTED]';
+      Reflect.set(out, key, '[REDACTED]');
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactParams(value);
+      Reflect.set(out, key, redactParams(value));
     } else {
-      out[key] = value;
+      Reflect.set(out, key, value);
     }
   }
   return out;

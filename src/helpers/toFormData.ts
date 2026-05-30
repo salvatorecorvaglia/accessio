@@ -14,12 +14,13 @@ export function toFormData(obj: any, form?: FormData, namespace?: string): FormD
     !(typeof Blob !== 'undefined' && obj instanceof Blob)
   ) {
     Object.keys(obj).forEach((key) => {
+      if (key === '__proto__' || key === 'prototype' || key === 'constructor') return;
       if (Array.isArray(obj)) {
         formKey = namespace ? `${namespace}[${key}]` : key;
       } else {
         formKey = namespace ? `${namespace}.${key}` : key;
       }
-      toFormData(obj[key], fd, formKey);
+      toFormData(Reflect.get(obj, key), fd, formKey);
     });
   } else {
     fd.append(namespace || '', obj);

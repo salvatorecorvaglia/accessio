@@ -59,7 +59,7 @@ export function flattenHeaders(
 
   for (const key in headers) {
     if (Object.prototype.hasOwnProperty.call(headers, key) && !METHOD_KEYS.has(key)) {
-      merged[key] = headers[key] as unknown as string | string[];
+      Reflect.set(merged, key, Reflect.get(headers, key) as unknown as string | string[]);
     }
   }
 
@@ -69,7 +69,7 @@ export function flattenHeaders(
 export function removeContentType(headers: Record<string, string | string[]>): void {
   const keys = Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type');
   for (const key of keys) {
-    delete headers[key];
+    Reflect.deleteProperty(headers, key);
   }
 }
 
