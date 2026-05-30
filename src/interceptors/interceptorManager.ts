@@ -49,9 +49,9 @@ export class InterceptorManager {
    */
   get handlers(): Array<InterceptorHandler | null> {
     const max = this._nextId;
-    const out: Array<InterceptorHandler | null> = [];
+    const out: Array<InterceptorHandler | null> = new Array(max);
     for (let i = 0; i < max; i++) {
-      out.push(this._handlers.get(i) ?? null);
+      out[i] = this._handlers.get(i) ?? null;
     }
     return out;
   }

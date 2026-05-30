@@ -38,10 +38,9 @@ function createInstance(defaultConfig: AccessioRequestConfig) {
   };
 
   for (const key of PUBLIC_METHODS) {
-    if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
-    const method: any = Reflect.get(context, key);
+    const method: any = (context as any)[key];
     if (typeof method === 'function') {
-      Reflect.set(instance, key, method.bind(context));
+      instance[key] = method.bind(context);
     }
   }
 

@@ -31,7 +31,7 @@ function serializeParams(
       });
     } else if (typeof value === 'object' && !(value instanceof Date)) {
       Object.keys(value as Record<string, unknown>).forEach((key) => {
-        encode(`${prefix}[${key}]`, Reflect.get(value as Record<string, unknown>, key));
+        encode(`${prefix}[${key}]`, (value as Record<string, unknown>)[key]);
       });
     } else {
       const encodedValue = value instanceof Date ? value.toISOString() : value;
@@ -40,7 +40,7 @@ function serializeParams(
   }
 
   Object.keys(params).forEach((key) => {
-    encode(key, Reflect.get(params, key));
+    encode(key, params[key]);
   });
 
   return parts.join('&');
@@ -80,7 +80,7 @@ export default function buildURL(
     const unusedParams: Record<string, unknown> = {};
     for (const key of Object.keys(params)) {
       if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
-      Reflect.set(unusedParams, key, Reflect.get(params as Record<string, unknown>, key));
+      unusedParams[key] = (params as Record<string, unknown>)[key];
     }
     fullURL = fullURL.replace(/(?::([a-zA-Z0-9_]+))|(?:{([a-zA-Z0-9_]+)})/g, (match, p1, p2) => {
       const key = p1 || p2;

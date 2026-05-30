@@ -16,7 +16,7 @@ function lookupHeader(headers: FlatHeaders, name: string): string {
   const target = name.toLowerCase();
   for (const k of Object.keys(headers)) {
     if (k.toLowerCase() === target) {
-      const v = Reflect.get(headers, k);
+      const v = headers[k];
       return Array.isArray(v) ? v.join(',') : (v ?? '');
     }
   }
