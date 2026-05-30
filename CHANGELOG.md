@@ -46,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Refactored `InterceptorManager` to use `Map` for memory-efficient storage and compacted handler execution.
-- Consolidated form request helpers (`postForm`, `putForm`, `patchForm`) directly in the `Accessio` class.
+- Consolidated form request helpers (`postForm`, `putForm`, `patchForm`) directly in the Accessio class.
 - Improved TypeScript type definitions and aligned `index.d.ts` with `src/types.ts`.
 
 ## [1.3.0] - 2026-05-19
