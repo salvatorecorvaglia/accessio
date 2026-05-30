@@ -1,4 +1,4 @@
-# Accessio
+# Accessio 🎯
 
 **Fast, flexible HTTP client — simple, modular, and dependency-free.**
 
@@ -153,7 +153,7 @@ accessio.interceptors.response.use(
 
 ### Error Handling
 
-`Accessio` provides a structured error object with specific codes to help you handle failures gracefully.
+Accessio provides a structured error object with specific codes to help you handle failures gracefully.
 
 | Code               | Description                   |
 | :----------------- | :---------------------------- |
@@ -167,7 +167,7 @@ accessio.interceptors.response.use(
 
 ### Automatic Retries
 
-`Accessio` includes a powerful retry mechanism that handles network errors and 5xx responses automatically. You can configure the number of retries, base delay, and cap the max delay with `maxRetryDelay`.
+Accessio includes a powerful retry mechanism that handles network errors and 5xx responses automatically. You can configure the number of retries, base delay, and cap the max delay with `maxRetryDelay`.
 
 ```typescript
 const response = await accessio.get('/flaky-endpoint', {
