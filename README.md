@@ -2,7 +2,7 @@
 
 **Fast, flexible HTTP client — simple, modular, and dependency-free.**
 
-`Accessio` is a lightweight, modern HTTP client built on top of the native `fetch` API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining **zero external dependencies**.
+Accessio is a lightweight, modern HTTP client built on top of the native fetch API. It provides a familiar, Promise-based interface with advanced features like interceptors, automatic retries, rate limiting, and structured debug logging, all while maintaining zero external dependencies.
 
 ---
 
