@@ -1,6 +1,6 @@
 # Contributing to Accessio 🎯
 
-First off, thank you for considering contributing to `Accessio`! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
+First off, thank you for considering contributing to Accessio! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
 
 ## 🌈 How Can I Contribute?
 
@@ -17,7 +17,7 @@ When filing an issue, please include:
 
 ### Suggesting Enhancements 💡
 
-We are always looking for ways to improve `Accessio`. If you have an idea for a new feature or an improvement to an existing one:
+We are always looking for ways to improve Accessio. If you have an idea for a new feature or an improvement to an existing one:
 
 - Check if it's already been suggested in the [issues](https://github.com/salvatorecorvaglia/accessio/issues).
 - Open a new issue with the "enhancement" label.
