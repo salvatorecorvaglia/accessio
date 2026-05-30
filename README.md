@@ -1,4 +1,4 @@
-# Accessio 🎯
+# Accessio
 
 **Fast, flexible HTTP client — simple, modular, and dependency-free.**
 
