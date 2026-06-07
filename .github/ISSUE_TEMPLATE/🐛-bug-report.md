@@ -27,4 +27,4 @@ If applicable, add screenshots or paste console logs to help explain your proble
 
 ### Environment
 
-- **Accessio Version:** (e.g. 0.3.1)
+- **Version:**
