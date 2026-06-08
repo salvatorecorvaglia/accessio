@@ -101,7 +101,7 @@ describe('defaultTransformRequest', () => {
   });
 
   it('does not overwrite existing Content-Type header', () => {
-    const headers = { 'content-type': 'application/x-www-form-urlencoded' };
+    const headers: Record<string, string | string[]> = { 'content-type': 'application/x-www-form-urlencoded' };
     const obj = { x: 1 };
     const result = defaultTransformRequest(obj, headers);
     expect(result).toBe('{"x":1}');
