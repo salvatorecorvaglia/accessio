@@ -91,6 +91,11 @@ export interface AccessioRequestConfig {
   dedupe?: boolean;
   cache?: boolean | CacheProvider;
   cacheTTL?: number;
+  cacheKeySerializer?: (
+    config: AccessioRequestConfig,
+    fullURL: string,
+    headers: Record<string, string | string[]>,
+  ) => string;
   onDownloadProgress?: (progressEvent: { loaded: number; total: number }) => void;
   hooks?: AccessioHooks;
   schema?: SchemaValidator;

@@ -2,6 +2,11 @@ import type { CacheProvider } from '../types';
 
 class MemoryCache implements CacheProvider {
   private cache = new Map<string, { value: any; expiry: number | null }>();
+  private maxItems: number;
+
+  constructor(maxItems: number = 1000) {
+    this.maxItems = maxItems;
+  }
 
   get(key: string) {
     const item = this.cache.get(key);
@@ -14,7 +19,24 @@ class MemoryCache implements CacheProvider {
   }
 
   set(key: string, value: any, ttl?: number) {
-    const expiry = ttl ? Date.now() + ttl : null;
+    const now = Date.now();
+
+    // Proactively evict all expired items first
+    for (const [k, item] of this.cache.entries()) {
+      if (item.expiry && now > item.expiry) {
+        this.cache.delete(k);
+      }
+    }
+
+    // Evict oldest item if we are still at limit
+    if (this.cache.size >= this.maxItems) {
+      const oldest = this.cache.keys().next().value;
+      if (oldest !== undefined) {
+        this.cache.delete(oldest);
+      }
+    }
+
+    const expiry = ttl ? now + ttl : null;
     this.cache.set(key, { value, expiry });
   }
 
@@ -28,3 +50,4 @@ class MemoryCache implements CacheProvider {
 }
 
 export const defaultMemoryCache = new MemoryCache();
+export { MemoryCache };

@@ -117,8 +117,8 @@ export class AccessioError extends Error {
     this.response = response ?? null;
     this.isAccessioError = true;
 
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, AccessioError);
+    if ((Error as any).captureStackTrace) {
+      (Error as any).captureStackTrace(this, AccessioError);
     }
   }
 

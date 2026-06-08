@@ -37,7 +37,7 @@ function deepMerge(...sources: any[]): Record<string, any> {
 }
 
 const requestOnlyKeys = new Set<string>(['url', 'data', 'signal']);
-const deepMergeKeys = new Set<string>(['headers']);
+const deepMergeKeys = new Set<string>(['headers', 'params', 'hooks']);
 
 export default function mergeConfig(
   config1: AccessioRequestConfig = {},

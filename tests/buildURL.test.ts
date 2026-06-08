@@ -37,6 +37,11 @@ describe('buildURL', () => {
     );
   });
 
+  it('does not corrupt port numbers in absolute URLs', () => {
+    const result = buildURL('http://localhost:3000/users', undefined, { '3000': 'val' });
+    expect(result).toBe('http://localhost:3000/users?3000=val');
+  });
+
   it('ignores prototype-polluting param keys in path templates (M6)', () => {
     const polluted = JSON.parse('{"__proto__":"evil","id":"42"}');
     expect(buildURL('/users/{id}/{__proto__}', undefined, polluted)).toBe('/users/42/{__proto__}');

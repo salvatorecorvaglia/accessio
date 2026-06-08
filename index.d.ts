@@ -150,6 +150,13 @@ export interface AccessioRequestConfig {
   /** TTL in ms for cached responses (when supported by the provider) */
   cacheTTL?: number;
 
+  /** Custom function to serialize request properties into a deterministic cache key */
+  cacheKeySerializer?: (
+    config: AccessioRequestConfig,
+    fullURL: string,
+    headers: Record<string, HeaderValue>,
+  ) => string;
+
   // ── Response handling ──────────────────────────────
 
   /** Maximum allowed response Content-Length in bytes */

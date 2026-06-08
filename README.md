@@ -115,6 +115,7 @@ console.log(`User created in ${response.duration}ms`);
   dedupe: true,                      // Prevent duplicate in-flight requests
   cache: true,                       // Cache responses (boolean or CacheProvider)
   cacheTTL: 60000,                   // Cache time-to-live in ms
+  cacheKeySerializer: (config, url, headers) => 'custom-key', // Custom cache key generator
   schema: z.object({...}),           // Schema validator (e.g., Zod)
   fetch: customFetch,                // Custom fetch implementation
   onDownloadProgress: ({ loaded, total }) => {}, // Track download progress (supported on length-based stream responses)
@@ -236,8 +237,14 @@ const api = accessio.create({
   dedupe: true, // Prevents duplicate concurrent in-flight requests
   cache: myCacheProvider, // Custom cache provider (or true for default in-memory cache)
   cacheTTL: 5 * 60 * 1000, // Cache TTL in ms (5 minutes)
+  // Customize the cache key generation:
+  cacheKeySerializer: (config, fullURL, headers) => {
+    return `${config.method}:${fullURL}:${headers['x-tenant-id'] || 'default'}`;
+  },
 });
 ```
+
+By default, Accessio automatically generates deterministic cache keys by sorting and serializing request headers (excluding environment-specific transient headers like `User-Agent`) to prevent collisions (e.g. between different tenants). Additionally, the default in-memory cache includes automatic stale checks and eviction controls (capping cache size at 1000 items) to prevent unbound memory growth.
 
 ### Schema Validation
 

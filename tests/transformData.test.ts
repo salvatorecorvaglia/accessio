@@ -59,3 +59,74 @@ describe('transformData', () => {
     });
   });
 });
+
+import { defaultTransformRequest, defaultTransformResponse } from '../src/defaults/transforms';
+
+describe('defaultTransformRequest', () => {
+  it('returns null or undefined as is', () => {
+    expect(defaultTransformRequest(null, {})).toBeNull();
+    expect(defaultTransformRequest(undefined, {})).toBeUndefined();
+  });
+
+  it('returns string, ArrayBuffer, Blob, FormData, URLSearchParams, ReadableStream as is', () => {
+    const stringData = 'hello';
+    const buf = new ArrayBuffer(8);
+    expect(defaultTransformRequest(stringData, {})).toBe(stringData);
+    expect(defaultTransformRequest(buf, {})).toBe(buf);
+
+    if (typeof Blob !== 'undefined') {
+      const blob = new Blob();
+      expect(defaultTransformRequest(blob, {})).toBe(blob);
+    }
+    if (typeof FormData !== 'undefined') {
+      const fd = new FormData();
+      expect(defaultTransformRequest(fd, {})).toBe(fd);
+    }
+    if (typeof URLSearchParams !== 'undefined') {
+      const usp = new URLSearchParams();
+      expect(defaultTransformRequest(usp, {})).toBe(usp);
+    }
+    if (typeof ReadableStream !== 'undefined') {
+      const rs = new ReadableStream();
+      expect(defaultTransformRequest(rs, {})).toBe(rs);
+    }
+  });
+
+  it('serializes objects to JSON and defaults Content-Type header', () => {
+    const headers: Record<string, string> = {};
+    const obj = { x: 1 };
+    const result = defaultTransformRequest(obj, headers);
+    expect(result).toBe('{"x":1}');
+    expect(headers['Content-Type']).toBe('application/json');
+  });
+
+  it('does not overwrite existing Content-Type header', () => {
+    const headers = { 'content-type': 'application/x-www-form-urlencoded' };
+    const obj = { x: 1 };
+    const result = defaultTransformRequest(obj, headers);
+    expect(result).toBe('{"x":1}');
+    expect(headers['content-type']).toBe('application/x-www-form-urlencoded');
+    expect(headers['Content-Type']).toBeUndefined();
+  });
+
+  it('throws on circular references', () => {
+    const obj: any = {};
+    obj.self = obj;
+    expect(() => defaultTransformRequest(obj, {})).toThrow('Cannot stringify circular structure');
+  });
+});
+
+describe('defaultTransformResponse', () => {
+  it('parses valid JSON string', () => {
+    expect(defaultTransformResponse('{"ok":true}')).toEqual({ ok: true });
+  });
+
+  it('returns invalid JSON string as is', () => {
+    expect(defaultTransformResponse('not json')).toBe('not json');
+  });
+
+  it('returns non-string values as is', () => {
+    const obj = { ok: true };
+    expect(defaultTransformResponse(obj)).toBe(obj);
+  });
+});

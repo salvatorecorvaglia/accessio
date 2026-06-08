@@ -12,28 +12,35 @@ import type { AccessioRequestConfig, AccessioResponse, TransformFunction } from 
 type HeadersConfig = Record<string, Record<string, string | string[]>>;
 type FlatHeaders = Record<string, string | string[]>;
 
-function lookupHeader(headers: FlatHeaders, name: string): string {
-  const target = name.toLowerCase();
-  for (const k of Object.keys(headers)) {
-    if (k.toLowerCase() === target) {
-      const v = headers[k];
-      return Array.isArray(v) ? v.join(',') : (v ?? '');
-    }
-  }
-  return '';
-}
-
 function buildCacheKey(
   config: AccessioRequestConfig,
   fullURL: string,
   flatHeaders: FlatHeaders,
 ): string {
+  if (typeof config.cacheKeySerializer === 'function') {
+    return config.cacheKeySerializer(config, fullURL, flatHeaders);
+  }
   const method = (config.method || 'GET').toUpperCase();
-  const auth = lookupHeader(flatHeaders, 'authorization');
-  const accept = lookupHeader(flatHeaders, 'accept');
   const withCreds = config.withCredentials ? '1' : '0';
   const respType = config.responseType || 'json';
-  return `${method}:${fullURL}|a=${auth}|x=${accept}|c=${withCreds}|t=${respType}`;
+
+  // Sort and serialize headers dynamically to prevent collisions,
+  // excluding environment-specific transient headers.
+  const serializedHeaders = Object.keys(flatHeaders)
+    .sort()
+    .filter(
+      (k) =>
+        !['user-agent', 'connection', 'host', 'content-length', 'accept-encoding'].includes(
+          k.toLowerCase(),
+        ),
+    )
+    .map((k) => {
+      const val = flatHeaders[k];
+      return `${k.toLowerCase()}=${Array.isArray(val) ? val.join(',') : val}`;
+    })
+    .join('&');
+
+  return `${method}:${fullURL}|h:${serializedHeaders}|c=${withCreds}|t=${respType}`;
 }
 
 function buildTransformArray(
@@ -126,8 +133,39 @@ export default async function dispatchRequest(
   if (isGet && config.dedupe) {
     const inflight = activeRequests.get(cacheKey);
     if (inflight) {
-      const shared = await inflight;
-      return finalizeResponse(shared, config);
+      try {
+        const shared = await inflight;
+        const response = finalizeResponse(shared, config);
+        const settled = await new Promise<AccessioResponse>((resolve, reject) => {
+          settle(
+            resolve as (value: AccessioResponse) => void,
+            reject as (reason: AccessioError) => void,
+            response,
+            config,
+          );
+        });
+
+        if (config.hooks?.onRequestResponse) {
+          await config.hooks.onRequestResponse(settled);
+        }
+
+        return settled;
+      } catch (error) {
+        let finalError = error;
+        if (error instanceof AccessioError) {
+          finalError = AccessioError.from(
+            error,
+            error.code || 'ERR_DEDUPE',
+            config,
+            error.request,
+            error.response,
+          );
+        }
+        if (config.hooks?.onRequestError && finalError instanceof AccessioError) {
+          await config.hooks.onRequestError(finalError);
+        }
+        throw finalError;
+      }
     }
   }
 
