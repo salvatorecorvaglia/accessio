@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-06-09
+
+### Added
+
+- Added support for a custom cache key serializer (`cacheKeySerializer` option) in request configurations.
+- Added max item capacity limits and expired item eviction controls to the memory cache provider, exposing the `MemoryCache` class.
+- Added deep merging support for `params` and `hooks` configurations in `mergeConfig`.
+
+### Fixed
+
+- Fixed request deduplication logic to correctly settle concurrent requests sharing the same inflight request and propagate standard request hooks (`onRequestResponse` and `onRequestError`).
+- Fixed parameter regex interpolation in `buildURL` to prevent incorrect identifier matching.
+- Excluded transient environment-specific headers (e.g., `user-agent`, `host`, `connection`, `content-length`, `accept-encoding`) from the default cache key generator and dynamically sorted headers to avoid cache key collisions.
+
+### Changed
+
+- Expanded documentation for retries, rate limiting, and caching controls in `README.md`.
+- Upgraded `vitest` and `@vitest/coverage-v8` to version 4.1.8.
+- Cleaned up the repository by removing obsolete documentation site files, workflows, and Code of Conduct references.
+
 ## [1.5.0] - 2026-05-22
 
 ### Added

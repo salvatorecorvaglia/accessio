@@ -1,75 +1,149 @@
 # Contributing to Accessio 🎯
 
-First off, thank you for considering contributing to Accessio! It's people like you who make the open-source community such an amazing place to learn, inspire, and create.
+Thank you for your interest in contributing to **Accessio**! It is contributors like you who make this project a fast, flexible, and robust HTTP client for everyone.
 
-## 🌈 How Can I Contribute?
+This document provides guidelines and instructions to help you get started with your contribution, set up your local development environment, and understand our codebase patterns.
 
-### Reporting Bugs 🐛
+---
 
-Before creating a bug report, please check the [existing issues](https://github.com/salvatorecorvaglia/accessio/issues) to see if the problem has already been reported.
+## 🧭 Code of Conduct
 
-When filing an issue, please include:
+By participating in this project, you agree to maintain a respectful, inclusive, and professional environment. Please be kind, constructive, and helpful to all members of the community.
 
-- A clear, descriptive title.
-- Steps to reproduce the bug.
+---
+
+## 🌈 How to Contribute
+
+### 1. Reporting Bugs 🐛
+
+If you find a bug, please check the [existing issues](https://github.com/salvatorecorvaglia/accessio/issues) to make sure it hasn't already been reported. If it's a new issue, open a bug report and include:
+
+- A clear, descriptive title and summary.
+- The version of Accessio you are using.
+- Steps to reproduce the bug (a minimal reproducing code snippet or repository is highly appreciated).
 - Expected vs. actual behavior.
-- Environment details (Node.js version, Browser, OS).
+- Details about your environment (Node.js version, browser version, operating system).
 
-### Suggesting Enhancements 💡
+### 2. Suggesting Enhancements 💡
 
-We are always looking for ways to improve Accessio. If you have an idea for a new feature or an improvement to an existing one:
+We are always open to improvements! To suggest a feature:
 
-- Check if it's already been suggested in the [issues](https://github.com/salvatorecorvaglia/accessio/issues).
-- Open a new issue with the "enhancement" label.
-- Provide a clear description of the feature and its benefits.
+- Check the [issues](https://github.com/salvatorecorvaglia/accessio/issues) to see if it has already been proposed.
+- Open a new issue describing the feature, why it is needed, how it should behave, and any potential API designs.
 
-### Pull Requests 🚀
+### 3. Submitting Pull Requests 🚀
 
-1. **Fork** the repository and create your branch from `main`.
-2. **Install dependencies**: `npm install`.
-3. **Make your changes**. If you're adding a feature or fixing a bug, please include tests.
-4. **Format & Lint**: Ensure your code follows the project's style by running `npm run format`, `npm run lint`, and `npm run typecheck`.
-5. **Run tests**: Make sure all tests pass by running `npm run test` and verify coverage with `npm run test:coverage`.
-6. **Commit your changes**: Use [Conventional Commits](https://www.conventionalcommits.org/) (e.g., `feat: add new interceptor logic` or `fix: resolve timeout jitter issue`).
-7. **Submit a Pull Request** to the `main` branch.
+When you're ready to submit a change:
 
-## 🛠️ Local Development
+1.  **Fork** the repository and create your branch from `main`.
+2.  Follow the **Development Workflow** below to set up your environment, make changes, run tests, and format your code.
+3.  Commit your changes using standard commit messages (see [Commit Message Guidelines](#-commit-message-guidelines)).
+4.  Open a Pull Request (PR) against the `main` branch. Ensure you fill out the provided PR template.
+
+---
+
+## 🛠️ Development Workflow
 
 ### Prerequisites
 
-- Node.js ≥ 18.0.0
-- npm
+- **Node.js**: Version `18.0.0` or higher is required.
+- **npm**: The package manager configured with this repository.
 
-### Setup
+### Local Setup
+
+Clone your fork of the repository and install the dependencies:
 
 ```bash
-git clone https://github.com/salvatorecorvaglia/accessio.git
+git clone https://github.com/<your-username>/accessio.git
 cd accessio
 npm install
 ```
 
-### Useful Scripts
+### Directory Structure
 
-- `npm run build`: Build the project (CJS).
-- `npm run lint`: Check for linting errors.
-- `npm run lint:fix`: Automatically fix linting errors.
-- `npm run format`: Format the code using Prettier.
-- `npm run test`: Run the test suite.
-- `npm run test:watch`: Run tests in watch mode.
-- `npm run test:coverage`: Run tests with coverage report.
-- `npm run test:browser`: Run tests in browser environment.
-- `npm run typecheck`: Run TypeScript type checking.
+Familiarize yourself with the project's layout:
 
-## 💎 Design Principles
+- `src/`: The core library source code written in TypeScript.
+  - `src/accessio.ts`: Core client implementation and API class.
+  - `src/index.ts`: The package entry point.
+  - `src/types.ts`: Global TypeScript type definitions.
+  - `src/core/`: Internal modules (URL builders, configuration merging, retry mechanics, request handlers).
+  - `src/helpers/`: Utility helpers (caching, limiters, header parsing, transform functions).
+  - `src/defaults/`: Default configurations.
+  - `src/interceptors/`: Request/response interceptor management.
+- `tests/`: Comprehensive test suite written with **Vitest**.
+- `cjs/`: Output directory containing compiled CommonJS modules (built via `tsup`).
 
-- **Zero Dependencies**: Keep the core lightweight.
-- **Modern Standards**: Leverage native `fetch` and modern TypeScript.
-- **Developer Experience**: Focus on a clean, intuitive API.
-- **Modularity**: Advanced features (like caching, schema validation, SSE) should integrate seamlessly without breaking the lightweight core.
+### Useful Scripts & Commands
 
-## 📜 Code of Conduct
+Accessio uses several scripts to ensure code quality, proper types, and comprehensive test coverage.
 
-Please maintain a respectful and professional tone in all communications.
+| Command                 | Description                                                                           |
+| :---------------------- | :------------------------------------------------------------------------------------ |
+| `npm run test`          | Run all unit tests (Node.js environment)                                              |
+| `npm run test:watch`    | Run tests in watch mode for active development                                        |
+| `npm run test:coverage` | Run all tests and generate a test coverage report                                     |
+| `npm run test:browser`  | Run tests in a simulated browser environment using `jsdom`                            |
+| `npm run lint`          | Run ESLint to check for style and quality violations                                  |
+| `npm run lint:fix`      | Run ESLint and automatically fix fixable issues                                       |
+| `npm run format`        | Format files in the repository using Prettier                                         |
+| `npm run typecheck`     | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
+| `npm run build`         | Build the project for distribution (CommonJS output)                                  |
+
+> [!IMPORTANT]
+> Always run `npm run lint`, `npm run typecheck`, and `npm run test` before submitting a pull request to ensure the CI pipeline passes.
+
+---
+
+## 📐 Design Principles
+
+When writing code for Accessio, please adhere to our core design values:
+
+1.  **Zero Dependencies**: The core package must remain entirely dependency-free. Do not add any runtime dependencies.
+2.  **Modern Standards**: Rely on modern JavaScript/TypeScript standards and browser/Node APIs (e.g., native `fetch`, `AbortController`).
+3.  **Modular Features**: Extra features like rate limiting, debugging logs, custom cache providers, or schema validation should be optional, lightweight, and easily tree-shaken.
+4.  **Premium Developer Experience (DX)**: APIs should be intuitive, types should be precise, and warnings/errors should be helpful and descriptive.
+
+---
+
+## 💬 Commit Message Guidelines
+
+We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification. This helps us generate clean changelogs and automate releases.
+
+Commit messages should be formatted as follows:
+
+```text
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Common Types:
+
+- `feat`: A new user-facing feature.
+- `fix`: A bug fix.
+- `docs`: Documentation changes only.
+- `style`: Code formatting changes (Prettier updates, lint fixes, etc.).
+- `refactor`: Code changes that neither fix a bug nor add a feature.
+- `test`: Adding or correcting tests.
+- `chore`: Internal chores, build setup, dependencies, etc.
+
+_Example:_ `feat(cache): add stale-while-revalidate strategy support`
+
+---
+
+## 📋 Pull Request Checklist
+
+Before submitting your PR, please verify:
+
+- [ ] Your code compiles correctly with no type errors (`npm run typecheck`).
+- [ ] All linters and formatters pass with no errors (`npm run lint` and `npm run format`).
+- [ ] Existing and new unit tests pass successfully (`npm run test` and `npm run test:browser`).
+- [ ] You have added tests covering the new feature or bug fix.
+- [ ] You have updated the documentation or `README.md` if your changes introduce new features or change behavior.
+- [ ] Your commit messages follow the Conventional Commits specification.
 
 ---
 
