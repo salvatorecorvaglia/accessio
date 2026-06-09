@@ -147,4 +147,4 @@ Before submitting your PR, please verify:
 
 ---
 
-Happy coding! 🌑
+Happy coding! 🎯
