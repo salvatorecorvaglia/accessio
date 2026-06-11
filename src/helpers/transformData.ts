@@ -17,7 +17,7 @@ export default async function transformData(
   for (const transform of transforms) {
     if (typeof transform === 'function') {
       try {
-        result = await transform(result, headers);
+        result = await transform(result, headers, config);
       } catch (err) {
         throw AccessioError.from(
           err instanceof Error ? err : new Error(String(err)),

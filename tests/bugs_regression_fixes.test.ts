@@ -229,4 +229,83 @@ describe('Bugs & Regression Fixes Tests', () => {
       expect(limiter.active).toBe(0);
     });
   });
+
+  describe('responseType: text override', () => {
+    it('returns raw text even when content-type is application/json', async () => {
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: () => Promise.resolve('{"json": true}'),
+      });
+      global.fetch = mockFetch;
+
+      const client = new Accessio();
+      const response = await client.request({
+        url: '/json-as-text',
+        responseType: 'text',
+      });
+      expect(response.data).toBe('{"json": true}');
+    });
+  });
+
+  describe('parseHeaders array flattening', () => {
+    it('flattens array values instead of nesting them', async () => {
+      const { default: parseHeaders } = await import('../src/helpers/parseHeaders');
+      const input = {
+        'Set-Cookie': ['a=1', 'b=2'],
+      };
+      const result = parseHeaders(input);
+      expect(result['set-cookie']).toEqual(['a=1', 'b=2']);
+    });
+  });
+
+  describe('flattenHeaders case-insensitive merging', () => {
+    it('overwrites case-variant keys without duplication', async () => {
+      const { flattenHeaders } = await import('../src/helpers/flattenHeaders');
+      const headers = {
+        common: {
+          'Content-Type': 'application/json',
+        },
+        get: {
+          'content-type': 'text/html',
+        },
+      };
+      const result = flattenHeaders(headers, 'get');
+      expect(Object.keys(result)).toHaveLength(1);
+      expect(result['content-type']).toBe('text/html');
+    });
+  });
+
+  describe('Abort reason propagation', () => {
+    it('propagates the signal reason to AccessioError message and cause', async () => {
+      const controller = new AbortController();
+      const customError = new Error('Custom abort reason');
+
+      const client = new Accessio();
+      global.fetch = vi.fn().mockImplementation((_url, init) => {
+        return new Promise((_resolve, reject) => {
+          if (init.signal?.aborted) {
+            reject(customError);
+            return;
+          }
+          init.signal.addEventListener('abort', () => reject(customError));
+        });
+      });
+
+      const p = client.request({
+        url: '/abort-test',
+        signal: controller.signal,
+      });
+
+      controller.abort(customError);
+
+      await expect(p).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_CANCELED',
+        message: 'Custom abort reason',
+        cause: customError,
+      });
+    });
+  });
 });

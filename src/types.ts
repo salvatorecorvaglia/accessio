@@ -14,6 +14,7 @@ export type ParamsSerializer = (params: Record<string, unknown>) => string;
 export type TransformFunction = (
   data: unknown,
   headers: Record<string, string | string[]>,
+  config?: any,
 ) => unknown | Promise<unknown>;
 
 export type RetryConditionFunction = (error: AccessioError) => boolean;

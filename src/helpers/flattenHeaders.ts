@@ -49,17 +49,31 @@ export function flattenHeaders(
   const merged: Record<string, string | string[]> = {};
   const methodLower = (method || 'get').toLowerCase();
 
+  const setHeader = (target: Record<string, string | string[]>, key: string, value: any) => {
+    const keyLower = key.toLowerCase();
+    for (const existingKey of Object.keys(target)) {
+      if (existingKey.toLowerCase() === keyLower) {
+        delete target[existingKey];
+      }
+    }
+    target[key] = value;
+  };
+
   if (headers['common']) {
-    Object.assign(merged, headers['common']);
+    Object.entries(headers['common']).forEach(([k, v]) => {
+      setHeader(merged, k, v);
+    });
   }
 
   if (headers[methodLower]) {
-    Object.assign(merged, headers[methodLower]);
+    Object.entries(headers[methodLower]).forEach(([k, v]) => {
+      setHeader(merged, k, v);
+    });
   }
 
   for (const key in headers) {
     if (Object.prototype.hasOwnProperty.call(headers, key) && !METHOD_KEYS.has(key)) {
-      merged[key] = headers[key] as unknown as string | string[];
+      setHeader(merged, key, headers[key]);
     }
   }
 

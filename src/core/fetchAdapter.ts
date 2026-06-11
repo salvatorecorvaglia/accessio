@@ -14,6 +14,8 @@ async function readResponseData(
       return await fetchResponse.blob();
     case 'stream':
       return fetchResponse.body;
+    case 'text':
+      return await fetchResponse.text();
     case 'json':
     default: {
       const contentType = fetchResponse.headers.get('content-type') || '';
@@ -186,7 +188,18 @@ function classifyFetchError(
   const isAbort =
     (error instanceof Error && error.name === 'AbortError') || !!config.signal?.aborted;
   if (isAbort) {
-    return new AccessioError('Request aborted', AccessioError.ERR_CANCELED, config, null, null);
+    const reason = config.signal?.reason;
+    const message =
+      reason instanceof Error
+        ? reason.message
+        : typeof reason === 'string'
+          ? reason
+          : 'Request aborted';
+    const err = new AccessioError(message, AccessioError.ERR_CANCELED, config, null, null);
+    if (reason instanceof Error) {
+      err.cause = reason;
+    }
+    return err;
   }
 
   return AccessioError.from(

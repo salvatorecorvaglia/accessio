@@ -21,14 +21,23 @@ class MemoryCache implements CacheProvider {
   set(key: string, value: any, ttl?: number) {
     const now = Date.now();
 
-    // Proactively evict all expired items first
+    if (this.cache.has(key)) {
+      const expiry = ttl ? now + ttl : null;
+      this.cache.set(key, { value, expiry });
+      return;
+    }
+
+    // Proactively evict up to 5 of the oldest items to prevent memory build-up without O(N) cost.
+    // Map entries are ordered by insertion, so the oldest are checked first.
+    let count = 0;
     for (const [k, item] of this.cache.entries()) {
+      if (count++ >= 5) break;
       if (item.expiry && now > item.expiry) {
         this.cache.delete(k);
       }
     }
 
-    // Evict oldest item if we are still at limit
+    // Evict the oldest item if we are still at limit
     if (this.cache.size >= this.maxItems) {
       const oldest = this.cache.keys().next().value;
       if (oldest !== undefined) {

@@ -3,16 +3,19 @@ export default function parseHeaders(headers: any): Record<string, string | stri
 
   if (!headers) return parsed;
 
-  const addHeader = (key: string, value: string) => {
+  const addHeader = (key: string, value: string | string[]) => {
     const k = key.toLowerCase();
-    if (parsed[k]) {
-      if (Array.isArray(parsed[k])) {
-        (parsed[k] as string[]).push(value);
+    const values = Array.isArray(value) ? value : [value];
+    for (const val of values) {
+      if (parsed[k]) {
+        if (Array.isArray(parsed[k])) {
+          (parsed[k] as string[]).push(val);
+        } else {
+          parsed[k] = [parsed[k] as string, val];
+        }
       } else {
-        parsed[k] = [parsed[k] as string, value];
+        parsed[k] = val;
       }
-    } else {
-      parsed[k] = value;
     }
   };
 
