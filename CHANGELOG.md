@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-06-11
+
+### Added
+
+- Added support for `text` response type in `responseType` configuration.
+- Added support for propagating abort signal reason (message and cause) to `AccessioError` when a request is canceled.
+- Added comprehensive regression and bug fix test suite in `tests/bugs_regression_fixes.test.ts`.
+
+### Fixed
+
+- Fixed header normalization in `parseHeaders` to correctly flatten array-valued headers (e.g. `Set-Cookie`).
+- Fixed case-insensitive header merging in `flattenHeaders` to avoid duplicate header variants (e.g. `Content-Type` vs `content-type`).
+
+### Changed
+
+- Optimized memory cache proactive eviction to check up to 5 oldest items per insertion to prevent memory build-up without O(N) complexity.
+- Updated transform functions to receive the full request config object as the third argument.
+- Updated CI/CD configuration to run `npm pack --dry-run` instead of `npm publish --dry-run`.
+- Tightened GitHub Actions release workflow permissions by removing write access for `packages` and `actions`.
+
 ## [1.6.0] - 2026-06-09
 
 ### Added
