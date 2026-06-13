@@ -113,7 +113,8 @@ export default async function dispatchRequest(
   setBasicAuth(config, flatHeaders);
 
   const isGet = (config.method || 'GET').toUpperCase() === 'GET';
-  const cacheKey = isGet && (config.cache || config.dedupe) ? buildCacheKey(config, fullURL, flatHeaders) : '';
+  const cacheKey =
+    isGet && (config.cache || config.dedupe) ? buildCacheKey(config, fullURL, flatHeaders) : '';
 
   if (isGet && config.cache) {
     const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;

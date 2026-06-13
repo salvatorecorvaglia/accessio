@@ -56,7 +56,7 @@ function combineURLs(baseURL: string, relativeURL: string): string {
   let relStart = 0;
   while (relStart < relativeURL.length && relativeURL[relStart] === '/') relStart++;
 
-  return baseURL.slice(0, baseEnd) + '/' + relativeURL.slice(relStart);
+  return `${baseURL.slice(0, baseEnd)}/${relativeURL.slice(relStart)}`;
 }
 
 function isAbsoluteURL(url: string): boolean {
