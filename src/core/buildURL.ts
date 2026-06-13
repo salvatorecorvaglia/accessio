@@ -50,10 +50,13 @@ function combineURLs(baseURL: string, relativeURL: string): string {
   if (!baseURL) return relativeURL || '';
   if (!relativeURL) return baseURL;
 
-  const base = baseURL.replace(/\/+$/, '');
-  const relative = relativeURL.replace(/^\/+/, '');
+  let baseEnd = baseURL.length;
+  while (baseEnd > 0 && baseURL[baseEnd - 1] === '/') baseEnd--;
 
-  return `${base}/${relative}`;
+  let relStart = 0;
+  while (relStart < relativeURL.length && relativeURL[relStart] === '/') relStart++;
+
+  return baseURL.slice(0, baseEnd) + '/' + relativeURL.slice(relStart);
 }
 
 function isAbsoluteURL(url: string): boolean {
