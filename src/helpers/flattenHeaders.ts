@@ -47,28 +47,33 @@ export function flattenHeaders(
   if (!headers) return {};
 
   const merged: Record<string, string | string[]> = {};
+  const lowerKeys: Record<string, string> = {};
   const methodLower = (method || 'get').toLowerCase();
 
   const setHeader = (target: Record<string, string | string[]>, key: string, value: any) => {
     const keyLower = key.toLowerCase();
-    for (const existingKey of Object.keys(target)) {
-      if (existingKey.toLowerCase() === keyLower) {
-        delete target[existingKey];
-      }
+    const existingKey = lowerKeys[keyLower];
+    if (existingKey !== undefined) {
+      delete target[existingKey];
     }
     target[key] = value;
+    lowerKeys[keyLower] = key;
   };
 
   if (headers['common']) {
-    Object.entries(headers['common']).forEach(([k, v]) => {
-      setHeader(merged, k, v);
-    });
+    for (const key in headers['common']) {
+      if (Object.prototype.hasOwnProperty.call(headers['common'], key)) {
+        setHeader(merged, key, headers['common'][key]);
+      }
+    }
   }
 
   if (headers[methodLower]) {
-    Object.entries(headers[methodLower]).forEach(([k, v]) => {
-      setHeader(merged, k, v);
-    });
+    for (const key in headers[methodLower]) {
+      if (Object.prototype.hasOwnProperty.call(headers[methodLower], key)) {
+        setHeader(merged, key, headers[methodLower][key]);
+      }
+    }
   }
 
   for (const key in headers) {
@@ -81,25 +86,32 @@ export function flattenHeaders(
 }
 
 export function removeContentType(headers: Record<string, string | string[]>): void {
-  const keys = Object.keys(headers).filter((k) => k.toLowerCase() === 'content-type');
-  for (const key of keys) {
-    delete headers[key];
+  for (const key in headers) {
+    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+      if (key.toLowerCase() === 'content-type') {
+        delete headers[key];
+      }
+    }
   }
 }
 
 export function buildFetchHeaders(headers: Record<string, string | string[]>): Headers {
   const fetchHeaders = new Headers();
-  for (const [key, value] of Object.entries(headers)) {
-    if (value === undefined || value === null) continue;
-    assertSafeHeader(key, value);
-    if (Array.isArray(value)) {
-      for (const v of value) {
-        if (v !== undefined && v !== null) {
-          fetchHeaders.append(key, v);
+  for (const key in headers) {
+    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+      const value = headers[key];
+      if (value === undefined || value === null) continue;
+      assertSafeHeader(key, value);
+      if (Array.isArray(value)) {
+        for (let i = 0; i < value.length; i++) {
+          const v = value[i];
+          if (v !== undefined && v !== null) {
+            fetchHeaders.append(key, v);
+          }
         }
+      } else {
+        fetchHeaders.set(key, value);
       }
-    } else {
-      fetchHeaders.set(key, value);
     }
   }
   return fetchHeaders;

@@ -50,15 +50,8 @@ function combineURLs(baseURL: string, relativeURL: string): string {
   if (!baseURL) return relativeURL || '';
   if (!relativeURL) return baseURL;
 
-  let base = baseURL;
-  while (base.endsWith('/')) {
-    base = base.slice(0, -1);
-  }
-
-  let relative = relativeURL;
-  while (relative.startsWith('/')) {
-    relative = relative.slice(1);
-  }
+  const base = baseURL.replace(/\/+$/, '');
+  const relative = relativeURL.replace(/^\/+/, '');
 
   return `${base}/${relative}`;
 }
@@ -77,28 +70,30 @@ export default function buildURL(
 
   let finalParams = params;
   if (params && typeof params === 'object' && !(params instanceof URLSearchParams)) {
-    const unusedParams: Record<string, unknown> = {};
-    for (const key of Object.keys(params)) {
-      if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
-      unusedParams[key] = (params as Record<string, unknown>)[key];
+    if (fullURL.includes('{') || /:[a-zA-Z_]/.test(fullURL)) {
+      const unusedParams: Record<string, unknown> = {};
+      for (const key of Object.keys(params)) {
+        if (key === '__proto__' || key === 'prototype' || key === 'constructor') continue;
+        unusedParams[key] = (params as Record<string, unknown>)[key];
+      }
+      fullURL = fullURL.replace(
+        /(?::([a-zA-Z_][a-zA-Z0-9_]*))|(?:{([a-zA-Z_][a-zA-Z0-9_]*)})/g,
+        (match, p1, p2) => {
+          const key = p1 || p2;
+          if (
+            key &&
+            Object.prototype.hasOwnProperty.call(unusedParams, key) &&
+            unusedParams[key] !== undefined
+          ) {
+            const val = unusedParams[key];
+            delete unusedParams[key];
+            return encodeURIComponent(String(val));
+          }
+          return match;
+        },
+      );
+      finalParams = unusedParams;
     }
-    fullURL = fullURL.replace(
-      /(?::([a-zA-Z_][a-zA-Z0-9_]*))|(?:{([a-zA-Z_][a-zA-Z0-9_]*)})/g,
-      (match, p1, p2) => {
-        const key = p1 || p2;
-        if (
-          key &&
-          Object.prototype.hasOwnProperty.call(unusedParams, key) &&
-          unusedParams[key] !== undefined
-        ) {
-          const val = unusedParams[key];
-          delete unusedParams[key];
-          return encodeURIComponent(String(val));
-        }
-        return match;
-      },
-    );
-    finalParams = unusedParams;
   }
 
   const serialized = serializeParams(finalParams as Record<string, unknown>, paramsSerializer);

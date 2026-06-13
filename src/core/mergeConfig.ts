@@ -45,20 +45,24 @@ export default function mergeConfig(
 ): AccessioRequestConfig {
   const merged: any = Object.create(null);
 
-  const allKeys = new Set<string>([...Object.keys(config1), ...Object.keys(config2)]);
+  const keys1 = Object.keys(config1);
+  for (let i = 0; i < keys1.length; i++) {
+    const key = keys1[i];
+    if (requestOnlyKeys.has(key)) continue;
+    merged[key] = config1[key as keyof AccessioRequestConfig];
+  }
 
-  for (const key of allKeys) {
-    const val1 = config1[key as keyof AccessioRequestConfig];
+  const keys2 = Object.keys(config2);
+  for (let i = 0; i < keys2.length; i++) {
+    const key = keys2[i];
     const val2 = config2[key as keyof AccessioRequestConfig];
-
-    if (requestOnlyKeys.has(key)) {
-      if (val2 !== undefined) {
+    if (val2 !== undefined) {
+      if (deepMergeKeys.has(key)) {
+        const val1 = config1[key as keyof AccessioRequestConfig];
+        merged[key] = deepMerge(val1 || {}, val2);
+      } else {
         merged[key] = val2;
       }
-    } else if (deepMergeKeys.has(key)) {
-      merged[key] = deepMerge(val1 || {}, val2 || {});
-    } else {
-      merged[key] = val2 !== undefined ? val2 : val1;
     }
   }
 

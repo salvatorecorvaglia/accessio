@@ -30,11 +30,16 @@ class MemoryCache implements CacheProvider {
     // Proactively evict up to 5 of the oldest items to prevent memory build-up without O(N) cost.
     // Map entries are ordered by insertion, so the oldest are checked first.
     let count = 0;
-    for (const [k, item] of this.cache.entries()) {
-      if (count++ >= 5) break;
-      if (item.expiry && now > item.expiry) {
+    const keys = this.cache.keys();
+    while (count < 5) {
+      const next = keys.next();
+      if (next.done) break;
+      const k = next.value;
+      const item = this.cache.get(k);
+      if (item && item.expiry && now > item.expiry) {
         this.cache.delete(k);
       }
+      count++;
     }
 
     // Evict the oldest item if we are still at limit

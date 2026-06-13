@@ -18,7 +18,7 @@ import defaultsConfig from './defaults/index';
 function runRequestInterceptorsSync(
   startConfig: AccessioRequestConfig,
   interceptors: InterceptorHandler[],
-): Promise<AccessioRequestConfig> {
+): AccessioRequestConfig {
   let cfg = startConfig;
   let rejectReason: any = null;
   let isRejected = false;
@@ -44,7 +44,10 @@ function runRequestInterceptorsSync(
     }
   }
 
-  return isRejected ? Promise.reject(rejectReason) : Promise.resolve(cfg);
+  if (isRejected) {
+    throw rejectReason;
+  }
+  return cfg;
 }
 
 function runRequestInterceptorsAsync(
@@ -65,7 +68,7 @@ function dispatchAndRetry(cfg: AccessioRequestConfig): Promise<AccessioResponse>
   const fullUrl = buildURL(cfg.url ?? '', cfg.baseURL, cfg.params, cfg.paramsSerializer);
   logRequest(cfg, fullUrl);
 
-  const enrichedCfg = fullUrl !== (cfg.url || '') ? { ...cfg, _builtUrl: fullUrl } : cfg;
+  const enrichedCfg = { ...cfg, _builtUrl: fullUrl };
 
   const dispatchFn = cfg.rateLimiter
     ? (config: AccessioRequestConfig) =>
@@ -114,11 +117,20 @@ export class Accessio {
     const { requestInterceptors, responseInterceptors, synchronous } =
       this.collectInterceptors(mergedConfig);
 
-    let promise: Promise<any> = synchronous
-      ? runRequestInterceptorsSync(mergedConfig, requestInterceptors)
-      : runRequestInterceptorsAsync(mergedConfig, requestInterceptors);
+    let promise: Promise<any>;
 
-    promise = promise.then((cfg: AccessioRequestConfig) => dispatchAndRetry(cfg));
+    if (synchronous) {
+      try {
+        const finalCfg = runRequestInterceptorsSync(mergedConfig, requestInterceptors);
+        promise = dispatchAndRetry(finalCfg);
+      } catch (err) {
+        promise = Promise.reject(err);
+      }
+    } else {
+      promise = runRequestInterceptorsAsync(mergedConfig, requestInterceptors).then(
+        (cfg: AccessioRequestConfig) => dispatchAndRetry(cfg),
+      );
+    }
 
     promise = promise.then(
       (value: AccessioResponse) => {
@@ -131,13 +143,65 @@ export class Accessio {
       },
     );
 
-    for (const interceptor of responseInterceptors) {
-      promise = promise.then((value: any) => {
-        if (interceptor.fulfilled) {
-          return (interceptor.fulfilled as any)(value);
-        }
-        return value;
-      }, interceptor.rejected ?? undefined);
+    if (responseInterceptors.length > 0) {
+      promise = promise.then(
+        async (value: AccessioResponse) => {
+          let current: any = value;
+          let isRejected = false;
+          for (const interceptor of responseInterceptors) {
+            if (!isRejected) {
+              try {
+                if (interceptor.fulfilled) {
+                  current = await (interceptor.fulfilled as any)(current);
+                }
+              } catch (err) {
+                current = err;
+                isRejected = true;
+              }
+            } else if (interceptor.rejected) {
+              try {
+                current = await interceptor.rejected(current);
+                isRejected = false;
+              } catch (err) {
+                current = err;
+                isRejected = true;
+              }
+            }
+          }
+          if (isRejected) {
+            throw current;
+          }
+          return current;
+        },
+        async (error: any) => {
+          let current: any = error;
+          let isRejected = true;
+          for (const interceptor of responseInterceptors) {
+            if (!isRejected) {
+              try {
+                if (interceptor.fulfilled) {
+                  current = await (interceptor.fulfilled as any)(current);
+                }
+              } catch (err) {
+                current = err;
+                isRejected = true;
+              }
+            } else if (interceptor.rejected) {
+              try {
+                current = await interceptor.rejected(current);
+                isRejected = false;
+              } catch (err) {
+                current = err;
+                isRejected = true;
+              }
+            }
+          }
+          if (isRejected) {
+            throw current;
+          }
+          return current;
+        },
+      );
     }
 
     return promise;
