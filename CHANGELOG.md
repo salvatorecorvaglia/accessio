@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.1] - 2026-06-13
+
+### Changed
+
+- Optimized `flattenHeaders` to use a lookup map for case-insensitive deduplication instead of iterating all existing keys on every insertion.
+- Replaced `Object.entries` and `.forEach` iteration in `flattenHeaders` and `buildFetchHeaders` with `for...in` loops and explicit `hasOwnProperty` checks for improved performance.
+- Optimized `mergeConfig` to iterate each config object independently, avoiding a combined `Set` allocation and reducing redundant key lookups.
+- Refactored `buildURL` to skip regex-based parameter interpolation when the URL contains no path parameters, avoiding unnecessary object allocation and regex execution.
+- Skipped cache key computation in `dispatchRequest` for GET requests when neither `cache` nor `dedupe` is enabled.
+- Optimized `combineURLs` to trim trailing/leading slashes with simple `replace` calls instead of multiple conditional checks.
+- Refactored memory cache proactive eviction to use an explicit `keys()` iterator instead of `entries()` destructuring.
+
+### Fixed
+
+- Added `esbuild` version override (`^0.28.1`) in `package.json` to resolve a transitive dependency version conflict with `tsup`.
+
 ## [1.7.0] - 2026-06-11
 
 ### Added
