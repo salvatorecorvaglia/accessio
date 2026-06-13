@@ -178,4 +178,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First implementation of Accessio.
-- Initial stable release published to npm
+- Initial stable release published to npm.
