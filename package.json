@@ -1,6 +1,6 @@
 {
   "name": "accessio",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Fast, flexible HTTP client — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
@@ -106,5 +106,8 @@
     "typescript": "^5.0.0",
     "typescript-eslint": "^8.59.3",
     "vitest": "^4.1.8"
+  },
+  "overrides": {
+    "esbuild": "^0.28.1"
   }
 }

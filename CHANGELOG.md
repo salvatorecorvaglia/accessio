@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.2] - 2026-06-13
+
+### Changed
+
+- Optimized URL path concatenation in `combineURLs` by replacing regex slash trimming with manual loop index slicing.
+- Updated URL construction in `combineURLs` to use template literal syntax and improved request cache key generation wrapping.
+
+### Security
+
+- Restored `esbuild` dependency override in `package.json` to resolve high-severity security vulnerabilities (GHSA-gv7w-rqvm-qjhr and GHSA-g7r4-m6w7-qqqr) in `tsup`'s dependency tree.
+
 ## [1.7.1] - 2026-06-13
 
 ### Changed
