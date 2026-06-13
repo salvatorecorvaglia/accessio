@@ -14,11 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Optimized `mergeConfig` to iterate each config object independently, avoiding a combined `Set` allocation and reducing redundant key lookups.
 - Refactored `buildURL` to skip regex-based parameter interpolation when the URL contains no path parameters, avoiding unnecessary object allocation and regex execution.
 - Skipped cache key computation in `dispatchRequest` for GET requests when neither `cache` nor `dedupe` is enabled.
-- Optimized `combineURLs` to trim trailing/leading slashes with simple `replace` calls instead of multiple conditional checks.
+- Replaced regex-based slash trimming in `combineURLs` with linear `while`-loop scanning to eliminate backtracking.
 - Refactored memory cache proactive eviction to use an explicit `keys()` iterator instead of `entries()` destructuring.
 
 ### Fixed
 
+- Fixed polynomial regular expression (ReDoS) vulnerability in `combineURLs` (`/\/+$/` and `/^\/+/`) by replacing regexes with character-by-character loop trimming (CodeQL `js/polynomial-redos`).
 - Added `esbuild` version override (`^0.28.1`) in `package.json` to resolve a transitive dependency version conflict with `tsup`.
 
 ## [1.7.0] - 2026-06-11
