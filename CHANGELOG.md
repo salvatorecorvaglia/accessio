@@ -20,7 +20,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Fixed polynomial regular expression (ReDoS) vulnerability in `combineURLs` (`/\/+$/` and `/^\/+/`) by replacing regexes with character-by-character loop trimming (CodeQL `js/polynomial-redos`).
-- Added `esbuild` version override (`^0.28.1`) in `package.json` to resolve a transitive dependency version conflict with `tsup`.
 
 ## [1.7.0] - 2026-06-11
 
