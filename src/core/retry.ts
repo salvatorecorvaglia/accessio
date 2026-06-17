@@ -1,11 +1,11 @@
 import { ERR_BAD_OPTION, ERR_CANCELED, ERR_NETWORK } from '../constants/errorCodes';
-import AccessioErrorClass from './accessioError';
 import type {
-  AccessioRequestConfig,
   AccessioError,
-  RetryConditionFunction,
+  AccessioRequestConfig,
   OnRetryFunction,
+  RetryConditionFunction,
 } from '../types';
+import AccessioErrorClass from './accessioError';
 
 function isUnretriableBody(data: unknown): boolean {
   if (data == null) return false;
@@ -34,8 +34,8 @@ function defaultRetryCondition(error: any): boolean {
   return false;
 }
 
-function calculateDelay(attempt: number, baseDelay: number, maxDelay: number = 30000): number {
-  const exponentialDelay = baseDelay * Math.pow(2, attempt);
+function calculateDelay(attempt: number, baseDelay: number, maxDelay = 30000): number {
+  const exponentialDelay = baseDelay * 2 ** attempt;
   const jitter = exponentialDelay * 0.25 * (Math.random() * 2 - 1);
   const calculated = Math.round(exponentialDelay + jitter);
   return Math.min(calculated, maxDelay);
@@ -116,12 +116,12 @@ async function retryRequest(
         const headers = (error as any).response?.headers;
         const retryAfterStr = headers?.['retry-after'] || headers?.['Retry-After'];
         if (retryAfterStr) {
-          const parsed = parseInt(retryAfterStr, 10);
-          if (!isNaN(parsed)) {
+          const parsed = Number.parseInt(retryAfterStr, 10);
+          if (!Number.isNaN(parsed)) {
             delay = parsed * 1000;
           } else {
             const date = new Date(retryAfterStr);
-            if (!isNaN(date.getTime())) {
+            if (!Number.isNaN(date.getTime())) {
               delay = Math.max(0, date.getTime() - Date.now());
             }
           }

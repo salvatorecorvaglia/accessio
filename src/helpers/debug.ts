@@ -1,11 +1,12 @@
+import type AccessioError from '../core/accessioError';
+import { redactBody } from '../core/accessioError';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
-import AccessioError, { redactBody } from '../core/accessioError';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
   const sizes = ['B', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  return `${(bytes / 1024 ** i).toFixed(1)} ${sizes[i]}`;
 }
 
 function sanitizeConfigForLog(config: AccessioRequestConfig): {

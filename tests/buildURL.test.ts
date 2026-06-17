@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import buildURL, { serializeParams, combineURLs, isAbsoluteURL } from '../src/core/buildURL';
 
 describe('buildURL', () => {

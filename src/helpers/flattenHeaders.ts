@@ -1,5 +1,5 @@
-import AccessioError from '../core/accessioError';
 import { ERR_BAD_OPTION } from '../constants/errorCodes';
+import AccessioError from '../core/accessioError';
 
 const HEADER_FORBIDDEN_CHAR = /[\r\n\0]/;
 
@@ -60,10 +60,10 @@ export function flattenHeaders(
     lowerKeys[keyLower] = key;
   };
 
-  if (headers['common']) {
-    for (const key in headers['common']) {
-      if (Object.prototype.hasOwnProperty.call(headers['common'], key)) {
-        setHeader(merged, key, headers['common'][key]);
+  if (headers.common) {
+    for (const key in headers.common) {
+      if (Object.prototype.hasOwnProperty.call(headers.common, key)) {
+        setHeader(merged, key, headers.common[key]);
       }
     }
   }

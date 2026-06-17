@@ -1,9 +1,9 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import Accessio from '../src/accessio';
-import { toFormData } from '../src/helpers/toFormData';
-import retryRequest from '../src/core/retry';
 import AccessioError from '../src/core/accessioError';
+import retryRequest from '../src/core/retry';
 import createRateLimiter from '../src/helpers/rateLimiter';
+import { toFormData } from '../src/helpers/toFormData';
 
 describe('Bugs & Regression Fixes Tests', () => {
   describe('autoPaginate with null or non-object response data', () => {
@@ -81,8 +81,8 @@ describe('Bugs & Regression Fixes Tests', () => {
 
       try {
         // Delete global references to simulate environment without them
-        delete (global as any).File;
-        delete (global as any).Blob;
+        (global as any).File = undefined;
+        (global as any).Blob = undefined;
 
         const data = {
           name: 'test',

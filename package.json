@@ -62,18 +62,14 @@
       "require": "./cjs/helpers/transformData.cjs"
     }
   },
-  "files": [
-    "src/",
-    "cjs/",
-    "index.d.ts"
-  ],
+  "files": ["src/", "cjs/", "index.d.ts"],
   "scripts": {
     "build:cjs": "tsup",
     "build": "npm run build:cjs",
     "prepublishOnly": "npm run build",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "format": "prettier --write .",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "format": "biome format --write .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
@@ -96,15 +92,12 @@
     "node": ">=18.0.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "1.8.3",
     "@types/node": "^25.9.2",
     "@vitest/coverage-v8": "^4.1.8",
-    "eslint": "^9.0.0",
-    "eslint-config-prettier": "^10.1.8",
     "jsdom": "^29.0.2",
-    "prettier": "^3.8.3",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0",
-    "typescript-eslint": "^8.59.3",
     "vitest": "^4.1.8"
   },
   "overrides": {

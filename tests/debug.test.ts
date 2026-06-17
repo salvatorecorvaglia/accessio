@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { logRequest, logResponse, logError } from '../src/helpers/debug';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { logError, logRequest, logResponse } from '../src/helpers/debug';
 
 describe('debug.ts', () => {
   let consoleSpy: any;

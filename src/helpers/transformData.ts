@@ -1,5 +1,5 @@
 import AccessioError from '../core/accessioError';
-import type { TransformFunction, AccessioRequestConfig } from '../types';
+import type { AccessioRequestConfig, TransformFunction } from '../types';
 
 export default async function transformData(
   transforms: TransformFunction | TransformFunction[] | undefined,

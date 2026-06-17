@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Migrated workspace tooling to Biome for unified, high-performance linting, formatting, and import sorting.
+- Updated npm scripts (`lint`, `lint:fix`, `format`) and GitHub Actions CI configuration to run Biome checks.
+
 ## [1.7.2] - 2026-06-13
 
 ### Changed
@@ -131,7 +138,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Simplified rate limiter queue implementation by replacing object-based map with array-based FIFO queue.
-- Cleaned up ESLint configuration syntax and refined documentation formatting.
 - Refactored and cleaned up function signatures and consistent code formatting across source and test files.
 
 ## [1.2.0] - 2026-05-18

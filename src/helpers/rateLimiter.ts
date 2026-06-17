@@ -1,4 +1,4 @@
-import type { RateLimiter, AccessioRequestConfig, AccessioResponse } from '../types';
+import type { AccessioRequestConfig, AccessioResponse, RateLimiter } from '../types';
 
 interface QueueItem {
   resolve: () => void;
@@ -6,15 +6,21 @@ interface QueueItem {
 }
 
 export function createRateLimiter(
-  maxConcurrent: number = Infinity,
-  maxQueueSize: number = Infinity,
+  maxConcurrent: number = Number.POSITIVE_INFINITY,
+  maxQueueSize: number = Number.POSITIVE_INFINITY,
 ): RateLimiter {
-  if (maxConcurrent !== Infinity && (!Number.isInteger(maxConcurrent) || maxConcurrent < 1)) {
+  if (
+    maxConcurrent !== Number.POSITIVE_INFINITY &&
+    (!Number.isInteger(maxConcurrent) || maxConcurrent < 1)
+  ) {
     throw new RangeError(
       `[Accessio] maxConcurrent must be a positive integer or Infinity, got: ${maxConcurrent}`,
     );
   }
-  if (maxQueueSize !== Infinity && (!Number.isInteger(maxQueueSize) || maxQueueSize < 1)) {
+  if (
+    maxQueueSize !== Number.POSITIVE_INFINITY &&
+    (!Number.isInteger(maxQueueSize) || maxQueueSize < 1)
+  ) {
     throw new RangeError(
       `[Accessio] maxQueueSize must be a positive integer or Infinity, got: ${maxQueueSize}`,
     );

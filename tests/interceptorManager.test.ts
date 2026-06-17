@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import InterceptorManager from '../src/interceptors/interceptorManager';
 
 describe('InterceptorManager', () => {

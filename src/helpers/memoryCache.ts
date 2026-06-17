@@ -4,7 +4,7 @@ class MemoryCache implements CacheProvider {
   private cache = new Map<string, { value: any; expiry: number | null }>();
   private maxItems: number;
 
-  constructor(maxItems: number = 1000) {
+  constructor(maxItems = 1000) {
     this.maxItems = maxItems;
   }
 
@@ -36,7 +36,7 @@ class MemoryCache implements CacheProvider {
       if (next.done) break;
       const k = next.value;
       const item = this.cache.get(k);
-      if (item && item.expiry && now > item.expiry) {
+      if (item?.expiry && now > item.expiry) {
         this.cache.delete(k);
       }
       count++;

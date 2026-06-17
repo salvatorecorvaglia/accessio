@@ -1,4 +1,4 @@
-import type { TransformFunction, InterceptorHandler, InterceptorOptions } from '../types';
+import type { InterceptorHandler, InterceptorOptions, TransformFunction } from '../types';
 
 export class InterceptorManager {
   private _handlers: Map<number, InterceptorHandler>;

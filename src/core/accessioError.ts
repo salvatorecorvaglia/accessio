@@ -61,7 +61,7 @@ function redactParams(params: unknown): unknown {
 function redactURL(url: string | undefined): string | undefined {
   if (!url) return url;
   // Match inline credentials: http://user:pass@host
-  return url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (match, protocol, userInfo) => {
+  return url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (_match, protocol, userInfo) => {
     const parts = userInfo.split(':');
     if (parts.length > 1) {
       return `${protocol}${parts[0]}:[REDACTED]@`;
@@ -73,7 +73,7 @@ function redactURL(url: string | undefined): string | undefined {
 export function redactConfig(config: AccessioRequestConfig | null): AccessioRequestConfig | null {
   if (!config) return config;
   const clone = { ...config } as AccessioRequestConfig & { auth?: unknown };
-  if ('auth' in clone) delete clone.auth;
+  if ('auth' in clone) clone.auth = undefined;
   if (clone.headers) clone.headers = redactHeaders(clone.headers) as typeof clone.headers;
   if (clone.params) clone.params = redactParams(clone.params) as typeof clone.params;
   if (clone.url) clone.url = redactURL(clone.url);

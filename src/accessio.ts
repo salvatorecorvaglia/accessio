@@ -1,19 +1,19 @@
-import InterceptorManager from './interceptors/interceptorManager';
 import AccessioError from './core/accessioError';
+import buildURL from './core/buildURL';
 import mergeConfig from './core/mergeConfig';
 import dispatchRequest from './core/request';
-import buildURL from './core/buildURL';
 import retryRequest from './core/retry';
-import { logRequest, logResponse, logError } from './helpers/debug';
+import defaultsConfig from './defaults/index';
+import { logError, logRequest, logResponse } from './helpers/debug';
 import { rateLimitedRequest } from './helpers/rateLimiter';
 import { toFormData } from './helpers/toFormData';
+import InterceptorManager from './interceptors/interceptorManager';
 import type {
   AccessioRequestConfig,
   AccessioResponse,
-  Interceptors,
   InterceptorHandler,
+  Interceptors,
 } from './types';
-import defaultsConfig from './defaults/index';
 
 function runRequestInterceptorsSync(
   startConfig: AccessioRequestConfig,
@@ -336,13 +336,13 @@ export class Accessio {
           if (dataStr === '[DONE]') return;
           try {
             yield JSON.parse(dataStr);
-          } catch (e) {
+          } catch (_e) {
             yield dataStr as any;
           }
         } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
           try {
             yield JSON.parse(line);
-          } catch (e) {
+          } catch (_e) {
             // ignore partial json
           }
         }

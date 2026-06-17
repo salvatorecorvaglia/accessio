@@ -1,5 +1,5 @@
-import { defaultTransformRequest, defaultTransformResponse } from './transforms';
 import type { AccessioRequestConfig } from '../types';
+import { defaultTransformRequest, defaultTransformResponse } from './transforms';
 
 const defaults: AccessioRequestConfig = {
   method: 'get',

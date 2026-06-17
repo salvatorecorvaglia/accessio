@@ -17,10 +17,10 @@ export function setBasicAuth(
     // encodeURIComponent converts non-ASCII to %XX, then we replace %XX with raw bytes
     // before applying btoa.
     encoded = btoa(
-      encodeURIComponent(credentials).replace(/%([0-9A-F]{2})/g, (match, p1) => {
-        return String.fromCharCode(parseInt(p1, 16));
+      encodeURIComponent(credentials).replace(/%([0-9A-F]{2})/g, (_match, p1) => {
+        return String.fromCharCode(Number.parseInt(p1, 16));
       }),
     );
   }
-  headers['Authorization'] = `Basic ${encoded}`;
+  headers.Authorization = `Basic ${encoded}`;
 }

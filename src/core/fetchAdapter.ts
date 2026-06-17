@@ -1,6 +1,6 @@
-import AccessioError from './accessioError';
 import parseHeaders from '../helpers/parseHeaders';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
+import AccessioError from './accessioError';
 
 async function readResponseData(
   fetchResponse: Response,
@@ -16,7 +16,6 @@ async function readResponseData(
       return fetchResponse.body;
     case 'text':
       return await fetchResponse.text();
-    case 'json':
     default: {
       const contentType = fetchResponse.headers.get('content-type') || '';
       if (contentType.includes('application/json')) {
@@ -64,7 +63,7 @@ interface AbortWiring {
 function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): AbortWiring {
   if (
     config.timeout !== undefined &&
-    (typeof config.timeout !== 'number' || isNaN(config.timeout) || config.timeout < 0)
+    (typeof config.timeout !== 'number' || Number.isNaN(config.timeout) || config.timeout < 0)
   ) {
     throw new AccessioError(
       `Invalid timeout value: ${config.timeout}`,
@@ -76,7 +75,7 @@ function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): A
   }
 
   const timeoutValue = Number(config.timeout);
-  const hasTimeout = !isNaN(timeoutValue) && timeoutValue > 0;
+  const hasTimeout = !Number.isNaN(timeoutValue) && timeoutValue > 0;
 
   if (!hasTimeout) {
     if (config.signal) fetchOptions.signal = config.signal;
@@ -135,7 +134,7 @@ function wrapDownloadProgress(fetchResponse: Response, config: AccessioRequestCo
   }
 
   const contentLength = fetchResponse.headers.get('content-length');
-  const total = contentLength ? parseInt(contentLength, 10) : 0;
+  const total = contentLength ? Number.parseInt(contentLength, 10) : 0;
   let loaded = 0;
 
   const reader = fetchResponse.body.getReader();
@@ -230,7 +229,7 @@ export default async function fetchAdapter(
     if (
       contentLength &&
       config.maxContentLength &&
-      parseInt(contentLength, 10) > config.maxContentLength
+      Number.parseInt(contentLength, 10) > config.maxContentLength
     ) {
       throw new AccessioError(
         `maxContentLength size of ${config.maxContentLength} exceeded`,

@@ -1,6 +1,0 @@
-node_modules/
-dist/
-cjs/
-coverage/
-package-lock.json
-*.d.ts

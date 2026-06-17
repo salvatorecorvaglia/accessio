@@ -84,9 +84,9 @@ Accessio uses several scripts to ensure code quality, proper types, and comprehe
 | `npm run test:watch`    | Run tests in watch mode for active development                                        |
 | `npm run test:coverage` | Run all tests and generate a test coverage report                                     |
 | `npm run test:browser`  | Run tests in a simulated browser environment using `jsdom`                            |
-| `npm run lint`          | Run ESLint to check for style and quality violations                                  |
-| `npm run lint:fix`      | Run ESLint and automatically fix fixable issues                                       |
-| `npm run format`        | Format files in the repository using Prettier                                         |
+| `npm run lint`          | Run Biome to check formatting, linting, and quality rules                            |
+| `npm run lint:fix`      | Run Biome to automatically format and fix linting/import issues                       |
+| `npm run format`        | Format files in the repository using Biome                                            |
 | `npm run typecheck`     | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
 | `npm run build`         | Build the project for distribution (CommonJS output)                                  |
 
@@ -125,7 +125,7 @@ Commit messages should be formatted as follows:
 - `feat`: A new user-facing feature.
 - `fix`: A bug fix.
 - `docs`: Documentation changes only.
-- `style`: Code formatting changes (Prettier updates, lint fixes, etc.).
+- `style`: Code formatting changes (Biome updates, lint fixes, etc.).
 - `refactor`: Code changes that neither fix a bug nor add a feature.
 - `test`: Adding or correcting tests.
 - `chore`: Internal chores, build setup, dependencies, etc.

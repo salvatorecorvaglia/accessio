@@ -1,12 +1,12 @@
 import Accessio from './accessio';
-import defaults from './defaults';
-import AccessioError from './core/accessioError';
-import mergeConfig from './core/mergeConfig';
-import buildURL from './core/buildURL';
-import InterceptorManager from './interceptors/interceptorManager';
-import { createRateLimiter } from './helpers/rateLimiter';
-import { logRequest, logResponse, logError } from './helpers/debug';
 import { ERR_CANCELED } from './constants/errorCodes';
+import AccessioError from './core/accessioError';
+import buildURL from './core/buildURL';
+import mergeConfig from './core/mergeConfig';
+import defaults from './defaults';
+import { logError, logRequest, logResponse } from './helpers/debug';
+import { createRateLimiter } from './helpers/rateLimiter';
+import InterceptorManager from './interceptors/interceptorManager';
 import type { AccessioRequestConfig } from './types';
 
 const PUBLIC_METHODS = [
@@ -55,7 +55,7 @@ function createInstance(defaultConfig: AccessioRequestConfig) {
     };
   };
   instance.isCancel = function isCancel(value: any): boolean {
-    return !!(value && value.isAccessioError && value.code === ERR_CANCELED);
+    return !!(value?.isAccessioError && value.code === ERR_CANCELED);
   };
   instance.isAccessioError = function isAccessioError(value: any): boolean {
     return (

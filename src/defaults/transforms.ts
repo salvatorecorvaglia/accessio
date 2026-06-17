@@ -39,7 +39,7 @@ export function defaultTransformRequest(
   return data;
 }
 
-export function defaultTransformResponse(data: unknown, headers?: any, config?: any): unknown {
+export function defaultTransformResponse(data: unknown, _headers?: any, config?: any): unknown {
   if (config && config.responseType === 'text') {
     return data;
   }

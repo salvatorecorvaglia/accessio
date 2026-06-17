@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { createRateLimiter, rateLimitedRequest } from '../src/helpers/rateLimiter';
 
 describe('createRateLimiter', () => {
@@ -52,7 +52,7 @@ describe('createRateLimiter', () => {
   });
 
   it('works with Infinity (no limit)', async () => {
-    const limiter = createRateLimiter(Infinity);
+    const limiter = createRateLimiter(Number.POSITIVE_INFINITY);
     for (let i = 0; i < 100; i++) {
       await limiter.acquire();
     }

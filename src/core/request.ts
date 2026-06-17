@@ -1,13 +1,13 @@
-import buildURL from './buildURL';
-import AccessioError, { redactConfig } from './accessioError';
 import { ERR_BAD_OPTION } from '../constants/errorCodes';
-import transformData from '../helpers/transformData';
-import settle from '../helpers/settle';
-import { flattenHeaders, removeContentType, buildFetchHeaders } from '../helpers/flattenHeaders';
 import { setBasicAuth } from '../helpers/auth';
-import fetchAdapter from './fetchAdapter';
+import { buildFetchHeaders, flattenHeaders, removeContentType } from '../helpers/flattenHeaders';
 import { defaultMemoryCache } from '../helpers/memoryCache';
+import settle from '../helpers/settle';
+import transformData from '../helpers/transformData';
 import type { AccessioRequestConfig, AccessioResponse, TransformFunction } from '../types';
+import AccessioError, { redactConfig } from './accessioError';
+import buildURL from './buildURL';
+import fetchAdapter from './fetchAdapter';
 
 type HeadersConfig = Record<string, Record<string, string | string[]>>;
 type FlatHeaders = Record<string, string | string[]>;
@@ -64,8 +64,7 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
 
   if (!allowed.includes(scheme)) {
     throw new AccessioError(
-      `URL protocol "${scheme}" is not allowed. Allowed: ${allowed.join(', ')}. ` +
-        'Set config.allowedProtocols to extend, or null to disable the check.',
+      `URL protocol "${scheme}" is not allowed. Allowed: ${allowed.join(', ')}. Set config.allowedProtocols to extend, or null to disable the check.`,
       ERR_BAD_OPTION,
       config,
       null,
