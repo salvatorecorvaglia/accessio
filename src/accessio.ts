@@ -145,62 +145,9 @@ export class Accessio {
 
     if (responseInterceptors.length > 0) {
       promise = promise.then(
-        async (value: AccessioResponse) => {
-          let current: any = value;
-          let isRejected = false;
-          for (const interceptor of responseInterceptors) {
-            if (!isRejected) {
-              try {
-                if (interceptor.fulfilled) {
-                  current = await (interceptor.fulfilled as any)(current);
-                }
-              } catch (err) {
-                current = err;
-                isRejected = true;
-              }
-            } else if (interceptor.rejected) {
-              try {
-                current = await interceptor.rejected(current);
-                isRejected = false;
-              } catch (err) {
-                current = err;
-                isRejected = true;
-              }
-            }
-          }
-          if (isRejected) {
-            throw current;
-          }
-          return current;
-        },
-        async (error: any) => {
-          let current: any = error;
-          let isRejected = true;
-          for (const interceptor of responseInterceptors) {
-            if (!isRejected) {
-              try {
-                if (interceptor.fulfilled) {
-                  current = await (interceptor.fulfilled as any)(current);
-                }
-              } catch (err) {
-                current = err;
-                isRejected = true;
-              }
-            } else if (interceptor.rejected) {
-              try {
-                current = await interceptor.rejected(current);
-                isRejected = false;
-              } catch (err) {
-                current = err;
-                isRejected = true;
-              }
-            }
-          }
-          if (isRejected) {
-            throw current;
-          }
-          return current;
-        },
+        (value: AccessioResponse) =>
+          this.runResponseInterceptors(value, false, responseInterceptors),
+        (error: any) => this.runResponseInterceptors(error, true, responseInterceptors),
       );
     }
 
@@ -227,6 +174,49 @@ export class Accessio {
     });
 
     return { requestInterceptors, responseInterceptors, synchronous };
+  }
+
+  private async runResponseInterceptors(
+    initialValue: any,
+    initialRejected: boolean,
+    interceptors: InterceptorHandler[],
+  ): Promise<any> {
+    let current = initialValue;
+    let isRejected = initialRejected;
+    for (const interceptor of interceptors) {
+      if (!isRejected) {
+        try {
+          if (interceptor.fulfilled) {
+            const result = (interceptor.fulfilled as any)(current);
+            if (result && typeof result.then === 'function') {
+              current = await result;
+            } else {
+              current = result;
+            }
+          }
+        } catch (err) {
+          current = err;
+          isRejected = true;
+        }
+      } else if (interceptor.rejected) {
+        try {
+          const result = interceptor.rejected(current) as any;
+          if (result && typeof result.then === 'function') {
+            current = await result;
+          } else {
+            current = result;
+          }
+          isRejected = false;
+        } catch (err) {
+          current = err;
+          isRejected = true;
+        }
+      }
+    }
+    if (isRejected) {
+      throw current;
+    }
+    return current;
   }
 
   getUri(config?: AccessioRequestConfig): string {
@@ -404,7 +394,9 @@ export class Accessio {
           : null;
 
       if (nextUrl) {
-        currentConfig = mergeConfig(currentConfig, { url: nextUrl, params: {} });
+        const merged = mergeConfig(currentConfig, { url: nextUrl });
+        merged.params = {};
+        currentConfig = merged;
       }
     }
   }

@@ -622,4 +622,67 @@ describe('dispatchRequest (request.ts)', () => {
       ).rejects.toMatchObject({ code: 'ERR_BAD_OPTION' });
     });
   });
+
+  describe('schema validation (config.schema)', () => {
+    it('successfully parses data using a synchronous validator', async () => {
+      mockFetch({ id: 1, name: 'Alice' });
+
+      const syncSchema = {
+        parse: vi.fn((data: any) => ({ ...data, parsed: true })),
+      };
+
+      const response = await dispatchRequest({
+        url: 'https://api.test.com/user',
+        method: 'get',
+        headers: {},
+        schema: syncSchema,
+      });
+
+      expect(syncSchema.parse).toHaveBeenCalled();
+      expect(response.data).toEqual({ id: 1, name: 'Alice', parsed: true });
+    });
+
+    it('successfully parses data using an asynchronous validator', async () => {
+      mockFetch({ id: 2, name: 'Bob' });
+
+      const asyncSchema = {
+        parse: vi.fn((data: any) => data),
+        parseAsync: vi.fn(async (data: any) => ({ ...data, parsedAsync: true })),
+      };
+
+      const response = await dispatchRequest({
+        url: 'https://api.test.com/user',
+        method: 'get',
+        headers: {},
+        schema: asyncSchema,
+      });
+
+      expect(asyncSchema.parseAsync).toHaveBeenCalled();
+      expect(asyncSchema.parse).not.toHaveBeenCalled();
+      expect(response.data).toEqual({ id: 2, name: 'Bob', parsedAsync: true });
+    });
+
+    it('throws AccessioError if schema parsing fails', async () => {
+      mockFetch({ invalid: 'data' });
+
+      const failingSchema = {
+        parse: vi.fn(() => {
+          throw new Error('Validation failed');
+        }),
+      };
+
+      await expect(
+        dispatchRequest({
+          url: 'https://api.test.com/user',
+          method: 'get',
+          headers: {},
+          schema: failingSchema,
+        }),
+      ).rejects.toMatchObject({
+        isAccessioError: true,
+        code: 'ERR_BAD_RESPONSE',
+        message: expect.stringContaining('Validation failed'),
+      });
+    });
+  });
 });

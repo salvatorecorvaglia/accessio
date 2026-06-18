@@ -1,15 +1,19 @@
 import ErrorCodes from '../constants/errorCodes';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 
-function redactHeaders(headers: unknown): unknown {
+function redactHeaders(headers: unknown, seen?: WeakSet<object>): unknown {
   if (!headers || typeof headers !== 'object') return headers;
+  const visited = seen ?? new WeakSet<object>();
+  if (visited.has(headers as object)) return '[Circular]';
+  visited.add(headers as object);
+
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(headers as Record<string, unknown>)) {
     const value = (headers as Record<string, unknown>)[key];
     if (/^authorization$/i.test(key) || /^cookie$/i.test(key) || /^set-cookie$/i.test(key)) {
       out[key] = '[REDACTED]';
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactHeaders(value);
+      out[key] = redactHeaders(value, visited);
     } else {
       out[key] = value;
     }
@@ -22,16 +26,54 @@ const SENSITIVE_BODY_KEY =
 
 export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
   if (value === null || typeof value !== 'object') return value;
+
+  // Guard against binary formats, streams, buffers to prevent heavy serialization
+  if (
+    (typeof File !== 'undefined' && value instanceof File) ||
+    (typeof Blob !== 'undefined' && value instanceof Blob) ||
+    (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) ||
+    (typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(value)) ||
+    (typeof Buffer !== 'undefined' && Buffer.isBuffer(value)) ||
+    (typeof ReadableStream !== 'undefined' && value instanceof ReadableStream)
+  ) {
+    return '[Binary/Stream Data]';
+  }
+
   const visited = seen ?? new WeakSet<object>();
   if (visited.has(value as object)) return '[Circular]';
   visited.add(value as object);
 
   if (Array.isArray(value)) {
+    if (value.length > 100) {
+      const sliced = value.slice(0, 100).map((item) => redactBody(item, visited));
+      sliced.push(`[... ${value.length - 100} more items truncated]`);
+      return sliced;
+    }
     return value.map((item) => redactBody(item, visited));
   }
 
   const out: Record<string, unknown> = {};
-  for (const key of Object.keys(value as Record<string, unknown>)) {
+  const keys = Object.keys(value as Record<string, unknown>);
+
+  if (keys.length > 100) {
+    let count = 0;
+    for (const key of keys) {
+      if (count >= 100) {
+        out['...'] = `[Truncated: ${keys.length - 100} more keys]`;
+        break;
+      }
+      const v = (value as Record<string, unknown>)[key];
+      if (SENSITIVE_BODY_KEY.test(key)) {
+        out[key] = '[REDACTED]';
+      } else {
+        out[key] = redactBody(v, visited);
+      }
+      count++;
+    }
+    return out;
+  }
+
+  for (const key of keys) {
     const v = (value as Record<string, unknown>)[key];
     if (SENSITIVE_BODY_KEY.test(key)) {
       out[key] = '[REDACTED]';
@@ -42,15 +84,19 @@ export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
   return out;
 }
 
-function redactParams(params: unknown): unknown {
+function redactParams(params: unknown, seen?: WeakSet<object>): unknown {
   if (!params || typeof params !== 'object') return params;
+  const visited = seen ?? new WeakSet<object>();
+  if (visited.has(params as object)) return '[Circular]';
+  visited.add(params as object);
+
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(params as Record<string, unknown>)) {
     const value = (params as Record<string, unknown>)[key];
     if (SENSITIVE_BODY_KEY.test(key)) {
       out[key] = '[REDACTED]';
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactParams(value);
+      out[key] = redactParams(value, visited);
     } else {
       out[key] = value;
     }

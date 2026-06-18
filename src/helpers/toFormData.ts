@@ -11,7 +11,10 @@ export function toFormData(obj: any, form?: FormData, namespace?: string): FormD
   } else if (
     typeof obj === 'object' &&
     !(typeof File !== 'undefined' && obj instanceof File) &&
-    !(typeof Blob !== 'undefined' && obj instanceof Blob)
+    !(typeof Blob !== 'undefined' && obj instanceof Blob) &&
+    !(typeof ArrayBuffer !== 'undefined' && obj instanceof ArrayBuffer) &&
+    !(typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(obj)) &&
+    !(typeof Buffer !== 'undefined' && Buffer.isBuffer(obj))
   ) {
     Object.keys(obj).forEach((key) => {
       if (Array.isArray(obj)) {

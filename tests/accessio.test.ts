@@ -232,5 +232,39 @@ describe('Accessio class', () => {
       await accessio.request({ url: '/test' });
       expect(called).toBe(false);
     });
+
+    it('response interceptor rejection path and recovery', async () => {
+      const mockError = new Error('Network Failure');
+      const reqMock = (await import('../src/core/request')).default as any;
+      reqMock.mockRejectedValueOnce(mockError);
+
+      accessio.interceptors.response.use(
+        (res: any) => res,
+        (err: any) => {
+          return { data: { recovered: true, originalError: err.message }, status: 200 };
+        },
+      );
+
+      const res = await accessio.request({ url: '/test-error' });
+      expect(res.data.recovered).toBe(true);
+      expect(res.data.originalError).toBe('Network Failure');
+    });
+
+    it('response interceptor rejection propagates if not caught', async () => {
+      const mockError = new Error('Critical Network Failure');
+      const reqMock = (await import('../src/core/request')).default as any;
+      reqMock.mockRejectedValueOnce(mockError);
+
+      accessio.interceptors.response.use(
+        (res: any) => res,
+        (err: any) => {
+          throw new Error(`Wrapped: ${err.message}`);
+        },
+      );
+
+      await expect(accessio.request({ url: '/test-error' })).rejects.toThrow(
+        'Wrapped: Critical Network Failure',
+      );
+    });
   });
 });

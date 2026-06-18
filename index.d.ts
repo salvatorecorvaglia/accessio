@@ -466,7 +466,7 @@ export interface AccessioInstance {
   InterceptorManager: InterceptorManagerClass;
 
   /** Create a rate limiter for concurrent request control */
-  createRateLimiter(maxConcurrent?: number): RateLimiter;
+  createRateLimiter(maxConcurrent?: number, maxQueueSize?: number): RateLimiter;
 
   /** Merge two config objects */
   mergeConfig(
@@ -520,7 +520,7 @@ export const AccessioError: AccessioErrorConstructor;
 export const mergeConfig: (config1: AccessioRequestConfig, config2?: AccessioRequestConfig) => AccessioRequestConfig;
 export const buildURL: (url: string, baseURL?: string, params?: Record<string, any>, paramsSerializer?: (params: Record<string, any>) => string) => string;
 export const InterceptorManager: InterceptorManagerClass;
-export const createRateLimiter: (maxConcurrent?: number) => RateLimiter;
+export const createRateLimiter: (maxConcurrent?: number, maxQueueSize?: number) => RateLimiter;
 
 // ── Debug helper exports ────────────────────────────────────
 

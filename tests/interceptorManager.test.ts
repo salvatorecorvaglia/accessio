@@ -121,4 +121,22 @@ describe('InterceptorManager', () => {
       expect(items).toEqual([1, 2]);
     });
   });
+
+  describe('handlers getter', () => {
+    it('returns a snapshot array containing active interceptors and nulls for ejected ones', () => {
+      const manager = new InterceptorManager();
+      manager.use(() => 'first');
+      const id1 = manager.use(() => 'second');
+      manager.use(() => 'third');
+
+      manager.eject(id1);
+
+      const handlers = manager.handlers;
+      expect(handlers).toHaveLength(3);
+      expect(handlers[0]).not.toBeNull();
+      expect(handlers[1]).toBeNull();
+      expect(handlers[2]).not.toBeNull();
+      expect((handlers[0] as any).fulfilled()).toBe('first');
+    });
+  });
 });

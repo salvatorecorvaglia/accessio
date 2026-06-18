@@ -308,4 +308,127 @@ describe('Bugs & Regression Fixes Tests', () => {
       });
     });
   });
+
+  describe('autoPaginate parameter preservation', () => {
+    it('should not preserve initial params across pages', async () => {
+      const client = new Accessio();
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: () => Promise.resolve(JSON.stringify({ data: [1], next: '/page2?page=2' })),
+        })
+        .mockResolvedValueOnce({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: () => Promise.resolve(JSON.stringify({ data: [2], next: null })),
+        });
+      global.fetch = mockFetch;
+
+      const items: any[] = [];
+      for await (const item of client.autoPaginate('/test', { params: { page: 1 } })) {
+        items.push(item);
+      }
+
+      expect(items).toEqual([1, 2]);
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        1,
+        expect.stringContaining('page=1'),
+        expect.anything(),
+      );
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        expect.stringContaining('/page2?page=2'),
+        expect.anything(),
+      );
+      expect(mockFetch.mock.calls[1][0]).not.toContain('page=1');
+    });
+  });
+
+  describe('toFormData binary data handling', () => {
+    it('appends buffers and typed arrays without recursion stack overflow', () => {
+      const data = {
+        name: 'test',
+        buffer: typeof Buffer !== 'undefined' ? Buffer.from('hello') : new Uint8Array([1, 2, 3]),
+        typedArray: new Uint8Array([4, 5, 6]),
+      };
+
+      class MockFormData {
+        data: Record<string, any> = {};
+        append(key: string, val: any) {
+          this.data[key] = val;
+        }
+      }
+      const mockForm = new MockFormData() as any;
+
+      const result = toFormData(data, mockForm);
+      expect(result).toBeDefined();
+      expect((result as any).data.name).toBe('test');
+      expect((result as any).data['nested.buffer']).toBeUndefined();
+    });
+  });
+
+  describe('Circular reference handling in config log/redact', () => {
+    it('redacts config with circular headers/params without crashing', async () => {
+      const { redactConfig } = await import('../src/core/accessioError');
+      const circular: any = { key: 'val' };
+      circular.self = circular;
+
+      const config = {
+        url: '/test',
+        headers: {
+          'x-circular': circular,
+        },
+        params: {
+          circularParam: circular,
+        },
+      };
+
+      const redacted = redactConfig(config);
+      expect(redacted).toBeDefined();
+      expect(redacted?.headers?.['x-circular']).toEqual({ key: 'val', self: '[Circular]' });
+      expect(redacted?.params?.circularParam).toEqual({ key: 'val', self: '[Circular]' });
+    });
+
+    it('redacts large objects and arrays correctly', async () => {
+      const { redactBody } = await import('../src/core/accessioError');
+      const largeArray = new Array(200).fill('item');
+      const largeObject: any = {};
+      for (let i = 0; i < 200; i++) {
+        largeObject[`key_${i}`] = 'value';
+      }
+
+      const redactedArray = redactBody(largeArray) as any[];
+      expect(redactedArray.length).toBe(101);
+      expect(redactedArray[100]).toContain('truncated');
+
+      const redactedObj = redactBody(largeObject) as Record<string, any>;
+      expect(Object.keys(redactedObj).length).toBe(101);
+      expect(redactedObj['...']).toContain('Truncated');
+    });
+  });
+
+  describe('setBasicAuth browser fallback when Buffer is undefined', () => {
+    it('uses btoa for credentials encoding', async () => {
+      const { setBasicAuth } = await import('../src/helpers/auth');
+      const originalBuffer = (global as any).Buffer;
+      try {
+        (global as any).Buffer = undefined;
+        const config = {
+          auth: {
+            username: 'user',
+            password: 'password',
+          },
+        };
+        const headers: any = {};
+        setBasicAuth(config, headers);
+        expect(headers.Authorization).toBe('Basic dXNlcjpwYXNzd29yZA==');
+      } finally {
+        (global as any).Buffer = originalBuffer;
+      }
+    });
+  });
 });

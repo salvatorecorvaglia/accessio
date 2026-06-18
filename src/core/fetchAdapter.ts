@@ -100,19 +100,15 @@ function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): A
   let onUserAbort: (() => void) | null = null;
 
   if (config.signal) {
-    if (typeof AbortSignal.any === 'function') {
-      fetchOptions.signal = AbortSignal.any([config.signal, abortController.signal]);
+    if (config.signal.aborted) {
+      abortController.abort(config.signal.reason);
     } else {
-      if (config.signal.aborted) {
-        abortController.abort(config.signal.reason);
-      } else {
-        onUserAbort = () => {
-          if (!timedOut) abortController.abort(config.signal!.reason);
-        };
-        config.signal.addEventListener('abort', onUserAbort, { once: true });
-      }
-      fetchOptions.signal = abortController.signal;
+      onUserAbort = () => {
+        if (!timedOut) abortController.abort(config.signal!.reason);
+      };
+      config.signal.addEventListener('abort', onUserAbort, { once: true });
     }
+    fetchOptions.signal = abortController.signal;
   } else {
     fetchOptions.signal = abortController.signal;
   }
