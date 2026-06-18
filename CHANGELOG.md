@@ -7,10 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-06-18
+
+### Added
+
+- Added support for a `maxQueueSize` option in the `RateLimiter` configuration to restrict request queue growth and avoid memory exhaustion.
+- Exposed the `maxQueueSize` parameter in `createRateLimiter` TypeScript definitions.
+
 ### Changed
 
 - Migrated workspace tooling to Biome for unified, high-performance linting, formatting, and import sorting.
 - Updated npm scripts (`lint`, `lint:fix`, `format`) and GitHub Actions CI configuration to run Biome checks.
+- Refactored response interceptor loops into a private `runResponseInterceptors` helper for cleaner execution.
+- Added `typecheck` and `test:browser` verification steps to the GitHub Actions CI workflow.
+
+### Fixed
+
+- Fixed configuration and response body redaction logic to handle circular references safely, truncate extremely large objects/arrays, and detect binary/stream data.
+- Fixed fetch adapter abort handling to always use standard event listeners instead of `AbortSignal.any` for more robust propagation and cleanup.
+- Fixed query parameter duplication in `autoPaginate` by explicitly clearing the params cache on pagination transitions.
+- Fixed `toFormData` to skip recursive serialization of binary formats (e.g. `ArrayBuffer`, typed arrays, and `Buffer`), preventing stack overflow errors.
+
 
 ## [1.7.2] - 2026-06-13
 
