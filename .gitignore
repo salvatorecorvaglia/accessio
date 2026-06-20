@@ -18,6 +18,7 @@ npm-debug.log*
 
 # Build artifacts
 cjs/
+esm/
 dist/
 coverage/
 
@@ -36,5 +37,6 @@ claude-settings.json
 .prompts/
 .prompt-cache/
 .ai/
+.gemini/
 .antigravitycli/
 CLAUDE.md
