@@ -309,59 +309,85 @@ export class Accessio {
     url: string,
     config?: AccessioRequestConfig,
   ): AsyncGenerator<T, void, unknown> {
-    const response = await this.request<ReadableStream<Uint8Array>>(
+    const response = await this.request<any>(
       mergeConfig(config || {}, { method: 'get', url, responseType: 'stream' }),
     );
     if (!response.data) return;
 
-    const reader = response.data.getReader();
-    try {
-      const decoder = new TextDecoder();
-      let buffer = '';
+    const stream = response.data;
+    const decoder = new TextDecoder();
+    let buffer = '';
 
-      const processLine = function* (line: string) {
-        const trimmed = line.trim();
-        if (trimmed.startsWith('data:')) {
-          const dataStr = line.replace(/^data:\s*/, '');
-          if (dataStr === '[DONE]') return;
-          try {
-            yield JSON.parse(dataStr);
-          } catch (_e) {
-            yield dataStr as any;
-          }
-        } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-          try {
-            yield JSON.parse(line);
-          } catch (_e) {
-            // ignore partial json
-          }
+    const processLine = function* (line: string) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith('data:')) {
+        const dataStr = trimmed.replace(/^data:\s*/, '');
+        if (dataStr === '[DONE]') return;
+        try {
+          yield JSON.parse(dataStr);
+        } catch (_e) {
+          yield dataStr as any;
         }
-      };
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          yield* processLine(line);
+      } else if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+        try {
+          yield JSON.parse(trimmed);
+        } catch (_e) {
+          // ignore partial json
         }
       }
+    };
 
-      buffer += decoder.decode(new Uint8Array(), { stream: false });
-      if (buffer.trim()) {
-        yield* processLine(buffer);
+    const handleChunk = function* (chunk: any) {
+      const chunkStr =
+        chunk instanceof Uint8Array || ArrayBuffer.isView(chunk) || chunk instanceof ArrayBuffer
+          ? decoder.decode(chunk as any, { stream: true })
+          : String(chunk);
+      buffer += chunkStr;
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        yield* processLine(line);
       }
-    } finally {
+    };
+
+    if (typeof stream.getReader === 'function') {
+      const reader = stream.getReader();
       try {
-        await reader.cancel();
-      } catch {
-        // ignore errors on cancel
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          yield* handleChunk(value);
+        }
+      } finally {
+        try {
+          await reader.cancel();
+        } catch {
+          // ignore errors on cancel
+        }
+        reader.releaseLock();
       }
-      reader.releaseLock();
+    } else if (typeof stream[Symbol.asyncIterator] === 'function') {
+      try {
+        for await (const chunk of stream) {
+          yield* handleChunk(chunk);
+        }
+      } finally {
+        if (typeof stream.destroy === 'function') {
+          try {
+            stream.destroy();
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } else {
+      throw new Error('[Accessio] The response data is not a readable stream or async iterable.');
+    }
+
+    buffer += decoder.decode(new Uint8Array(), { stream: false });
+    if (buffer.trim()) {
+      yield* processLine(buffer);
     }
   }
 

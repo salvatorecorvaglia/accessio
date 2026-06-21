@@ -132,7 +132,30 @@ async function retryRequest(
         (config.onRetry as OnRetryFunction)(attempt + 1, error as AccessioError, config);
       }
 
-      await sleep(delay, { signal: config.signal });
+      try {
+        await sleep(delay, { signal: config.signal });
+      } catch (sleepError) {
+        const reason = config.signal?.reason;
+        const message =
+          reason instanceof Error
+            ? reason.message
+            : typeof reason === 'string'
+              ? reason
+              : (sleepError as Error).message || 'Request aborted';
+        const err = new AccessioErrorClass(
+          message,
+          ERR_CANCELED,
+          config,
+          null,
+          (error as AccessioError).response ?? null,
+        );
+        if (reason instanceof Error) {
+          err.cause = reason;
+        } else if (sleepError instanceof Error) {
+          err.cause = sleepError;
+        }
+        throw err;
+      }
     }
   }
 

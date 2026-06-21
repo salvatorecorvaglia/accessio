@@ -8,6 +8,7 @@
   "files": {
     "ignore": [
       "cjs/**",
+      "esm/**",
       "dist/**",
       "coverage/**",
       "package-lock.json",

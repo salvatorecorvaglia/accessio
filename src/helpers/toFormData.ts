@@ -1,10 +1,17 @@
-export function toFormData(obj: any, form?: FormData, namespace?: string): FormData {
+export function toFormData(
+  obj: any,
+  form?: FormData,
+  namespace?: string,
+  seen?: WeakSet<any>,
+): FormData {
   const fd = form || new FormData();
   let formKey: string;
 
   if (obj === null || obj === undefined) {
     return fd;
   }
+
+  const visited = seen || new WeakSet<any>();
 
   if (obj instanceof Date) {
     fd.append(namespace || '', obj.toISOString());
@@ -16,13 +23,18 @@ export function toFormData(obj: any, form?: FormData, namespace?: string): FormD
     !(typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(obj)) &&
     !(typeof Buffer !== 'undefined' && Buffer.isBuffer(obj))
   ) {
+    if (visited.has(obj)) {
+      return fd;
+    }
+    visited.add(obj);
+
     Object.keys(obj).forEach((key) => {
       if (Array.isArray(obj)) {
         formKey = namespace ? `${namespace}[${key}]` : key;
       } else {
         formKey = namespace ? `${namespace}.${key}` : key;
       }
-      toFormData(obj[key], fd, formKey);
+      toFormData(obj[key], fd, formKey, visited);
     });
   } else {
     fd.append(namespace || '', obj);

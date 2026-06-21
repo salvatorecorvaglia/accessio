@@ -119,9 +119,10 @@ export default async function dispatchRequest(
     const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
     const cached = await cacheProvider.get(cacheKey);
     if (cached) {
+      const clonedCached = cloneResponse(cached);
       const cachedView: AccessioResponse = {
-        ...cached,
-        config: redactConfig(config) as typeof cached.config,
+        ...clonedCached,
+        config: redactConfig(config) as typeof clonedCached.config,
       };
       if (config.hooks?.onRequestResponse) {
         await config.hooks.onRequestResponse(cachedView);
@@ -135,7 +136,18 @@ export default async function dispatchRequest(
     if (inflight) {
       try {
         const shared = await inflight;
-        const response = finalizeResponse(shared, config);
+        const clonedShared = cloneResponse(shared);
+        const response = finalizeResponse(clonedShared, config);
+
+        const responseTransforms = buildTransformArray(config.transformResponse);
+        response.data = await transformData(
+          responseTransforms,
+          response.data,
+          response.headers,
+          config,
+          'response',
+        );
+
         const settled = await new Promise<AccessioResponse>((resolve, reject) => {
           settle(
             resolve as (value: AccessioResponse) => void,
@@ -209,15 +221,6 @@ export default async function dispatchRequest(
     const requestStartTime = Date.now();
     const response = await fetchAdapter(config, fullURL, fetchOptions, requestStartTime);
 
-    const responseTransforms = buildTransformArray(config.transformResponse);
-    response.data = await transformData(
-      responseTransforms,
-      response.data,
-      response.headers,
-      config,
-      'response',
-    );
-
     return response;
   };
 
@@ -235,11 +238,21 @@ export default async function dispatchRequest(
 
   try {
     const shared = await promise;
-    const response = finalizeResponse(shared, config);
+    const clonedShared = cloneResponse(shared);
+    const response = finalizeResponse(clonedShared, config);
+
+    const responseTransforms = buildTransformArray(config.transformResponse);
+    response.data = await transformData(
+      responseTransforms,
+      response.data,
+      response.headers,
+      config,
+      'response',
+    );
 
     if (isGet && config.cache) {
       const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
-      await cacheProvider.set(cacheKey, shared, config.cacheTTL);
+      await cacheProvider.set(cacheKey, cloneResponse(response), config.cacheTTL);
     }
 
     const settled = await new Promise<AccessioResponse>((resolve, reject) => {
@@ -262,6 +275,35 @@ export default async function dispatchRequest(
     }
     throw error;
   }
+}
+
+function cloneResponse(response: AccessioResponse): AccessioResponse {
+  let clonedData = response.data;
+  if (response.data && typeof response.data === 'object') {
+    if (
+      !(typeof File !== 'undefined' && response.data instanceof File) &&
+      !(typeof Blob !== 'undefined' && response.data instanceof Blob) &&
+      !(typeof ArrayBuffer !== 'undefined' && response.data instanceof ArrayBuffer) &&
+      !(typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(response.data)) &&
+      !(typeof Buffer !== 'undefined' && Buffer.isBuffer(response.data)) &&
+      !(typeof ReadableStream !== 'undefined' && response.data instanceof ReadableStream)
+    ) {
+      try {
+        if (typeof structuredClone === 'function') {
+          clonedData = structuredClone(response.data);
+        } else {
+          clonedData = JSON.parse(JSON.stringify(response.data));
+        }
+      } catch {
+        clonedData = Array.isArray(response.data) ? [...response.data] : { ...response.data };
+      }
+    }
+  }
+  return {
+    ...response,
+    headers: { ...response.headers },
+    data: clonedData,
+  };
 }
 
 function finalizeResponse(

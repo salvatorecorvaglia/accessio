@@ -73,6 +73,7 @@ Familiarize yourself with the project's layout:
   - `src/interceptors/`: Request/response interceptor management.
 - `tests/`: Comprehensive test suite written with **Vitest**.
 - `cjs/`: Output directory containing compiled CommonJS modules (built via `tsup`).
+- `esm/`: Output directory containing compiled ES Modules (built via `tsup`).
 
 ### Useful Scripts & Commands
 
@@ -88,7 +89,7 @@ Accessio uses several scripts to ensure code quality, proper types, and comprehe
 | `npm run lint:fix`      | Run Biome to automatically format and fix linting/import issues                       |
 | `npm run format`        | Format files in the repository using Biome                                            |
 | `npm run typecheck`     | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
-| `npm run build`         | Build the project for distribution (CommonJS output)                                  |
+| `npm run build`         | Build the project for distribution (CommonJS and ESM outputs)                         |
 
 > [!IMPORTANT]
 > Always run `npm run lint`, `npm run typecheck`, and `npm run test` before submitting a pull request to ensure the CI pipeline passes.

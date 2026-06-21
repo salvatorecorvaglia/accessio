@@ -9,6 +9,7 @@ Accessio is a lightweight, modern HTTP client built on top of the native fetch A
 ## ⚡ Key Features
 
 - **Zero Runtime Dependencies**: Keep your bundle size minimal and avoid supply chain vulnerabilities.
+- **📦 Dual ESM/CJS Support**: Native support for both ES Modules (`import`) and CommonJS (`require`) environments, compiled correctly for modern Node.js and browsers.
 - **Axios-Compatible API**: Direct drop-in replacement with `.get()`, `.post()`, `.request()`, and custom instances via `.create()`.
 - **🛡️ Built-in Security & Auto-Redaction**: Prevents accidental leakage of secrets in error logs. Automatically redacts:
   - `Authorization`, `Cookie`, and `Set-Cookie` headers.

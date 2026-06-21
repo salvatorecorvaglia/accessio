@@ -1,10 +1,10 @@
 {
   "name": "accessio",
-  "version": "1.8.0",
+  "version": "1.9.0",
   "description": "Fast, flexible HTTP client — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
-  "module": "./src/index.ts",
+  "module": "./esm/index.js",
   "types": "./index.d.ts",
   "publishConfig": {
     "access": "public",
@@ -13,56 +13,56 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./src/index.ts",
+      "import": "./esm/index.js",
       "require": "./cjs/index.cjs"
     },
     "./helpers/rateLimiter": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/rateLimiter.ts",
+      "import": "./esm/helpers/rateLimiter.js",
       "require": "./cjs/helpers/rateLimiter.cjs"
     },
     "./helpers/debug": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/debug.ts",
+      "import": "./esm/helpers/debug.js",
       "require": "./cjs/helpers/debug.cjs"
     },
     "./core/buildURL": {
       "types": "./index.d.ts",
-      "import": "./src/core/buildURL.ts",
+      "import": "./esm/core/buildURL.js",
       "require": "./cjs/core/buildURL.cjs"
     },
     "./core/mergeConfig": {
       "types": "./index.d.ts",
-      "import": "./src/core/mergeConfig.ts",
+      "import": "./esm/core/mergeConfig.js",
       "require": "./cjs/core/mergeConfig.cjs"
     },
     "./core/request": {
       "types": "./index.d.ts",
-      "import": "./src/core/request.ts",
+      "import": "./esm/core/request.js",
       "require": "./cjs/core/request.cjs"
     },
     "./core/retry": {
       "types": "./index.d.ts",
-      "import": "./src/core/retry.ts",
+      "import": "./esm/core/retry.js",
       "require": "./cjs/core/retry.cjs"
     },
     "./helpers/parseHeaders": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/parseHeaders.ts",
+      "import": "./esm/helpers/parseHeaders.js",
       "require": "./cjs/helpers/parseHeaders.cjs"
     },
     "./helpers/settle": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/settle.ts",
+      "import": "./esm/helpers/settle.js",
       "require": "./cjs/helpers/settle.cjs"
     },
     "./helpers/transformData": {
       "types": "./index.d.ts",
-      "import": "./src/helpers/transformData.ts",
+      "import": "./esm/helpers/transformData.js",
       "require": "./cjs/helpers/transformData.cjs"
     }
   },
-  "files": ["src/", "cjs/", "index.d.ts"],
+  "files": ["src/", "cjs/", "esm/", "index.d.ts"],
   "scripts": {
     "build:cjs": "tsup",
     "build": "npm run build:cjs",

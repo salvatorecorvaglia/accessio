@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-06-21
+
+### Added
+
+- Added support for Node.js streams and async iterables (using `Symbol.asyncIterator`) in the `stream()` method, alongside standard web streams.
+- Added dual ESM/CJS build outputs for package distribution.
+- Added a comprehensive regression test suite (`tests/regression_fixes_v2.test.ts`) covering circular structures, stream iterator consumption, SSE line endings, retry abort behavior, response transforms, and cache mutation protection.
+
+### Changed
+
+- Updated `tsup.config.ts` build configuration to compile and bundle both CommonJS and ES Modules outputs.
+- Updated `package.json` fields (`module`, `exports`, and `files`), `.gitignore`, and `biome.json` to support and ignore the new `esm/` distribution directory.
+- Updated request dispatch to run `transformResponse` independently for deduplicated requests sharing an inflight request.
+
+### Fixed
+
+- Fixed `toFormData` to gracefully handle circular references using a `WeakSet`, preventing stack overflow errors.
+- Fixed `stream()` SSE processing to robustly strip carriage returns (`\r\r\n` or `\r\n`) from incoming chunk lines.
+- Fixed request caching and deduplication to clone response data and headers before returning or caching, protecting cached/shared data against downstream mutations.
+- Fixed request retry logic to handle signal aborts during retry backoff sleep delays, immediately throwing an `AccessioError` with `ERR_CANCELED` code and proper cancellation context.
+
 ## [1.8.0] - 2026-06-18
 
 ### Added

@@ -23,17 +23,33 @@ function collectEntries(dir: string, base: string = dir): Record<string, string>
 
 const srcDir = join(__dirname, 'src');
 
-export default defineConfig({
-  entry: collectEntries(srcDir),
-  format: ['cjs'],
-  outDir: 'cjs',
-  outExtension: () => ({ js: '.cjs' }),
-  bundle: false,
-  clean: true,
-  dts: false,
-  silent: false,
-  target: 'node18',
-  platform: 'node',
-  noExternal: [],
-  sourcemap: true,
-});
+export default defineConfig([
+  {
+    entry: collectEntries(srcDir),
+    format: ['cjs'],
+    outDir: 'cjs',
+    outExtension: () => ({ js: '.cjs' }),
+    bundle: false,
+    clean: true,
+    dts: false,
+    silent: false,
+    target: 'node18',
+    platform: 'node',
+    noExternal: [],
+    sourcemap: true,
+  },
+  {
+    entry: collectEntries(srcDir),
+    format: ['esm'],
+    outDir: 'esm',
+    outExtension: () => ({ js: '.js' }),
+    bundle: false,
+    clean: true,
+    dts: false,
+    silent: false,
+    target: 'node18',
+    platform: 'node',
+    noExternal: [],
+    sourcemap: true,
+  },
+]);
