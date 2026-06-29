@@ -71,7 +71,7 @@ Familiarize yourself with the project's layout:
   - `src/helpers/`: Utility helpers (caching, limiters, header parsing, transform functions).
   - `src/defaults/`: Default configurations.
   - `src/interceptors/`: Request/response interceptor management.
-- `tests/`: Comprehensive test suite written with **Vitest**.
+- `tests/`: Comprehensive test suite written with **Vitest**. Includes unit, integration, and dedicated regression/feature test suites (such as `tests/gql.test.ts` for GraphQL, `tests/stream.test.ts` for streaming, `tests/memoryCache.test.ts` for cache behavior, and `tests/bugs_regression_fixes.test.ts` for regression fixes).
 - `cjs/`: Output directory containing compiled CommonJS modules (built via `tsup`).
 - `esm/`: Output directory containing compiled ES Modules (built via `tsup`).
 

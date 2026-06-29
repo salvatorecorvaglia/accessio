@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-29
+
+### Added
+
+- Added `gql()` client method to perform GraphQL POST requests with `query` and `variables` payloads.
+- Added `formSerializer` configuration option (`{ brackets?: boolean }`) to customize nested object serialization in `FormData` (enabling bracket notation vs default dot notation).
+- Added `cacheClone` configuration option (`boolean`, defaults to `true`) to allow bypassing caching/shared response cloning for performance or reference preservation when set to `false`.
+- Added static `Accessio.publicMethods` property listing all exposed API helper methods on the class/instance.
+
+### Changed
+
+- Refactored `AccessioError` to lazily redact and cache configurations on access, improving instantiation performance.
+- Updated `setBasicAuth` helper to preserve the case of existing `Authorization` / `authorization` header keys.
+
+### Fixed
+
+- Fixed stream signal management in `fetchAdapter` to ensure abort and timeout event listeners remain active throughout stream reading and are properly cleaned up upon completion, cancellation, or error.
+- Fixed query parameter serialization in `serializeParams` to handle circular references safely using a `WeakSet`.
+- Fixed header parsing in `parseHeaders` to support capturing multiple `Set-Cookie` headers via `getSetCookie()` when available.
+- Fixed signal propagation in `stream()` and `autoPaginate()` to correctly forward aborted signals to the request options.
+
 ## [1.9.0] - 2026-06-21
 
 ### Added
