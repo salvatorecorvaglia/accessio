@@ -23,6 +23,12 @@ export default function parseHeaders(headers: any): Record<string, string | stri
     headers.forEach((value: string, key: string) => {
       addHeader(key, value);
     });
+    if (typeof headers.getSetCookie === 'function') {
+      const cookies = headers.getSetCookie();
+      if (cookies && cookies.length > 0) {
+        parsed['set-cookie'] = cookies;
+      }
+    }
     return parsed;
   }
 

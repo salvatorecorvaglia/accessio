@@ -9,24 +9,6 @@ import { createRateLimiter } from './helpers/rateLimiter';
 import InterceptorManager from './interceptors/interceptorManager';
 import type { AccessioRequestConfig } from './types';
 
-const PUBLIC_METHODS = [
-  'request',
-  'getUri',
-  'get',
-  'delete',
-  'head',
-  'options',
-  'post',
-  'put',
-  'patch',
-  'postForm',
-  'putForm',
-  'patchForm',
-  'stream',
-  'autoPaginate',
-  'gql',
-];
-
 function createInstance(defaultConfig: AccessioRequestConfig) {
   const context = new Accessio(defaultConfig);
 
@@ -37,7 +19,7 @@ function createInstance(defaultConfig: AccessioRequestConfig) {
     return context.request(configOrUrl, config);
   };
 
-  for (const key of PUBLIC_METHODS) {
+  for (const key of Accessio.publicMethods) {
     const method: any = (context as any)[key];
     if (typeof method === 'function') {
       instance[key] = method.bind(context);

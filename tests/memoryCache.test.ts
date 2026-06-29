@@ -85,4 +85,42 @@ describe('MemoryCache', () => {
     defaultMemoryCache.delete('x');
     expect(defaultMemoryCache.get('x')).toBeNull();
   });
+
+  it('updates existing key without evicting other keys or exceeding limit', () => {
+    cache.set('a', 1);
+    cache.set('b', 2);
+    cache.set('c', 3);
+
+    // Updating 'a' should keep it at 3 items and not evict 'b' or 'c'
+    cache.set('a', 10);
+    expect(cache.get('a')).toBe(10);
+    expect(cache.get('b')).toBe(2);
+    expect(cache.get('c')).toBe(3);
+  });
+
+  it('proactively evicts up to 5 expired items during set', () => {
+    vi.useFakeTimers();
+    try {
+      cache = new MemoryCache(10);
+      cache.set('a', 1, 100);
+      cache.set('b', 2, 100);
+      cache.set('c', 3, 100);
+      cache.set('d', 4, 100);
+      cache.set('e', 5, 100);
+
+      vi.advanceTimersByTime(200);
+
+      // Setting 'f' should trigger eviction of 'a' through 'e'
+      cache.set('f', 6);
+
+      expect(cache.get('a')).toBeNull();
+      expect(cache.get('b')).toBeNull();
+      expect(cache.get('c')).toBeNull();
+      expect(cache.get('d')).toBeNull();
+      expect(cache.get('e')).toBeNull();
+      expect(cache.get('f')).toBe(6);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

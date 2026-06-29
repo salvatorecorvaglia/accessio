@@ -103,6 +103,8 @@ export interface AccessioRequestConfig {
   fetch?: typeof fetch;
   retryOn429?: boolean;
   maxRetryDelay?: number;
+  formSerializer?: { brackets?: boolean };
+  cacheClone?: boolean;
 }
 
 export interface AccessioResponse<T = unknown> {

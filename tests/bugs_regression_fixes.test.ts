@@ -431,4 +431,130 @@ describe('Bugs & Regression Fixes Tests', () => {
       }
     });
   });
+
+  describe('serializeParams circular reference safety', () => {
+    it('safely skips circular references in query params without throwing RangeError', async () => {
+      const { serializeParams } = await import('../src/core/buildURL');
+      const circular: any = { a: 1 };
+      circular.self = circular;
+
+      const result = serializeParams(circular);
+      expect(result).toBe('a=1');
+    });
+  });
+
+  describe('getSetCookie support in headers parsing', () => {
+    it('uses getSetCookie when available to preserve multiple Set-Cookie headers as an array', async () => {
+      const { default: parseHeaders } = await import('../src/helpers/parseHeaders');
+      const mockHeaders = {
+        forEach(fn: any) {
+          fn('foo=bar', 'Set-Cookie');
+        },
+        getSetCookie: () => ['foo=bar', 'baz=qux'],
+      };
+
+      const parsed = parseHeaders(mockHeaders);
+      expect(parsed['set-cookie']).toEqual(['foo=bar', 'baz=qux']);
+    });
+  });
+
+  describe('formSerializer brackets option support', () => {
+    it('serializes nested objects using dot notation by default', async () => {
+      const client = new Accessio();
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: () => Promise.resolve('{}'),
+      });
+      global.fetch = mockFetch;
+
+      // Custom mock FormData to extract keys
+      const appendedKeys: Record<string, any> = {};
+      class MockFormData {
+        append(key: string, val: any) {
+          appendedKeys[key] = val;
+        }
+      }
+      const originalFormData = (global as any).FormData;
+      (global as any).FormData = MockFormData;
+
+      try {
+        await client.postForm('/submit', { user: { id: 1, profile: { name: 'Bob' } } });
+        expect(appendedKeys).toEqual({
+          'user.id': 1,
+          'user.profile.name': 'Bob',
+        });
+      } finally {
+        (global as any).FormData = originalFormData;
+      }
+    });
+
+    it('serializes nested objects using bracket notation when formSerializer.brackets is true', async () => {
+      const client = new Accessio();
+      const mockFetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers(),
+        text: () => Promise.resolve('{}'),
+      });
+      global.fetch = mockFetch;
+
+      const appendedKeys: Record<string, any> = {};
+      class MockFormData {
+        append(key: string, val: any) {
+          appendedKeys[key] = val;
+        }
+      }
+      const originalFormData = (global as any).FormData;
+      (global as any).FormData = MockFormData;
+
+      try {
+        await client.postForm(
+          '/submit',
+          { user: { id: 1, profile: { name: 'Bob' } } },
+          {
+            formSerializer: { brackets: true },
+          },
+        );
+        expect(appendedKeys).toEqual({
+          'user[id]': 1,
+          'user[profile][name]': 'Bob',
+        });
+      } finally {
+        (global as any).FormData = originalFormData;
+      }
+    });
+  });
+
+  describe('cacheClone option support', () => {
+    it('returns a clone by default but returns the same reference when cacheClone is false', async () => {
+      const client = new Accessio();
+      global.fetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'content-type': 'application/json' }),
+        text: () => Promise.resolve('{"items": [1]}'),
+      });
+
+      // Default (cloning enabled)
+      const res1 = await client.request({ url: '/cache-test', cache: true });
+      const res2 = await client.request({ url: '/cache-test', cache: true });
+      expect(res1.data).not.toBe(res2.data);
+      expect(res1.data).toEqual(res2.data);
+
+      // cacheClone: false (cloning disabled)
+      const res3 = await client.request({
+        url: '/cache-test-no-clone',
+        cache: true,
+        cacheClone: false,
+      });
+      const res4 = await client.request({
+        url: '/cache-test-no-clone',
+        cache: true,
+        cacheClone: false,
+      });
+      expect(res3.data).toBe(res4.data);
+    });
+  });
 });

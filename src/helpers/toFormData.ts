@@ -3,6 +3,7 @@ export function toFormData(
   form?: FormData,
   namespace?: string,
   seen?: WeakSet<any>,
+  options?: { brackets?: boolean },
 ): FormData {
   const fd = form || new FormData();
   let formKey: string;
@@ -32,9 +33,10 @@ export function toFormData(
       if (Array.isArray(obj)) {
         formKey = namespace ? `${namespace}[${key}]` : key;
       } else {
-        formKey = namespace ? `${namespace}.${key}` : key;
+        const useBrackets = options?.brackets ?? false;
+        formKey = namespace ? (useBrackets ? `${namespace}[${key}]` : `${namespace}.${key}`) : key;
       }
-      toFormData(obj[key], fd, formKey, visited);
+      toFormData(obj[key], fd, formKey, visited, options);
     });
   } else {
     fd.append(namespace || '', obj);

@@ -16,7 +16,7 @@ function serializeParams(
 
   const parts: string[] = [];
 
-  function encode(prefix: string, value: unknown): void {
+  function encode(prefix: string, value: unknown, seen?: WeakSet<object>): void {
     if (value === null || value === undefined) {
       return;
     }
@@ -24,14 +24,19 @@ function serializeParams(
     if (Array.isArray(value)) {
       value.forEach((item, index) => {
         if (typeof item === 'object' && item !== null) {
-          encode(`${prefix}[${index}]`, item);
+          encode(`${prefix}[${index}]`, item, seen);
         } else {
-          encode(prefix, item);
+          encode(prefix, item, seen);
         }
       });
     } else if (typeof value === 'object' && !(value instanceof Date)) {
+      const visited = seen ?? new WeakSet<object>();
+      if (visited.has(value)) {
+        return;
+      }
+      visited.add(value);
       Object.keys(value as Record<string, unknown>).forEach((key) => {
-        encode(`${prefix}[${key}]`, (value as Record<string, unknown>)[key]);
+        encode(`${prefix}[${key}]`, (value as Record<string, unknown>)[key], visited);
       });
     } else {
       const encodedValue = value instanceof Date ? value.toISOString() : value;
@@ -39,8 +44,13 @@ function serializeParams(
     }
   }
 
+  const rootSeen = new WeakSet<object>();
+  if (typeof params === 'object' && params !== null) {
+    rootSeen.add(params);
+  }
+
   Object.keys(params).forEach((key) => {
-    encode(key, params[key]);
+    encode(key, params[key], rootSeen);
   });
 
   return parts.join('&');

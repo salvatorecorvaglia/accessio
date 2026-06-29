@@ -206,6 +206,106 @@ function classifyFetchError(
   );
 }
 
+function wrapStreamWithCleanup(stream: any, cleanup: () => void): any {
+  if (!stream) return stream;
+
+  let cleaned = false;
+  const onceCleanup = () => {
+    if (!cleaned) {
+      cleaned = true;
+      cleanup();
+    }
+  };
+
+  // If it has a cancel method (Web Stream)
+  if (typeof stream.getReader === 'function') {
+    const originalGetReader = stream.getReader;
+    stream.getReader = (...args: any[]) => {
+      const reader = originalGetReader.apply(stream, args);
+      const originalRead = reader.read;
+      const originalCancel = reader.cancel;
+
+      reader.read = async () => {
+        try {
+          const result = await originalRead.call(reader);
+          if (result.done) {
+            onceCleanup();
+          }
+          return result;
+        } catch (err) {
+          onceCleanup();
+          throw err;
+        }
+      };
+
+      reader.cancel = async (...cancelArgs: any[]) => {
+        try {
+          return await originalCancel.apply(reader, cancelArgs);
+        } finally {
+          onceCleanup();
+        }
+      };
+
+      return reader;
+    };
+  }
+
+  // If it supports Symbol.asyncIterator (Node or Web Stream async iteration)
+  if (typeof stream[Symbol.asyncIterator] === 'function') {
+    const originalAsyncIterator = stream[Symbol.asyncIterator];
+    stream[Symbol.asyncIterator] = () => {
+      const iterator = originalAsyncIterator.call(stream);
+      const originalNext = iterator.next;
+      const originalReturn = iterator.return;
+      const originalThrow = iterator.throw;
+
+      iterator.next = async (...nextArgs: any[]) => {
+        try {
+          const result = await originalNext.apply(iterator, nextArgs);
+          if (result.done) {
+            onceCleanup();
+          }
+          return result;
+        } catch (err) {
+          onceCleanup();
+          throw err;
+        }
+      };
+
+      if (originalReturn) {
+        iterator.return = async (...returnArgs: any[]) => {
+          try {
+            return await originalReturn.apply(iterator, returnArgs);
+          } finally {
+            onceCleanup();
+          }
+        };
+      }
+
+      if (originalThrow) {
+        iterator.throw = async (...throwArgs: any[]) => {
+          try {
+            return await originalThrow.apply(iterator, throwArgs);
+          } finally {
+            onceCleanup();
+          }
+        };
+      }
+
+      return iterator;
+    };
+  }
+
+  // If it's a Node stream (EventEmitter)
+  if (typeof stream.on === 'function') {
+    stream.on('end', onceCleanup);
+    stream.on('close', onceCleanup);
+    stream.on('error', onceCleanup);
+  }
+
+  return stream;
+}
+
 export default async function fetchAdapter(
   config: AccessioRequestConfig,
   fullURL: string,
@@ -215,6 +315,7 @@ export default async function fetchAdapter(
   assertValidURL(fullURL, config);
 
   const abort = setupAbort(config, fetchOptions);
+  let isStream = false;
 
   try {
     const fetchImpl = config.fetch || fetch;
@@ -239,6 +340,10 @@ export default async function fetchAdapter(
     let responseData: unknown;
     try {
       responseData = await readResponseData(fetchResponse, config);
+      if (config.responseType === 'stream') {
+        isStream = true;
+        responseData = wrapStreamWithCleanup(responseData, abort.cleanup);
+      }
       if (config.schema) {
         if (typeof config.schema.parseAsync === 'function') {
           responseData = await config.schema.parseAsync(responseData);
@@ -269,6 +374,8 @@ export default async function fetchAdapter(
   } catch (error) {
     throw classifyFetchError(error, config, abort.isTimedOut());
   } finally {
-    abort.cleanup();
+    if (!isStream) {
+      abort.cleanup();
+    }
   }
 }

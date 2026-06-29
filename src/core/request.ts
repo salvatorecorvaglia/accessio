@@ -119,7 +119,7 @@ export default async function dispatchRequest(
     const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
     const cached = await cacheProvider.get(cacheKey);
     if (cached) {
-      const clonedCached = cloneResponse(cached);
+      const clonedCached = config.cacheClone !== false ? cloneResponse(cached) : cached;
       const cachedView: AccessioResponse = {
         ...clonedCached,
         config: redactConfig(config) as typeof clonedCached.config,
@@ -136,7 +136,7 @@ export default async function dispatchRequest(
     if (inflight) {
       try {
         const shared = await inflight;
-        const clonedShared = cloneResponse(shared);
+        const clonedShared = config.cacheClone !== false ? cloneResponse(shared) : shared;
         const response = finalizeResponse(clonedShared, config);
 
         const responseTransforms = buildTransformArray(config.transformResponse);
@@ -238,7 +238,7 @@ export default async function dispatchRequest(
 
   try {
     const shared = await promise;
-    const clonedShared = cloneResponse(shared);
+    const clonedShared = config.cacheClone !== false ? cloneResponse(shared) : shared;
     const response = finalizeResponse(clonedShared, config);
 
     const responseTransforms = buildTransformArray(config.transformResponse);
@@ -252,7 +252,11 @@ export default async function dispatchRequest(
 
     if (isGet && config.cache) {
       const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
-      await cacheProvider.set(cacheKey, cloneResponse(response), config.cacheTTL);
+      await cacheProvider.set(
+        cacheKey,
+        config.cacheClone !== false ? cloneResponse(response) : response,
+        config.cacheTTL,
+      );
     }
 
     const settled = await new Promise<AccessioResponse>((resolve, reject) => {

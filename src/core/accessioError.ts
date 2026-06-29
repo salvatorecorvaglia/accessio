@@ -141,12 +141,20 @@ export class AccessioError extends Error {
   static ERR_INVALID_URL: string = ErrorCodes.ERR_INVALID_URL;
 
   readonly code: string | null;
-  readonly config: AccessioRequestConfig | null;
+  private _config: AccessioRequestConfig | null;
+  private _redactedConfig: AccessioRequestConfig | null = null;
   readonly request: unknown;
   readonly response: AccessioResponse | null;
   readonly isAccessioError: true;
   cause?: Error;
   override name = 'AccessioError' as const;
+
+  get config(): AccessioRequestConfig | null {
+    if (this._redactedConfig === null && this._config !== null) {
+      this._redactedConfig = redactConfig(this._config);
+    }
+    return this._redactedConfig;
+  }
 
   constructor(
     message: string,
@@ -158,7 +166,7 @@ export class AccessioError extends Error {
     super(message);
     this.name = 'AccessioError';
     this.code = code ?? null;
-    this.config = redactConfig(config ?? null);
+    this._config = config ?? null;
     this.request = request ?? null;
     this.response = response ?? null;
     this.isAccessioError = true;

@@ -79,6 +79,24 @@ function dispatchAndRetry(cfg: AccessioRequestConfig): Promise<AccessioResponse>
 }
 
 export class Accessio {
+  static readonly publicMethods = [
+    'request',
+    'getUri',
+    'get',
+    'delete',
+    'head',
+    'options',
+    'post',
+    'put',
+    'patch',
+    'postForm',
+    'putForm',
+    'patchForm',
+    'stream',
+    'autoPaginate',
+    'gql',
+  ];
+
   defaults: AccessioRequestConfig;
   interceptors: Interceptors;
 
@@ -270,7 +288,11 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    const formData = data && !(data instanceof FormData) ? toFormData(data) : data;
+    const useBrackets = config?.formSerializer?.brackets ?? false;
+    const formData =
+      data && !(data instanceof FormData)
+        ? toFormData(data, undefined, undefined, undefined, { brackets: useBrackets })
+        : data;
     return this.request<T>(
       mergeConfig(config || {}, {
         method,
@@ -309,9 +331,11 @@ export class Accessio {
     url: string,
     config?: AccessioRequestConfig,
   ): AsyncGenerator<T, void, unknown> {
-    const response = await this.request<any>(
-      mergeConfig(config || {}, { method: 'get', url, responseType: 'stream' }),
-    );
+    const merged = mergeConfig(config || {}, { method: 'get', url, responseType: 'stream' });
+    if (config?.signal) {
+      merged.signal = config.signal;
+    }
+    const response = await this.request<any>(merged);
     if (!response.data) return;
 
     const stream = response.data;
@@ -422,6 +446,9 @@ export class Accessio {
       if (nextUrl) {
         const merged = mergeConfig(currentConfig, { url: nextUrl });
         merged.params = {};
+        if (currentConfig.signal) {
+          merged.signal = currentConfig.signal;
+        }
         currentConfig = merged;
       }
     }

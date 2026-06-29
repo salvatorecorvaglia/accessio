@@ -22,5 +22,7 @@ export function setBasicAuth(
       }),
     );
   }
-  headers.Authorization = `Basic ${encoded}`;
+  const authKey =
+    Object.keys(headers).find((key) => key.toLowerCase() === 'authorization') || 'Authorization';
+  headers[authKey] = `Basic ${encoded}`;
 }

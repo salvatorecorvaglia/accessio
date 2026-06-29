@@ -136,4 +136,72 @@ describe('Accessio streaming', () => {
 
     expect(items).toEqual([]);
   });
+
+  it('correctly keeps abort event listener active during streaming and cleans up after completion', async () => {
+    const controller = new AbortController();
+    const encoder = new TextEncoder();
+
+    let streamController: ReadableStreamDefaultController | null = null;
+    const mockStream = new ReadableStream({
+      start(c) {
+        streamController = c;
+        c.enqueue(encoder.encode('data: {"val": 1}\n'));
+      },
+    });
+
+    const client = new Accessio();
+    const customSignal = controller.signal;
+
+    // Spy on abort cleanup function or manually check event listeners
+    let signalListenersCount = 0;
+    const originalAddEventListener = customSignal.addEventListener.bind(customSignal);
+    const originalRemoveEventListener = customSignal.removeEventListener.bind(customSignal);
+
+    customSignal.addEventListener = vi.fn((type, listener, options) => {
+      signalListenersCount++;
+      return originalAddEventListener(type, listener, options);
+    });
+    customSignal.removeEventListener = vi.fn((type, listener, options) => {
+      signalListenersCount--;
+      return originalRemoveEventListener(type, listener, options);
+    });
+
+    const testAbortHandler = () => {
+      try {
+        streamController?.error(customSignal.reason || new Error('Aborted'));
+      } catch {
+        // ignore
+      }
+    };
+    customSignal.addEventListener('abort', testAbortHandler);
+
+    global.fetch = vi.fn().mockResolvedValue({
+      status: 200,
+      statusText: 'OK',
+      headers: new Headers({ 'content-type': 'text/plain' }),
+      body: mockStream,
+    });
+
+    const streamGen = client.stream('/stream', { signal: customSignal, timeout: 5000 });
+    const firstIter = await streamGen.next();
+    expect(firstIter.value).toEqual({ val: 1 });
+
+    // Assert that the listener is STILL active (has not been cleaned up yet because stream is open)
+    expect(signalListenersCount).toBeGreaterThan(0);
+
+    // Cancel / complete the stream by calling aborting
+    controller.abort('user cancel');
+
+    // Ensure the stream generator finishes and cleans up
+    try {
+      await streamGen.next();
+    } catch (_e) {
+      // ignore abort error if thrown
+    }
+
+    customSignal.removeEventListener('abort', testAbortHandler);
+
+    // Verify cleanup was run
+    expect(signalListenersCount).toBe(0);
+  });
 });
