@@ -40,4 +40,7 @@ claude-settings.json
 .gemini/
 .antigravity/
 .antigravitycli/
+.copilot/
+.codex/
+.cagent/
 CLAUDE.md
