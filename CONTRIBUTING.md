@@ -47,7 +47,7 @@ When you're ready to submit a change:
 ### Prerequisites
 
 - **Node.js**: Version `18.0.0` or higher is required.
-- **npm**: The package manager configured with this repository.
+- **pnpm**: The package manager configured with this repository.
 
 ### Local Setup
 
@@ -56,7 +56,7 @@ Clone your fork of the repository and install the dependencies:
 ```bash
 git clone https://github.com/<your-username>/accessio.git
 cd accessio
-npm install
+pnpm install
 ```
 
 ### Directory Structure
@@ -81,18 +81,18 @@ Accessio uses several scripts to ensure code quality, proper types, and comprehe
 
 | Command                 | Description                                                                           |
 | :---------------------- | :------------------------------------------------------------------------------------ |
-| `npm run test`          | Run all unit tests (Node.js environment)                                              |
-| `npm run test:watch`    | Run tests in watch mode for active development                                        |
-| `npm run test:coverage` | Run all tests and generate a test coverage report                                     |
-| `npm run test:browser`  | Run tests in a simulated browser environment using `jsdom`                            |
-| `npm run lint`          | Run Biome to check formatting, linting, and quality rules                            |
-| `npm run lint:fix`      | Run Biome to automatically format and fix linting/import issues                       |
-| `npm run format`        | Format files in the repository using Biome                                            |
-| `npm run typecheck`     | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
-| `npm run build`         | Build the project for distribution (CommonJS and ESM outputs)                         |
+| `pnpm test`             | Run all unit tests (Node.js environment)                                              |
+| `pnpm run test:watch`   | Run tests in watch mode for active development                                        |
+| `pnpm run test:coverage`| Run all tests and generate a test coverage report                                     |
+| `pnpm run test:browser` | Run tests in a simulated browser environment using `jsdom`                            |
+| `pnpm run lint`         | Run Biome to check formatting, linting, and quality rules                            |
+| `pnpm run lint:fix`     | Run Biome to automatically format and fix linting/import issues                       |
+| `pnpm run format`       | Format files in the repository using Biome                                            |
+| `pnpm run typecheck`    | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
+| `pnpm run build`        | Build the project for distribution (CommonJS and ESM outputs)                         |
 
 > [!IMPORTANT]
-> Always run `npm run lint`, `npm run typecheck`, and `npm run test` before submitting a pull request to ensure the CI pipeline passes.
+> Always run `pnpm run lint`, `pnpm run typecheck`, and `pnpm test` before submitting a pull request to ensure the CI pipeline passes.
 
 ---
 
@@ -139,9 +139,9 @@ _Example:_ `feat(cache): add stale-while-revalidate strategy support`
 
 Before submitting your PR, please verify:
 
-- [ ] Your code compiles correctly with no type errors (`npm run typecheck`).
-- [ ] All linters and formatters pass with no errors (`npm run lint` and `npm run format`).
-- [ ] Existing and new unit tests pass successfully (`npm run test` and `npm run test:browser`).
+- [ ] Your code compiles correctly with no type errors (`pnpm run typecheck`).
+- [ ] All linters and formatters pass with no errors (`pnpm run lint` and `pnpm run format`).
+- [ ] Existing and new unit tests pass successfully (`pnpm test` and `pnpm run test:browser`).
 - [ ] You have added tests covering the new feature or bug fix.
 - [ ] You have updated the documentation or `README.md` if your changes introduce new features or change behavior.
 - [ ] Your commit messages follow the Conventional Commits specification.

@@ -26,12 +26,15 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.publish_tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      - run: npm ci
-      - run: npm test
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm test
 
   publish-npm:
     name: Publish unscoped to npmjs
@@ -41,10 +44,13 @@ jobs:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.inputs.publish_tag }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
       - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build
-      - run: npm publish --access public --provenance
+          cache: 'pnpm'
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - run: pnpm publish --access public --provenance
