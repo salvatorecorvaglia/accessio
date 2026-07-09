@@ -104,6 +104,7 @@ When writing code for Accessio, please adhere to our core design values:
 2.  **Modern Standards**: Rely on modern JavaScript/TypeScript standards and browser/Node APIs (e.g., native `fetch`, `AbortController`).
 3.  **Modular Features**: Extra features like rate limiting, debugging logs, custom cache providers, or schema validation should be optional, lightweight, and easily tree-shaken.
 4.  **Premium Developer Experience (DX)**: APIs should be intuitive, types should be precise, and warnings/errors should be helpful and descriptive.
+5.  **Robust Regression Testing**: When fixing bugs or adding edge-case behaviors, write dedicated regression tests in `tests/bugs_regression_fixes.test.ts` to verify the fix and prevent future regressions.
 
 ---
 

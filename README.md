@@ -31,8 +31,20 @@ Accessio is a lightweight, modern HTTP client built on top of the native fetch A
 
 ## 📦 Installation
 
+Install Accessio using your preferred package manager:
+
 ```bash
+# Using npm
 npm install accessio
+
+# Using pnpm
+pnpm add accessio
+
+# Using yarn
+yarn add accessio
+
+# Using bun
+bun add accessio
 ```
 
 ---
@@ -128,6 +140,9 @@ const response = await accessio.get('/flaky-endpoint', {
 });
 ```
 
+> [!NOTE]
+> Even if the `retry` config option is set to `0`, enabling `retryOn429: true` will still retry `429 Too Many Requests` responses up to 3 times by default, respecting the `Retry-After` header.
+
 ### ⏳ Concurrency Rate Limiting
 
 Throttle outbound requests using a queue-based rate limiter. This is especially useful for third-party APIs with tight request limits.
@@ -144,6 +159,9 @@ const api = accessio.create({ rateLimiter });
 const requests = [1, 2, 3, 4, 5].map((id) => api.get(`/users/${id}`));
 const responses = await Promise.all(requests);
 ```
+
+> [!TIP]
+> If a queued request is aborted using an `AbortSignal`, it is immediately ejected from the rate limiter's queue to avoid blocking any pending requests in line.
 
 ### 🌊 SSE & Newline JSON Streaming
 
@@ -186,6 +204,8 @@ const response = await api.get('/users/123', {
 
 const user = response.data; // Fully typed as { id: string; name: string; email: string }
 ```
+
+Both synchronous (via `.parse()`) and asynchronous (via `.parseAsync()`) validation schemas are supported out-of-the-box.
 
 ### 📦 Request Deduplication & Caching
 

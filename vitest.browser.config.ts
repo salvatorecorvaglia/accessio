@@ -2,7 +2,7 @@
  * Vitest configuration for browser environment tests.
  *
  * Uses jsdom to simulate browser APIs (fetch, XMLHttpRequest, etc.)
- * Run with: npx vitest run --config vitest.browser.config.ts
+ * Run with: pnpm run test:browser
  */
 
 import { defineConfig } from 'vitest/config';
