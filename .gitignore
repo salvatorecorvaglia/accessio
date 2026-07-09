@@ -22,9 +22,6 @@ esm/
 dist/
 coverage/
 
-# Lock files
-yarn.lock
-
 # AI Tools
 .openai/
 .chatgpt/
