@@ -88,7 +88,7 @@
   },
   "homepage": "https://github.com/salvatorecorvaglia/accessio",
   "sideEffects": false,
-  "packageManager": "pnpm@11.6.0",
+  "packageManager": "pnpm@10.34.4",
   "engines": {
     "node": ">=18.0.0"
   },
