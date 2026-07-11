@@ -18,10 +18,11 @@ Accessio is a lightweight, modern HTTP client built on top of the native fetch A
   - Inline credentials inside URLs.
 - **⏳ Concurrency Rate Limiter**: Built-in queue-based rate limiter to throttle concurrent requests, complete with immediate queue ejection on `AbortSignal` cancellation.
 - **🔁 Jittered Exponential Backoff Retry**: Automatic retries for network failures or `5xx` status codes. Fully respects the HTTP 429 `Retry-After` header and supports customizable retry conditions and callbacks.
-- **🌊 SSE & Newline JSON Streaming**: Native asynchronous generator-based parsing for Server-Sent Events (SSE) and newline-delimited JSON streams. Works across Node.js streams, async iterables, and standard web streams.
-- **📂 Auto-Pagination**: Seamlessly yields paginated items from APIs using page links (e.g., `next` or `links.next`).
+- **🌊 SSE & Newline JSON Streaming**: Native asynchronous generator-based parsing for Server-Sent Events (SSE) and newline-delimited JSON streams. Works across Node.js streams, async iterables, and standard web streams. Supports raw plain text line-by-line fallback.
+- **📂 Auto-Pagination**: Seamlessly yields paginated items from APIs using page links, automatically preserving persistent query parameters and supporting custom item selectors.
+- **🛡️ Streaming Response Size Limits**: Enforces response download size limits using `maxContentLength` even for chunked streams to prevent memory exhaustion.
 - **🧪 Type-safe Schema Validation**: Validate API response payloads at runtime using Zod, ArkType, or any validation library with a `.parse()` or `.parseAsync()` method.
-- **📦 Request Deduplication**: Automatically coalesces concurrent duplicate GET requests to avoid redundant network traffic.
+- **📦 Request Deduplication**: Automatically coalesces concurrent duplicate GET requests, correctly managing per-request abort controllers and hooks.
 - **💾 Memory Caching**: In-memory caching out-of-the-box with custom TTL, or easily swap in a custom storage provider (e.g., Redis, LocalStorage).
 - **🔗 Synchronous & Asynchronous Interceptors**: Hook into the request/response pipeline to dynamically inject headers, handle global errors, or log metrics.
 - **⚓ Lifecycle Hooks**: Granular callbacks (`onBeforeRequest`, `onRequestResponse`, `onRequestError`) for custom instrumentation.
@@ -174,14 +175,51 @@ for await (const chunk of api.stream('/ai/complete')) {
 }
 ```
 
-### 📂 Auto-Pagination
-
-Avoid boilerplate code for pagination. Accessio can auto-follow `next` and `links.next` properties automatically:
+If the stream contains raw plain text instead of structured SSE or JSON format, the stream utility will gracefully fall back to yielding raw text lines:
 
 ```typescript
-// Automatically fetches subsequent pages until next link is null
-for await (const item of api.autoPaginate('/users?page=1')) {
-  console.log(item.name); // Yields individual items from each page's items array
+for await (const line of api.stream('/raw-logs')) {
+  console.log(line); // Yields "raw plain line 1", "raw plain line 2", etc.
+}
+```
+
+### 📂 Auto-Pagination
+
+Avoid boilerplate code for pagination. Accessio can auto-follow `next` and `links.next` properties automatically.
+
+By default, the client looks for arrays under `data`, `data.data`, `data.items`, or `data.results` to extract items. If your API structure is different, configure `paginateItems` with either a property name string or a custom extractor function:
+
+```typescript
+// Using a custom property key
+for await (const item of api.autoPaginate('/users?page=1', { paginateItems: 'results' })) {
+  console.log(item.name);
+}
+
+// Using a custom extractor function for nested structures
+for await (const item of api.autoPaginate('/users?page=1', {
+  paginateItems: (data) => data.nested.items_list
+})) {
+  console.log(item.name);
+}
+```
+
+> [!NOTE]
+> `autoPaginate` automatically preserves persistent query parameters (e.g. `apiKey` or `token`) across page transitions, while cleanly stripping out any parameters (such as `page`) that are overridden by the next page URL.
+
+### 🛡️ Streaming Response Size Limits
+
+Prevent memory exhaustion or denial-of-service from infinite or extremely large responses by setting `maxContentLength`. This enforces download size limits on both standard responses and chunked/SSE streams.
+
+```typescript
+try {
+  await api.get('/large-file', {
+    maxContentLength: 10 * 1024 * 1024, // Limit response to 10MB
+    responseType: 'stream',
+  });
+} catch (error) {
+  if (accessio.isAccessioError(error)) {
+    console.error(error.message); // "maxContentLength size of 10485760 exceeded"
+  }
 }
 ```
 
@@ -258,6 +296,10 @@ api.interceptors.response.use(
 );
 ```
 
+> [!WARNING]
+> Synchronous request interceptors (configured using `{ synchronous: true }` option) must return the config object synchronously and **cannot** return a `Promise`. Returning a `Promise` from a synchronous interceptor will throw an `AccessioError` with code `ERR_BAD_OPTION`.
+```
+
 ### 🕸️ GraphQL (GQL) Support
 
 Accessio offers a native `.gql()` method to execute GraphQL query or mutation requests easily:
@@ -314,6 +356,7 @@ Here is the complete list of config parameters available in `AccessioRequestConf
 | `auth`               | `AuthConfig`                                              | `undefined`           | Credentials for HTTP Basic Auth (`username` and `password`).                    |
 | `params`             | `Record`                                                  | `undefined`           | Query parameters appended to the URL.                                          |
 | `paramsSerializer`   | `ParamsSerializer`                                        | `undefined`           | Custom query parameters serializer function.                                   |
+| `paginateItems`      | `string \| ((data: any) => any[])`                        | `undefined`           | Custom extraction key or function to resolve array of items for auto-pagination.|
 | `data`               | `any`                                                     | `undefined`           | The payload to send in the request body.                                       |
 | `formSerializer`     | `{ brackets?: boolean }`                                  | `undefined`           | Options for flat/nested FormData serialization behavior.                       |
 | `timeout`            | `number`                                                  | `0` (disabled)        | Request timeout in milliseconds.                                               |
@@ -324,7 +367,8 @@ Here is the complete list of config parameters available in `AccessioRequestConf
 | `validateStatus`     | `(status: number) => boolean`                             | `undefined`           | Custom function to validate status code (determines if promise is resolved).    |
 | `retry`              | `number`                                                  | `0`                   | Number of times to retry failed requests.                                      |
 | `retryDelay`         | `number`                                                  | `1000`                | Initial delay for exponential backoff (ms).                                    |
-| `maxRetryDelay`      | `number`                                                  | `10000`               | Maximum retry delay cap in milliseconds.                                       |
+| `maxRetryDelay`      | `number`                                                  | `30000`               | Maximum retry delay cap in milliseconds.                                       |
+| `maxContentLength`   | `number`                                                  | `undefined`           | Maximum allowed content length in bytes (enforced even for chunked streams).  |                                       |
 | `retryOn429`         | `boolean`                                                 | `false`               | Automatically retry on 429 using the `Retry-After` header.                     |
 | `rateLimiter`        | `RateLimiter`                                             | `undefined`           | A rate limiter instance to enqueue requests.                                   |
 | `dedupe`             | `boolean`                                                 | `false`               | Coalesce concurrent duplicate GET requests.                                    |

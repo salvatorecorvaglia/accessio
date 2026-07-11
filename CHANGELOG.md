@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-07-11
+
+### Added
+
+- Added `maxContentLength` configuration option to enforce streaming response download size limits (throws `AccessioError` with `ERR_BAD_RESPONSE` when exceeded).
+- Added `paginateItems` configuration option (`string | ((data: any) => any[])`) to `autoPaginate()` to allow custom extraction of paginated items.
+- Exported all TypeScript types from the main entrypoint via `export type * from './types'`.
+- Added a regression test suite (`tests/regression_fixes_v3.test.ts`) covering response size limits, custom pagination, interceptors, request deduplication, and rate limit abort behavior.
+
+### Changed
+
+- Migrated workspace package manager from npm to pnpm (`v10.34.4`), introducing workspace-wide package dependency management and updating all GitHub Actions CI workflows to use `pnpm/action-setup@v6`.
+- Refactored request deduplication to use a subscriber-based execution pattern, ensuring correct hook execution and response cloning for duplicate concurrent requests.
+- Improved abort handling in request deduplication to automatically abort the backing fetch request if all subscriber signals are aborted.
+- Restricted synchronous request interceptors from returning a `Promise`, throwing a bad option error if one is returned.
+- Updated configuration merging in `mergeConfig` to use standard object literals `{}` instead of `Object.create(null)`.
+- Updated `autoPaginate` logic to selectively strip only query parameters present in the next URL, preserving other custom parameters.
+- Capped retry backoff delay to a maximum value defined by `maxRetryDelay` (defaulting to 30,000ms).
+- Updated package exports to point types to `./esm/index.d.ts` and separate granular TypeScript declarations for subpaths.
+- Moved `esbuild` dependency override from `package.json` to `pnpm-workspace.yaml`.
+
 ## [2.0.0] - 2026-06-29
 
 ### Added

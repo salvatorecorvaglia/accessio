@@ -1,6 +1,6 @@
 {
   "name": "accessio",
-  "version": "2.0.0",
+  "version": "3.0.0",
   "description": "Fast, flexible HTTP client — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",
@@ -94,11 +94,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.8.3",
-    "@types/node": "^25.9.2",
-    "@vitest/coverage-v8": "^4.1.8",
-    "jsdom": "^29.0.2",
-    "tsup": "^8.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^4.1.8"
+    "@types/node": "^25.9.5",
+    "@vitest/coverage-v8": "^4.1.10",
+    "jsdom": "^29.1.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

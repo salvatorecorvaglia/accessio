@@ -71,7 +71,7 @@ Familiarize yourself with the project's layout:
   - `src/helpers/`: Utility helpers (caching, limiters, header parsing, transform functions).
   - `src/defaults/`: Default configurations.
   - `src/interceptors/`: Request/response interceptor management.
-- `tests/`: Comprehensive test suite written with **Vitest**. Includes unit, integration, and dedicated regression/feature test suites (such as `tests/gql.test.ts` for GraphQL, `tests/stream.test.ts` for streaming, `tests/memoryCache.test.ts` for cache behavior, and `tests/bugs_regression_fixes.test.ts` for regression fixes).
+- `tests/`: Comprehensive test suite written with **Vitest**. Includes unit, integration, and dedicated regression/feature test suites (such as `tests/gql.test.ts` for GraphQL, `tests/stream.test.ts` for streaming, `tests/memoryCache.test.ts` for cache behavior, and dedicated regression test suites like `tests/bugs_regression_fixes.test.ts`, `tests/regression_fixes_v2.test.ts`, and `tests/regression_fixes_v3.test.ts`).
 - `cjs/`: Output directory containing compiled CommonJS modules (built via `tsup`).
 - `esm/`: Output directory containing compiled ES Modules (built via `tsup`).
 
@@ -104,7 +104,7 @@ When writing code for Accessio, please adhere to our core design values:
 2.  **Modern Standards**: Rely on modern JavaScript/TypeScript standards and browser/Node APIs (e.g., native `fetch`, `AbortController`).
 3.  **Modular Features**: Extra features like rate limiting, debugging logs, custom cache providers, or schema validation should be optional, lightweight, and easily tree-shaken.
 4.  **Premium Developer Experience (DX)**: APIs should be intuitive, types should be precise, and warnings/errors should be helpful and descriptive.
-5.  **Robust Regression Testing**: When fixing bugs or adding edge-case behaviors, write dedicated regression tests in `tests/bugs_regression_fixes.test.ts` to verify the fix and prevent future regressions.
+5.  **Robust Regression Testing**: When fixing bugs or adding edge-case behaviors, write dedicated regression tests in `tests/bugs_regression_fixes.test.ts` or the versioned regression test files (e.g., `tests/regression_fixes_v2.test.ts`, `tests/regression_fixes_v3.test.ts`) to verify the fix and prevent future regressions.
 
 ---
 
