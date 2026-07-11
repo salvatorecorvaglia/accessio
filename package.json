@@ -5,59 +5,59 @@
   "type": "module",
   "main": "./cjs/index.cjs",
   "module": "./esm/index.js",
-  "types": "./index.d.ts",
+  "types": "./esm/index.d.ts",
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
   },
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./esm/index.d.ts",
       "import": "./esm/index.js",
       "require": "./cjs/index.cjs"
     },
     "./helpers/rateLimiter": {
-      "types": "./index.d.ts",
+      "types": "./esm/helpers/rateLimiter.d.ts",
       "import": "./esm/helpers/rateLimiter.js",
       "require": "./cjs/helpers/rateLimiter.cjs"
     },
     "./helpers/debug": {
-      "types": "./index.d.ts",
+      "types": "./esm/helpers/debug.d.ts",
       "import": "./esm/helpers/debug.js",
       "require": "./cjs/helpers/debug.cjs"
     },
     "./core/buildURL": {
-      "types": "./index.d.ts",
+      "types": "./esm/core/buildURL.d.ts",
       "import": "./esm/core/buildURL.js",
       "require": "./cjs/core/buildURL.cjs"
     },
     "./core/mergeConfig": {
-      "types": "./index.d.ts",
+      "types": "./esm/core/mergeConfig.d.ts",
       "import": "./esm/core/mergeConfig.js",
       "require": "./cjs/core/mergeConfig.cjs"
     },
     "./core/request": {
-      "types": "./index.d.ts",
+      "types": "./esm/core/request.d.ts",
       "import": "./esm/core/request.js",
       "require": "./cjs/core/request.cjs"
     },
     "./core/retry": {
-      "types": "./index.d.ts",
+      "types": "./esm/core/retry.d.ts",
       "import": "./esm/core/retry.js",
       "require": "./cjs/core/retry.cjs"
     },
     "./helpers/parseHeaders": {
-      "types": "./index.d.ts",
+      "types": "./esm/helpers/parseHeaders.d.ts",
       "import": "./esm/helpers/parseHeaders.js",
       "require": "./cjs/helpers/parseHeaders.cjs"
     },
     "./helpers/settle": {
-      "types": "./index.d.ts",
+      "types": "./esm/helpers/settle.d.ts",
       "import": "./esm/helpers/settle.js",
       "require": "./cjs/helpers/settle.cjs"
     },
     "./helpers/transformData": {
-      "types": "./index.d.ts",
+      "types": "./esm/helpers/transformData.d.ts",
       "import": "./esm/helpers/transformData.js",
       "require": "./cjs/helpers/transformData.cjs"
     }

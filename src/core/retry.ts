@@ -125,6 +125,10 @@ async function retryRequest(
               delay = Math.max(0, date.getTime() - Date.now());
             }
           }
+          const maxDelay = config.maxRetryDelay ?? 30000;
+          if (delay > maxDelay) {
+            delay = maxDelay;
+          }
         }
       }
 

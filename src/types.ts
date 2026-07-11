@@ -105,6 +105,7 @@ export interface AccessioRequestConfig {
   maxRetryDelay?: number;
   formSerializer?: { brackets?: boolean };
   cacheClone?: boolean;
+  paginateItems?: string | ((data: any) => any[]);
 }
 
 export interface AccessioResponse<T = unknown> {

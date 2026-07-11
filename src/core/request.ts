@@ -73,21 +73,53 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
   }
 }
 
-const activeRequests = new Map<string, Promise<AccessioResponse>>();
+interface Subscriber {
+  config: AccessioRequestConfig;
+  resolve: (res: AccessioResponse) => void;
+  reject: (err: any) => void;
+  signal?: AbortSignal;
+  onAbort?: () => void;
+}
+
+interface InFlightRecord {
+  promise: Promise<AccessioResponse>;
+  abortController: AbortController;
+  subscribers: Set<Subscriber>;
+}
+
+const activeRequests = new Map<string, InFlightRecord>();
 const MAX_ACTIVE_REQUESTS = 1024;
 
 export function __activeRequestsSize(): number {
   return activeRequests.size;
 }
 
-function trackActiveRequest(key: string, promise: Promise<AccessioResponse>): void {
-  activeRequests.set(key, promise);
-  // Evict the oldest entry if we've grown past the cap. Map preserves insertion order.
+function trackActiveRequest(key: string, record: InFlightRecord): void {
+  activeRequests.set(key, record);
   while (activeRequests.size > MAX_ACTIVE_REQUESTS) {
     const oldest = activeRequests.keys().next().value;
     if (oldest === undefined || oldest === key) break;
+    const oldRecord = activeRequests.get(oldest);
+    if (oldRecord) {
+      oldRecord.abortController.abort(new Error('Evicted from active requests cache'));
+    }
     activeRequests.delete(oldest);
   }
+}
+
+function createCanceledError(config: AccessioRequestConfig): AccessioError {
+  const reason = config.signal?.reason;
+  const message =
+    reason instanceof Error
+      ? reason.message
+      : typeof reason === 'string'
+        ? reason
+        : 'Request aborted';
+  const err = new AccessioError(message, AccessioError.ERR_CANCELED, config, null, null);
+  if (reason instanceof Error) {
+    err.cause = reason;
+  }
+  return err;
 }
 
 export default async function dispatchRequest(
@@ -132,53 +164,190 @@ export default async function dispatchRequest(
   }
 
   if (isGet && config.dedupe) {
-    const inflight = activeRequests.get(cacheKey);
-    if (inflight) {
-      try {
-        const shared = await inflight;
-        const clonedShared = config.cacheClone !== false ? cloneResponse(shared) : shared;
-        const response = finalizeResponse(clonedShared, config);
+    let record = activeRequests.get(cacheKey);
+    const isNew = !record;
+    if (isNew) {
+      const recordAbortController = new AbortController();
+      const fetchConfig = { ...config, signal: recordAbortController.signal };
 
-        const responseTransforms = buildTransformArray(config.transformResponse);
-        response.data = await transformData(
-          responseTransforms,
-          response.data,
-          response.headers,
-          config,
-          'response',
+      const performRequest = async (): Promise<AccessioResponse> => {
+        const requestTransforms = buildTransformArray(fetchConfig.transformRequest);
+        const requestData = await transformData(
+          requestTransforms,
+          fetchConfig.data,
+          flatHeaders,
+          fetchConfig,
         );
 
-        const settled = await new Promise<AccessioResponse>((resolve, reject) => {
-          settle(
-            resolve as (value: AccessioResponse) => void,
-            reject as (reason: AccessioError) => void,
-            response,
-            config,
-          );
-        });
-
-        if (config.hooks?.onRequestResponse) {
-          await config.hooks.onRequestResponse(settled);
+        if (
+          requestData === null ||
+          requestData === undefined ||
+          (typeof FormData !== 'undefined' && requestData instanceof FormData)
+        ) {
+          removeContentType(flatHeaders);
         }
 
-        return settled;
-      } catch (error) {
-        let finalError = error;
-        if (error instanceof AccessioError) {
-          finalError = AccessioError.from(
-            error,
-            error.code || 'ERR_DEDUPE',
-            config,
-            error.request,
-            error.response,
-          );
+        const fetchOptions: RequestInit = {
+          method: (fetchConfig.method || 'GET').toUpperCase(),
+          headers: buildFetchHeaders(flatHeaders),
+        };
+
+        const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
+        if (
+          methodsWithBody.includes(fetchOptions.method!) &&
+          requestData !== undefined &&
+          requestData !== null
+        ) {
+          fetchOptions.body = requestData as BodyInit;
         }
-        if (config.hooks?.onRequestError && finalError instanceof AccessioError) {
-          await config.hooks.onRequestError(finalError);
+
+        if (fetchConfig.withCredentials) {
+          fetchOptions.credentials = 'include';
         }
-        throw finalError;
-      }
+
+        if (fetchConfig.dispatcher) {
+          (fetchOptions as any).dispatcher = fetchConfig.dispatcher;
+        }
+        if (fetchConfig.agent) {
+          (fetchOptions as any).agent = fetchConfig.agent;
+        }
+
+        const requestStartTime = Date.now();
+        const response = await fetchAdapter(fetchConfig, fullURL, fetchOptions, requestStartTime);
+
+        return response;
+      };
+
+      const promise = performRequest();
+
+      record = {
+        promise,
+        abortController: recordAbortController,
+        subscribers: new Set<Subscriber>(),
+      };
+
+      trackActiveRequest(cacheKey, record);
+
+      promise.then(
+        async (shared) => {
+          if (activeRequests.get(cacheKey) === record) {
+            activeRequests.delete(cacheKey);
+          }
+          for (const sub of record!.subscribers) {
+            if (sub.signal && sub.onAbort) {
+              sub.signal.removeEventListener('abort', sub.onAbort);
+            }
+            try {
+              const clonedShared = sub.config.cacheClone !== false ? cloneResponse(shared) : shared;
+              const response = finalizeResponse(clonedShared, sub.config);
+
+              const responseTransforms = buildTransformArray(sub.config.transformResponse);
+              response.data = await transformData(
+                responseTransforms,
+                response.data,
+                response.headers,
+                sub.config,
+                'response',
+              );
+
+              if (isGet && sub.config.cache) {
+                const cacheProvider =
+                  typeof sub.config.cache === 'object' ? sub.config.cache : defaultMemoryCache;
+                await cacheProvider.set(
+                  cacheKey,
+                  sub.config.cacheClone !== false ? cloneResponse(response) : response,
+                  sub.config.cacheTTL,
+                );
+              }
+
+              const settled = await new Promise<AccessioResponse>((resolve, reject) => {
+                settle(
+                  resolve as (value: AccessioResponse) => void,
+                  reject as (reason: AccessioError) => void,
+                  response,
+                  sub.config,
+                );
+              });
+
+              if (sub.config.hooks?.onRequestResponse) {
+                await sub.config.hooks.onRequestResponse(settled);
+              }
+
+              sub.resolve(settled);
+            } catch (subErr) {
+              let finalError = subErr;
+              if (subErr instanceof AccessioError) {
+                finalError = AccessioError.from(
+                  subErr,
+                  subErr.code || 'ERR_DEDUPE',
+                  sub.config,
+                  subErr.request,
+                  subErr.response,
+                );
+              }
+              if (sub.config.hooks?.onRequestError && finalError instanceof AccessioError) {
+                await sub.config.hooks.onRequestError(finalError);
+              }
+              sub.reject(finalError);
+            }
+          }
+        },
+        (error) => {
+          if (activeRequests.get(cacheKey) === record) {
+            activeRequests.delete(cacheKey);
+          }
+          for (const sub of record!.subscribers) {
+            if (sub.signal && sub.onAbort) {
+              sub.signal.removeEventListener('abort', sub.onAbort);
+            }
+            let finalError = error;
+            if (error instanceof AccessioError) {
+              finalError = AccessioError.from(
+                error,
+                error.code || 'ERR_DEDUPE',
+                sub.config,
+                error.request,
+                error.response,
+              );
+            }
+            if (sub.config.hooks?.onRequestError && finalError instanceof AccessioError) {
+              const hookResult = sub.config.hooks.onRequestError(finalError);
+              if (hookResult && typeof (hookResult as any).catch === 'function') {
+                (hookResult as any).catch(() => {});
+              }
+            }
+            sub.reject(finalError);
+          }
+        },
+      );
     }
+
+    return new Promise<AccessioResponse>((resolve, reject) => {
+      const subscriber: Subscriber = {
+        config,
+        resolve,
+        reject,
+        signal: config.signal,
+      };
+
+      if (config.signal) {
+        if (config.signal.aborted) {
+          reject(createCanceledError(config));
+          return;
+        }
+        const onAbort = () => {
+          record!.subscribers.delete(subscriber);
+          reject(createCanceledError(config));
+          if (record!.subscribers.size === 0) {
+            record!.abortController.abort(config.signal!.reason);
+          }
+        };
+        subscriber.onAbort = onAbort;
+        config.signal.addEventListener('abort', onAbort, { once: true });
+      }
+
+      record!.subscribers.add(subscriber);
+    });
   }
 
   const performRequest = async (): Promise<AccessioResponse> => {
@@ -225,16 +394,6 @@ export default async function dispatchRequest(
   };
 
   const promise = performRequest();
-
-  if (isGet && config.dedupe) {
-    trackActiveRequest(cacheKey, promise);
-    const cleanup = () => {
-      if (activeRequests.get(cacheKey) === promise) {
-        activeRequests.delete(cacheKey);
-      }
-    };
-    promise.then(cleanup, cleanup);
-  }
 
   try {
     const shared = await promise;

@@ -28,6 +28,15 @@ function runRequestInterceptorsSync(
       try {
         if (interceptor.fulfilled) {
           cfg = (interceptor.fulfilled as any)(cfg) as AccessioRequestConfig;
+          if (cfg && typeof (cfg as any).then === 'function') {
+            throw new AccessioError(
+              'Synchronous request interceptors cannot return a Promise.',
+              AccessioError.ERR_BAD_OPTION,
+              startConfig,
+              null,
+              null,
+            );
+          }
         }
       } catch (err) {
         rejectReason = err;
@@ -36,6 +45,15 @@ function runRequestInterceptorsSync(
     } else if (interceptor.rejected) {
       try {
         cfg = interceptor.rejected(rejectReason) as AccessioRequestConfig;
+        if (cfg && typeof (cfg as any).then === 'function') {
+          throw new AccessioError(
+            'Synchronous request interceptors cannot return a Promise.',
+            AccessioError.ERR_BAD_OPTION,
+            startConfig,
+            null,
+            null,
+          );
+        }
         isRejected = false;
       } catch (err) {
         rejectReason = err;
@@ -356,8 +374,10 @@ export class Accessio {
         try {
           yield JSON.parse(trimmed);
         } catch (_e) {
-          // ignore partial json
+          yield trimmed;
         }
+      } else if (trimmed) {
+        yield trimmed;
       }
     };
 
@@ -426,11 +446,25 @@ export class Accessio {
       const response: AccessioResponse<any> = await this.get(nextUrl, currentConfig);
 
       const data = response.data;
-      const items = Array.isArray(data)
-        ? data
-        : data && typeof data === 'object'
-          ? (data as any).data
-          : null;
+      let items: any = null;
+
+      if (currentConfig.paginateItems) {
+        if (typeof currentConfig.paginateItems === 'function') {
+          items = currentConfig.paginateItems(data);
+        } else if (
+          typeof currentConfig.paginateItems === 'string' &&
+          data &&
+          typeof data === 'object'
+        ) {
+          items = (data as any)[currentConfig.paginateItems];
+        }
+      } else {
+        items = Array.isArray(data)
+          ? data
+          : data && typeof data === 'object'
+            ? (data as any).data || (data as any).items || (data as any).results || null
+            : null;
+      }
 
       if (Array.isArray(items)) {
         for (const item of items) {
@@ -445,7 +479,17 @@ export class Accessio {
 
       if (nextUrl) {
         const merged = mergeConfig(currentConfig, { url: nextUrl });
-        merged.params = {};
+        if (merged.params) {
+          try {
+            const dummyBase = 'http://dummy-base.com';
+            const parsedUrl = new URL(nextUrl, dummyBase);
+            for (const key of parsedUrl.searchParams.keys()) {
+              delete merged.params[key];
+            }
+          } catch {
+            merged.params = {};
+          }
+        }
         if (currentConfig.signal) {
           merged.signal = currentConfig.signal;
         }

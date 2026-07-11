@@ -124,8 +124,11 @@ function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): A
   };
 }
 
-function wrapDownloadProgress(fetchResponse: Response, config: AccessioRequestConfig): Response {
-  if (!config.onDownloadProgress || !fetchResponse.body || config.responseType === 'stream') {
+function wrapResponseStream(fetchResponse: Response, config: AccessioRequestConfig): Response {
+  const hasLimit = typeof config.maxContentLength === 'number' && config.maxContentLength > 0;
+  const hasProgress = !!config.onDownloadProgress && config.responseType !== 'stream';
+
+  if ((!hasLimit && !hasProgress) || !fetchResponse.body) {
     return fetchResponse;
   }
 
@@ -144,7 +147,23 @@ function wrapDownloadProgress(fetchResponse: Response, config: AccessioRequestCo
             break;
           }
           loaded += value.byteLength;
-          config.onDownloadProgress!({ loaded, total });
+
+          if (hasLimit && loaded > config.maxContentLength!) {
+            const limitError = new AccessioError(
+              `maxContentLength size of ${config.maxContentLength} exceeded`,
+              AccessioError.ERR_BAD_RESPONSE,
+              config,
+              fetchResponse,
+              null,
+            );
+            controller.error(limitError);
+            throw limitError;
+          }
+
+          if (hasProgress) {
+            config.onDownloadProgress!({ loaded, total });
+          }
+
           controller.enqueue(value);
         }
       } catch (e) {
@@ -216,6 +235,13 @@ function wrapStreamWithCleanup(stream: any, cleanup: () => void): any {
       cleanup();
     }
   };
+
+  if (typeof FinalizationRegistry !== 'undefined') {
+    const registry = new FinalizationRegistry((cleanupFn: () => void) => {
+      cleanupFn();
+    });
+    registry.register(stream, onceCleanup);
+  }
 
   // If it has a cancel method (Web Stream)
   if (typeof stream.getReader === 'function') {
@@ -320,7 +346,7 @@ export default async function fetchAdapter(
   try {
     const fetchImpl = config.fetch || fetch;
     const rawResponse = await fetchImpl(fullURL, fetchOptions);
-    const fetchResponse = wrapDownloadProgress(rawResponse, config);
+    const fetchResponse = wrapResponseStream(rawResponse, config);
 
     const contentLength = fetchResponse.headers.get('content-length');
     if (
