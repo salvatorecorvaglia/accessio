@@ -84,7 +84,8 @@ export function flattenHeaders(
     if (Object.prototype.hasOwnProperty.call(headers, key)) {
       const value = headers[key];
       const isMethodKey = METHOD_KEYS.has(key);
-      const isObjectGroup = isMethodKey && value && typeof value === 'object' && !Array.isArray(value);
+      const isObjectGroup =
+        isMethodKey && value && typeof value === 'object' && !Array.isArray(value);
       if (!isObjectGroup) {
         setHeader(merged, key, value);
       }

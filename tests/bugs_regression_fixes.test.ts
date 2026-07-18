@@ -2,11 +2,11 @@ import { describe, expect, it, vi } from 'vitest';
 import Accessio from '../src/accessio';
 import AccessioError, { redactConfig } from '../src/core/accessioError';
 import retryRequest from '../src/core/retry';
+import { flattenHeaders } from '../src/helpers/flattenHeaders';
+import { MemoryCache } from '../src/helpers/memoryCache';
 import createRateLimiter from '../src/helpers/rateLimiter';
 import { toFormData } from '../src/helpers/toFormData';
-import { flattenHeaders } from '../src/helpers/flattenHeaders';
 import transformData from '../src/helpers/transformData';
-import { MemoryCache } from '../src/helpers/memoryCache';
 import InterceptorManager from '../src/interceptors/interceptorManager';
 
 describe('Bugs & Regression Fixes Tests', () => {
@@ -578,7 +578,7 @@ describe('Bugs & Regression Fixes Tests', () => {
     });
 
     it('transformData: supports a single function instead of an array', async () => {
-      const fn = (data: any) => data + '!';
+      const fn = (data: any) => `${data}!`;
       const result = await transformData(fn, 'hello', {});
       expect(result).toBe('hello!');
     });
@@ -588,7 +588,9 @@ describe('Bugs & Regression Fixes Tests', () => {
         url: 'https://example.com/api?api_key=secret-token&password=123&other=public',
       };
       const redacted = redactConfig(config);
-      expect(redacted?.url).toBe('https://example.com/api?api_key=[REDACTED]&password=[REDACTED]&other=public');
+      expect(redacted?.url).toBe(
+        'https://example.com/api?api_key=[REDACTED]&password=[REDACTED]&other=public',
+      );
     });
 
     it('fetchAdapter: upfront content-length validation check', async () => {
@@ -603,7 +605,7 @@ describe('Bugs & Regression Fixes Tests', () => {
         client.request({
           url: '/test',
           maxContentLength: 500,
-        })
+        }),
       ).rejects.toThrow('maxContentLength size of 500 exceeded');
     });
 
@@ -668,9 +670,9 @@ describe('Bugs & Regression Fixes Tests', () => {
 
     it('interceptorManager: handlers getter does not perform redundant lookups on large nextId', () => {
       const manager = new InterceptorManager();
-      
+
       const id1 = manager.use(() => {});
-      const id2 = manager.use(() => {});
+      const _id2 = manager.use(() => {});
       manager.eject(id1);
 
       const handlers = manager.handlers;

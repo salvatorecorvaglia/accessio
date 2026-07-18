@@ -137,7 +137,7 @@ function redactURL(url: string | undefined): string | undefined {
       }
       return part;
     });
-    redacted = base + '?' + redactedParts.join('&') + hash;
+    redacted = `${base}?${redactedParts.join('&')}${hash}`;
   }
   return redacted;
 }

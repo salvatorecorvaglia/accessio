@@ -90,6 +90,7 @@ Accessio uses several scripts to ensure code quality, proper types, and comprehe
 | `pnpm run format`       | Format files in the repository using Biome                                            |
 | `pnpm run typecheck`    | Run the TypeScript compiler in dry-run mode (`tsc --noEmit`) to check for type errors |
 | `pnpm run build`        | Build the project for distribution (CommonJS and ESM outputs)                         |
+| `pnpm run release:npm`  | Trigger GitHub Actions workflow to publish the package to NPM (maintainers only)      |
 
 > [!IMPORTANT]
 > Always run `pnpm run lint`, `pnpm run typecheck`, and `pnpm test` before submitting a pull request to ensure the CI pipeline passes.

@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-07-18
+
+### Added
+
+- Added upfront response `content-length` validation check in `fetchAdapter` to fail immediately if `maxContentLength` is exceeded.
+
+### Changed
+
+- Updated GitHub Actions CI workflows to dynamically cancel in-progress runs only on pull request events.
+- Configured explicit registry URL (`https://registry.npmjs.org`) across package publication and release workflows.
+- Expanded release verification coverage in GitHub workflows to include type checking and browser testing.
+
+### Fixed
+
+- Fixed URL redaction in `AccessioError` to scrub sensitive query parameters (such as `api_key` and `password`) from error objects and logged request configurations.
+- Fixed stream signal management in `fetchAdapter` to clean up timeout and abort event listeners immediately upon direct stream cancellation via `stream.cancel()`.
+- Fixed active request tracking to prevent evicting and aborting in-flight concurrent requests under high concurrency limits.
+- Fixed header flattening in `flattenHeaders` to handle primitive header values that collide with HTTP method names or `common`.
+- Fixed data transformation in `transformData` to accept a single function option in `transformRequest`/`transformResponse` alongside arrays of transforms.
+- Fixed `MemoryCache` to correctly update insertion order and eviction priority when an existing cache key is updated.
+- Fixed interceptor iteration in `handlers` getter to iterate over active map entries, avoiding performance degradation with high interceptor IDs.
+
 ## [3.0.0] - 2026-07-11
 
 ### Added

@@ -1,6 +1,6 @@
 {
   "name": "accessio",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Fast, flexible HTTP client — simple, modular, and dependency-free",
   "type": "module",
   "main": "./cjs/index.cjs",

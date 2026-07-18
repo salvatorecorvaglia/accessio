@@ -15,7 +15,7 @@ Accessio is a lightweight, modern HTTP client built on top of the native fetch A
 - **🛡️ Built-in Security & Auto-Redaction**: Prevents accidental leakage of secrets in error logs. Automatically redacts:
   - `Authorization`, `Cookie`, and `Set-Cookie` headers.
   - Sensitive request/response parameters (e.g., `api_key`, `token`, `password`, `secret`).
-  - Inline credentials inside URLs.
+  - Inline credentials and sensitive query parameters inside URLs.
 - **⏳ Concurrency Rate Limiter**: Built-in queue-based rate limiter to throttle concurrent requests, complete with immediate queue ejection on `AbortSignal` cancellation.
 - **🔁 Jittered Exponential Backoff Retry**: Automatic retries for network failures or `5xx` status codes. Fully respects the HTTP 429 `Retry-After` header and supports customizable retry conditions and callbacks.
 - **🌊 SSE & Newline JSON Streaming**: Native asynchronous generator-based parsing for Server-Sent Events (SSE) and newline-delimited JSON streams. Works across Node.js streams, async iterables, and standard web streams. Supports raw plain text line-by-line fallback.
@@ -92,12 +92,23 @@ const { data } = await api.get('/users');
 
 ### 🛡️ Auto-Redaction (Zero-leak Logs)
 
-Accessio is built with security first. If a request fails, sensitive credentials in request/response properties are redacted automatically before being attached to the `AccessioError`.
+Accessio is built with security first. If a request fails, sensitive credentials in request/response properties (headers, params, request/response bodies) and URL strings are redacted automatically before being attached to the `AccessioError`.
+
+The client automatically checks keys against the following list (case-insensitive):
+- `password`, `passwd`, `pwd`
+- `token`, `access_token`, `refresh_token`, `id_token`
+- `authorization`
+- `api_key`, `api-key`, `apikey`
+- `secret`, `client_secret`, `client-secret`
+- `cookie`, `set-cookie`, `set_cookie`
+- `private_key`, `private-key`
+- `session`
+
+Both inline URL credentials (e.g., `user:password@host`) and sensitive URL query parameters (e.g., `?api_key=...`) are fully redacted.
 
 ```typescript
 try {
-  await accessio.get('https://admin:secret_password@api.example.com/users', {
-    params: { api_key: 'super_secret_token_123' },
+  await accessio.get('https://admin:secret_password@api.example.com/users?api_key=super_secret_token_123', {
     headers: { Authorization: 'Bearer token_xyz' },
   });
 } catch (error) {
@@ -111,10 +122,7 @@ try {
         "code": "ERR_BAD_REQUEST",
         "status": 401,
         "config": {
-          "url": "https://admin:[REDACTED]@api.example.com/users",
-          "params": {
-            "api_key": "[REDACTED]"
-          },
+          "url": "https://admin:[REDACTED]@api.example.com/users?api_key=[REDACTED]",
           "headers": {
             "authorization": "[REDACTED]"
           }
@@ -210,6 +218,9 @@ for await (const item of api.autoPaginate('/users?page=1', {
 
 Prevent memory exhaustion or denial-of-service from infinite or extremely large responses by setting `maxContentLength`. This enforces download size limits on both standard responses and chunked/SSE streams.
 
+- **Upfront Check**: If the server returns a `Content-Length` header that exceeds the configured `maxContentLength`, Accessio rejects the promise *immediately* before reading any data from the network.
+- **Dynamic Stream Tracking**: For chunked transfer encoding or SSE streams where the total size is not declared in advance, Accessio tracks the cumulative byte size dynamically and aborts the stream as soon as the threshold is exceeded.
+
 ```typescript
 try {
   await api.get('/large-file', {
@@ -260,12 +271,30 @@ const api = accessio.create({
 const [res1, res2] = await Promise.all([api.get('/heavy-report'), api.get('/heavy-report')]);
 ```
 
+> [!IMPORTANT]
+> When multiple requests are deduplicated (i.e. coalesced into a single active request), each caller maintains its own independent `AbortSignal`. If one caller aborts their request, only their promise is rejected with a cancellation error; other concurrent callers are unaffected and their requests continue to resolve successfully.
+
 By default, cached responses are cloned (`cacheClone: true`) to protect the cache against downstream mutations. If you want to bypass cloning and reuse the same object reference, set `cacheClone: false`:
 
 ```typescript
 const response = await api.get('/data', {
   cache: true,
   cacheClone: false, // Bypasses deep cloning of the cached response object
+});
+```
+
+#### Customizing Memory Cache
+
+Accessio includes an in-memory cache provider (`MemoryCache`) with a default limit of `1000` items (using a Least Recently Used (LRU) policy where keys are updated in insertion order when set or updated). You can instantiate and configure a custom `MemoryCache` limit:
+
+```typescript
+import accessio, { MemoryCache } from 'accessio';
+
+const cache = new MemoryCache(500); // Set a custom limit of 500 items
+
+const api = accessio.create({
+  cache,
+  cacheTTL: 30000 // 30 seconds TTL
 });
 ```
 
@@ -298,7 +327,30 @@ api.interceptors.response.use(
 
 > [!WARNING]
 > Synchronous request interceptors (configured using `{ synchronous: true }` option) must return the config object synchronously and **cannot** return a `Promise`. Returning a `Promise` from a synchronous interceptor will throw an `AccessioError` with code `ERR_BAD_OPTION`.
+
+### 🔄 Request & Response Data Transformation
+
+You can transform the request payload or headers before they are sent, or transform the response payload before it resolves. Accessio allows you to pass either a single transform function or an array of transform functions.
+
+```typescript
+const response = await api.post('/users', { name: 'john' }, {
+  // Transform request data & headers
+  transformRequest: [
+    (data, headers) => {
+      headers['X-Modified-By'] = 'Transformer';
+      return { ...data, name: data.name.toUpperCase() };
+    }
+  ],
+  // Transform response data
+  transformResponse: (data) => {
+    return { ...data, transformedAt: new Date() };
+  }
+});
 ```
+
+If any transform function throws an error, the request/response fails:
+- Request transform errors are wrapped in an `AccessioError` with code `ERR_BAD_REQUEST`.
+- Response transform errors are wrapped in an `AccessioError` with code `ERR_BAD_RESPONSE`.
 
 ### 🕸️ GraphQL (GQL) Support
 
