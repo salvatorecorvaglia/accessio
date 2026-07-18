@@ -23,6 +23,7 @@ class MemoryCache implements CacheProvider {
 
     if (this.cache.has(key)) {
       const expiry = ttl ? now + ttl : null;
+      this.cache.delete(key);
       this.cache.set(key, { value, expiry });
       return;
     }

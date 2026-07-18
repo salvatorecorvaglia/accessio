@@ -60,7 +60,7 @@ export function flattenHeaders(
     lowerKeys[keyLower] = key;
   };
 
-  if (headers.common) {
+  if (headers.common && typeof headers.common === 'object' && !Array.isArray(headers.common)) {
     for (const key in headers.common) {
       if (Object.prototype.hasOwnProperty.call(headers.common, key)) {
         setHeader(merged, key, headers.common[key]);
@@ -68,7 +68,11 @@ export function flattenHeaders(
     }
   }
 
-  if (headers[methodLower]) {
+  if (
+    headers[methodLower] &&
+    typeof headers[methodLower] === 'object' &&
+    !Array.isArray(headers[methodLower])
+  ) {
     for (const key in headers[methodLower]) {
       if (Object.prototype.hasOwnProperty.call(headers[methodLower], key)) {
         setHeader(merged, key, headers[methodLower][key]);
@@ -77,8 +81,13 @@ export function flattenHeaders(
   }
 
   for (const key in headers) {
-    if (Object.prototype.hasOwnProperty.call(headers, key) && !METHOD_KEYS.has(key)) {
-      setHeader(merged, key, headers[key]);
+    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+      const value = headers[key];
+      const isMethodKey = METHOD_KEYS.has(key);
+      const isObjectGroup = isMethodKey && value && typeof value === 'object' && !Array.isArray(value);
+      if (!isObjectGroup) {
+        setHeader(merged, key, value);
+      }
     }
   }
 

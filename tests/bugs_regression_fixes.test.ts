@@ -1,9 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import Accessio from '../src/accessio';
-import AccessioError from '../src/core/accessioError';
+import AccessioError, { redactConfig } from '../src/core/accessioError';
 import retryRequest from '../src/core/retry';
 import createRateLimiter from '../src/helpers/rateLimiter';
 import { toFormData } from '../src/helpers/toFormData';
+import { flattenHeaders } from '../src/helpers/flattenHeaders';
+import transformData from '../src/helpers/transformData';
+import { MemoryCache } from '../src/helpers/memoryCache';
+import InterceptorManager from '../src/interceptors/interceptorManager';
 
 describe('Bugs & Regression Fixes Tests', () => {
   describe('autoPaginate with null or non-object response data', () => {
@@ -555,6 +559,124 @@ describe('Bugs & Regression Fixes Tests', () => {
         cacheClone: false,
       });
       expect(res3.data).toBe(res4.data);
+    });
+  });
+
+  describe('New Analysis Fixes Verification', () => {
+    it('flattenHeaders: handles primitive flat headers that collide with METHOD_KEYS or common', () => {
+      const input = {
+        common: 'flat-common-header',
+        get: 'flat-get-header',
+        'content-type': 'application/json',
+      };
+      const flat = flattenHeaders(input as any, 'get');
+      expect(flat).toEqual({
+        common: 'flat-common-header',
+        get: 'flat-get-header',
+        'content-type': 'application/json',
+      });
+    });
+
+    it('transformData: supports a single function instead of an array', async () => {
+      const fn = (data: any) => data + '!';
+      const result = await transformData(fn, 'hello', {});
+      expect(result).toBe('hello!');
+    });
+
+    it('redactURL: redacts sensitive query parameters', () => {
+      const config = {
+        url: 'https://example.com/api?api_key=secret-token&password=123&other=public',
+      };
+      const redacted = redactConfig(config);
+      expect(redacted?.url).toBe('https://example.com/api?api_key=[REDACTED]&password=[REDACTED]&other=public');
+    });
+
+    it('fetchAdapter: upfront content-length validation check', async () => {
+      const client = new Accessio();
+      global.fetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'content-length': '1000' }),
+        text: () => Promise.resolve('hello'),
+      });
+      await expect(
+        client.request({
+          url: '/test',
+          maxContentLength: 500,
+        })
+      ).rejects.toThrow('maxContentLength size of 500 exceeded');
+    });
+
+    it('fetchAdapter: direct stream cancel triggers abort cleanup immediately', async () => {
+      const client = new Accessio();
+      const ctrl = new AbortController();
+      let listenerRemoved = false;
+
+      const originalRemoveEventListener = ctrl.signal.removeEventListener.bind(ctrl.signal);
+      ctrl.signal.removeEventListener = (type: string, listener: any, options?: any) => {
+        if (type === 'abort') {
+          listenerRemoved = true;
+        }
+        return originalRemoveEventListener(type, listener, options);
+      };
+
+      const mockStream = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('chunk'));
+        },
+      });
+
+      global.fetch = vi.fn().mockResolvedValue({
+        status: 200,
+        statusText: 'OK',
+        headers: new Headers({ 'content-type': 'text/plain' }),
+        body: mockStream,
+      });
+
+      const res = await client.request({
+        url: '/stream-cancel-test',
+        responseType: 'stream',
+        signal: ctrl.signal,
+        timeout: 5000,
+      });
+
+      expect(listenerRemoved).toBe(false);
+
+      // Directly cancel the stream
+      await res.data.cancel();
+
+      expect(listenerRemoved).toBe(true);
+    });
+
+    it('MemoryCache: moves updated key to the end of insertion order', () => {
+      const cache = new MemoryCache(3);
+      cache.set('a', 1);
+      cache.set('b', 2);
+      cache.set('c', 3);
+
+      // Updating 'a' should make it the newest insertion
+      cache.set('a', 10);
+
+      // Adding 'd' should evict 'b' (which is now the oldest) instead of 'a'
+      cache.set('d', 4);
+
+      expect(cache.get('b')).toBeNull();
+      expect(cache.get('a')).toBe(10);
+      expect(cache.get('c')).toBe(3);
+      expect(cache.get('d')).toBe(4);
+    });
+
+    it('interceptorManager: handlers getter does not perform redundant lookups on large nextId', () => {
+      const manager = new InterceptorManager();
+      
+      const id1 = manager.use(() => {});
+      const id2 = manager.use(() => {});
+      manager.eject(id1);
+
+      const handlers = manager.handlers;
+      expect(handlers.length).toBe(2);
+      expect(handlers[0]).toBeNull();
+      expect(handlers[1]).toBeDefined();
     });
   });
 });

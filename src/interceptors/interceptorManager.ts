@@ -50,8 +50,11 @@ export class InterceptorManager {
   get handlers(): Array<InterceptorHandler | null> {
     const max = this._nextId;
     const out: Array<InterceptorHandler | null> = new Array(max);
-    for (let i = 0; i < max; i++) {
-      out[i] = this._handlers.get(i) ?? null;
+    out.fill(null);
+    for (const [id, handler] of this._handlers.entries()) {
+      if (id < max) {
+        out[id] = handler;
+      }
     }
     return out;
   }

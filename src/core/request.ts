@@ -99,10 +99,6 @@ function trackActiveRequest(key: string, record: InFlightRecord): void {
   while (activeRequests.size > MAX_ACTIVE_REQUESTS) {
     const oldest = activeRequests.keys().next().value;
     if (oldest === undefined || oldest === key) break;
-    const oldRecord = activeRequests.get(oldest);
-    if (oldRecord) {
-      oldRecord.abortController.abort(new Error('Evicted from active requests cache'));
-    }
     activeRequests.delete(oldest);
   }
 }

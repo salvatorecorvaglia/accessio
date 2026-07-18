@@ -107,13 +107,39 @@ function redactParams(params: unknown, seen?: WeakSet<object>): unknown {
 function redactURL(url: string | undefined): string | undefined {
   if (!url) return url;
   // Match inline credentials: http://user:pass@host
-  return url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (_match, protocol, userInfo) => {
+  let redacted = url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (_match, protocol, userInfo) => {
     const parts = userInfo.split(':');
     if (parts.length > 1) {
       return `${protocol}${parts[0]}:[REDACTED]@`;
     }
     return `${protocol}[REDACTED]@`;
   });
+
+  // Redact sensitive query parameters
+  const qIndex = redacted.indexOf('?');
+  if (qIndex !== -1) {
+    const base = redacted.slice(0, qIndex);
+    const query = redacted.slice(qIndex + 1);
+    const hashIndex = query.indexOf('#');
+    let search = query;
+    let hash = '';
+    if (hashIndex !== -1) {
+      search = query.slice(0, hashIndex);
+      hash = query.slice(hashIndex);
+    }
+    const parts = search.split('&');
+    const redactedParts = parts.map((part) => {
+      const eqIndex = part.indexOf('=');
+      if (eqIndex === -1) return part;
+      const key = part.slice(0, eqIndex);
+      if (SENSITIVE_BODY_KEY.test(decodeURIComponent(key))) {
+        return `${key}=[REDACTED]`;
+      }
+      return part;
+    });
+    redacted = base + '?' + redactedParts.join('&') + hash;
+  }
+  return redacted;
 }
 
 export function redactConfig(config: AccessioRequestConfig | null): AccessioRequestConfig | null {

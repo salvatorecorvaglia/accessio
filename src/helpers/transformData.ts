@@ -8,13 +8,15 @@ export default async function transformData(
   config?: AccessioRequestConfig,
   direction: 'request' | 'response' = 'request',
 ): Promise<unknown> {
-  if (!transforms || !Array.isArray(transforms)) {
+  if (!transforms) {
     return data;
   }
 
+  const transformList = Array.isArray(transforms) ? transforms : [transforms];
+
   let result = data;
 
-  for (const transform of transforms) {
+  for (const transform of transformList) {
     if (typeof transform === 'function') {
       try {
         result = await transform(result, headers, config);

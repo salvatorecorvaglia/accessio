@@ -243,6 +243,17 @@ function wrapStreamWithCleanup(stream: any, cleanup: () => void): any {
     registry.register(stream, onceCleanup);
   }
 
+  if (typeof stream.cancel === 'function') {
+    const originalCancel = stream.cancel;
+    stream.cancel = async (...args: any[]) => {
+      try {
+        return await originalCancel.apply(stream, args);
+      } finally {
+        onceCleanup();
+      }
+    };
+  }
+
   // If it has a cancel method (Web Stream)
   if (typeof stream.getReader === 'function') {
     const originalGetReader = stream.getReader;
