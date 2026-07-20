@@ -6,40 +6,35 @@ Accessio is a lightweight, modern HTTP client built on top of the native fetch A
 
 ---
 
-## ⚡ Key Features
+## Features ✨
 
-- **Zero Runtime Dependencies**: Keep your bundle size minimal and avoid supply chain vulnerabilities.
-- **📦 Dual ESM/CJS Support**: Native support for both ES Modules (`import`) and CommonJS (`require`) environments, compiled correctly for modern Node.js and browsers.
-- **Axios-Compatible API**: Direct drop-in replacement with `.get()`, `.post()`, `.request()`, and custom instances via `.create()`.
-- **GraphQL (GQL) Support**: Native support for GraphQL queries and mutations via the `.gql()` method.
-- **🛡️ Built-in Security & Auto-Redaction**: Prevents accidental leakage of secrets in error logs. Automatically redacts:
-  - `Authorization`, `Cookie`, and `Set-Cookie` headers.
-  - Sensitive request/response parameters (e.g., `api_key`, `token`, `password`, `secret`).
-  - Inline credentials and sensitive query parameters inside URLs.
-- **⏳ Concurrency Rate Limiter**: Built-in queue-based rate limiter to throttle concurrent requests, complete with immediate queue ejection on `AbortSignal` cancellation.
-- **🔁 Jittered Exponential Backoff Retry**: Automatic retries for network failures or `5xx` status codes. Fully respects the HTTP 429 `Retry-After` header and supports customizable retry conditions and callbacks.
-- **🌊 SSE & Newline JSON Streaming**: Native asynchronous generator-based parsing for Server-Sent Events (SSE) and newline-delimited JSON streams. Works across Node.js streams, async iterables, and standard web streams. Supports raw plain text line-by-line fallback.
-- **📂 Auto-Pagination**: Seamlessly yields paginated items from APIs using page links, automatically preserving persistent query parameters and supporting custom item selectors.
-- **🛡️ Streaming Response Size Limits**: Enforces response download size limits using `maxContentLength` even for chunked streams to prevent memory exhaustion.
-- **🧪 Type-safe Schema Validation**: Validate API response payloads at runtime using Zod, ArkType, or any validation library with a `.parse()` or `.parseAsync()` method.
-- **📦 Request Deduplication**: Automatically coalesces concurrent duplicate GET requests, correctly managing per-request abort controllers and hooks.
-- **💾 Memory Caching**: In-memory caching out-of-the-box with custom TTL, or easily swap in a custom storage provider (e.g., Redis, LocalStorage).
-- **🔗 Synchronous & Asynchronous Interceptors**: Hook into the request/response pipeline to dynamically inject headers, handle global errors, or log metrics.
-- **⚓ Lifecycle Hooks**: Granular callbacks (`onBeforeRequest`, `onRequestResponse`, `onRequestError`) for custom instrumentation.
-- **FormData Serialization**: Automatically converts flat or nested JS objects to `FormData` for multipart submissions, supporting dot notation or bracket notation configuration.
+- 📦 **Zero Dependencies** — Ultra-lightweight codebase leveraging native `fetch`.
+- 🧩 **Dual-Module Support** — Shipping fully compatible ES Modules (ESM) and CommonJS (CJS) builds.
+- 🔒 **Type-Safe** — Written from the ground up in TypeScript with exported first-class typings.
+- 📡 **HTTP Shorthand Methods** — `get`, `post`, `put`, `delete`, `options`, `patch`, `head`.
+- 📝 **Form Submissions** — Helper methods like `postForm`, `putForm`, and `patchForm` for simple `multipart/form-data` uploads.
+- 🌊 **SSE & Stream Processing** — Stream server responses line-by-line using async generators (`stream`).
+- 📃 **Auto-Pagination** — Effortless cursored/linked API pagination with `autoPaginate`.
+- 🕸️ **GraphQL Support** — Sane GraphQL POST request shortcut (`gql`).
+- ⚡ **Interceptors** — Both synchronous and asynchronous request/response hooks.
+- 🔄 **Advanced Retries** — Automatic retries with customizable delay, backoff limits, and conditions (e.g., retrying on 429).
+- 🚦 **Rate Limiting** — Custom concurrent and queued request rate-limiting with cancellation support.
+- 👥 **Request Deduplication** — De-duplicates active identical inflight GET requests to optimize performance.
+- 💾 **Response Caching** — Built-in Memory Cache with TTL and mutation protection (cloning) or plug in your own custom cache store.
+- 🔍 **Schema Validation** — Seamless validation hooks using Zod, Valibot, or custom schemas.
 
 ---
 
-## 📦 Installation
+## Installation 📦
 
 Install Accessio using your preferred package manager:
 
 ```bash
+# Using pnpm (recommended)
+pnpm add accessio
+
 # Using npm
 npm install accessio
-
-# Using pnpm
-pnpm add accessio
 
 # Using yarn
 yarn add accessio
@@ -50,7 +45,7 @@ bun add accessio
 
 ---
 
-## 🚀 Quick Start
+## Quick Start 🚀
 
 ### Basic Requests
 
@@ -58,185 +53,158 @@ bun add accessio
 import accessio from 'accessio';
 
 // Simple GET request
-const response = await accessio.get('https://api.example.com/users/123');
-console.log(response.data); // Automatically parsed JSON response
+const response = await accessio.get('https://api.example.com/users/1');
+console.log(response.data); // Automatically parsed JSON
 
 // POST request with body
-const postResponse = await accessio.post('https://api.example.com/users', {
-  name: 'Jane Doe',
-  role: 'Developer',
+const createResponse = await accessio.post('https://api.example.com/users', {
+  name: 'Salvatore Corvaglia',
+  role: 'Developer'
 });
 ```
 
-### Custom Instances
+### Custom Client Instances
+
+Create instances with base configurations:
 
 ```typescript
 import accessio from 'accessio';
 
-// Create a configured instance
-const api = accessio.create({
+const client = accessio.create({
   baseURL: 'https://api.example.com/v1',
+  timeout: 5000,
   headers: {
-    'X-Client-Name': 'AccessioClient',
-  },
-  timeout: 5000, // 5-second timeout
+    'Authorization': 'Bearer YOUR_TOKEN'
+  }
 });
 
-// Use instance methods
-const { data } = await api.get('/users');
+// Sends GET to https://api.example.com/v1/projects
+const response = await client.get('/projects');
 ```
 
 ---
 
-## 🛠️ Advanced Features
+## Advanced Features 🛠️
 
-### 🛡️ Auto-Redaction (Zero-leak Logs)
-
-Accessio is built with security first. If a request fails, sensitive credentials in request/response properties (headers, params, request/response bodies) and URL strings are redacted automatically before being attached to the `AccessioError`.
-
-The client automatically checks keys against the following list (case-insensitive):
-- `password`, `passwd`, `pwd`
-- `token`, `access_token`, `refresh_token`, `id_token`
-- `authorization`
-- `api_key`, `api-key`, `apikey`
-- `secret`, `client_secret`, `client-secret`
-- `cookie`, `set-cookie`, `set_cookie`
-- `private_key`, `private-key`
-- `session`
-
-Both inline URL credentials (e.g., `user:password@host`) and sensitive URL query parameters (e.g., `?api_key=...`) are fully redacted.
+### 1. Server-Sent Events & Streaming 🌊
+Read streams line-by-line using `async generators`. Accessio handles SSE formats (`data: ...`) and returns JSON or strings automatically:
 
 ```typescript
-try {
-  await accessio.get('https://admin:secret_password@api.example.com/users?api_key=super_secret_token_123', {
-    headers: { Authorization: 'Bearer token_xyz' },
-  });
-} catch (error) {
-  if (accessio.isAccessioError(error)) {
-    console.error(error.toJSON());
-    /*
-      Outputs:
-      {
-        "name": "AccessioError",
-        "message": "Request failed with status code 401",
-        "code": "ERR_BAD_REQUEST",
-        "status": 401,
-        "config": {
-          "url": "https://admin:[REDACTED]@api.example.com/users?api_key=[REDACTED]",
-          "headers": {
-            "authorization": "[REDACTED]"
-          }
-        }
-      }
-    */
-  }
+// Stream completions from an LLM endpoint
+for await (const chunk of accessio.stream('https://api.example.com/chat/stream')) {
+  console.log(chunk); // Parsed JSON chunk or raw text line
 }
 ```
 
-### 🔁 Automatic Retries & Backoff
-
-Automatically retry failed requests using exponential backoff with randomized jitter to prevent thundering herds.
+### 2. Auto-Pagination 📃
+Iterate through paginated APIs seamlessly. It automatically tracks `next` links or page tokens:
 
 ```typescript
-const response = await accessio.get('/flaky-endpoint', {
-  retry: 3, // Max retry attempts
-  retryDelay: 1000, // Initial delay in ms (doubles each attempt)
-  maxRetryDelay: 10000, // Maximum delay cap
-  retryOn429: true, // Respect Retry-After header for HTTP 429 responses
-  onRetry: (attempt, error, config) => {
-    console.warn(`Retry attempt #${attempt} due to: ${error.message}`);
-  },
+// Automatically fetches next pages using standard link patterns
+const pageGenerator = accessio.autoPaginate('https://api.example.com/items', {
+  // Optional: customize page extraction mapping
+  paginateItems: (data) => data.results, 
+});
+
+for await (const item of pageGenerator) {
+  console.log('Paginated item:', item);
+}
+```
+
+### 3. GraphQL 🕸️
+Perform GraphQL queries with a dedicated wrapper:
+
+```typescript
+const query = `
+  query GetUser($id: ID!) {
+    user(id: $id) {
+      name
+      email
+    }
+  }
+`;
+
+const response = await accessio.gql('https://api.example.com/graphql', query, { id: '123' });
+console.log(response.data.user);
+```
+
+### 4. Caching 💾
+Cache responses in memory to speed up repeated queries. It supports automated cloning so references don't mutate:
+
+```typescript
+const response = await accessio.get('https://api.example.com/config', {
+  cache: true,      // Enable caching
+  cacheTTL: 60000,   // TTL in milliseconds (1 minute)
 });
 ```
 
-> [!NOTE]
-> Even if the `retry` config option is set to `0`, enabling `retryOn429: true` will still retry `429 Too Many Requests` responses up to 3 times by default, respecting the `Retry-After` header.
+You can also pass a custom `CacheProvider` implementation matching the `CacheProvider` interface:
+```typescript
+interface CacheProvider {
+  get: (key: string) => Promise<any> | any;
+  set: (key: string, value: any, ttl?: number) => Promise<void> | void;
+  delete: (key: string) => Promise<void> | void;
+  clear: () => Promise<void> | void;
+}
+```
 
-### ⏳ Concurrency Rate Limiting
+### 5. Request Deduplication 👥
+Prevent sending multiple identical concurrent requests (e.g. on dashboard load). In-flight requests for the same endpoint are collapsed into a single call:
 
-Throttle outbound requests using a queue-based rate limiter. This is especially useful for third-party APIs with tight request limits.
+```typescript
+// Only one network request is made; both calls receive the same response
+const [res1, res2] = await Promise.all([
+  accessio.get('/profile', { dedupe: true }),
+  accessio.get('/profile', { dedupe: true })
+]);
+```
+
+### 6. Rate Limiting 🚦
+Control concurrent requests to protect client/server throughput constraints:
 
 ```typescript
 import accessio, { createRateLimiter } from 'accessio';
 
-// Allow a maximum of 2 requests in parallel
-const rateLimiter = createRateLimiter(2);
+// Allow maximum 3 concurrent requests, max queue size of 10
+const limiter = createRateLimiter(3, 10);
 
-const api = accessio.create({ rateLimiter });
-
-// These will run with a max concurrency of 2, queueing the rest
-const requests = [1, 2, 3, 4, 5].map((id) => api.get(`/users/${id}`));
-const responses = await Promise.all(requests);
+const client = accessio.create({
+  rateLimiter: limiter
+});
 ```
 
-> [!TIP]
-> If a queued request is aborted using an `AbortSignal`, it is immediately ejected from the rate limiter's queue to avoid blocking any pending requests in line.
-
-### 🌊 SSE & Newline JSON Streaming
-
-Accessio leverages asynchronous generators to handle incoming response streams dynamically (works with Server-Sent Events or line-by-line JSON streams).
+### 7. Interceptors ⚡
+Add custom middleware hooks to transform requests or handle responses/errors globally:
 
 ```typescript
-// Iterating through an AI completion SSE stream
-for await (const chunk of api.stream('/ai/complete')) {
-  console.log(chunk); // Parsed JSON chunk, e.g., { text: "hello" }
-}
-```
+const client = accessio.create();
 
-If the stream contains raw plain text instead of structured SSE or JSON format, the stream utility will gracefully fall back to yielding raw text lines:
+// Add request interceptor
+client.interceptors.request.use(
+  (config) => {
+    config.headers = { ...config.headers, 'X-Custom-Header': 'Accessio' };
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-```typescript
-for await (const line of api.stream('/raw-logs')) {
-  console.log(line); // Yields "raw plain line 1", "raw plain line 2", etc.
-}
-```
-
-### 📂 Auto-Pagination
-
-Avoid boilerplate code for pagination. Accessio can auto-follow `next` and `links.next` properties automatically.
-
-By default, the client looks for arrays under `data`, `data.data`, `data.items`, or `data.results` to extract items. If your API structure is different, configure `paginateItems` with either a property name string or a custom extractor function:
-
-```typescript
-// Using a custom property key
-for await (const item of api.autoPaginate('/users?page=1', { paginateItems: 'results' })) {
-  console.log(item.name);
-}
-
-// Using a custom extractor function for nested structures
-for await (const item of api.autoPaginate('/users?page=1', {
-  paginateItems: (data) => data.nested.items_list
-})) {
-  console.log(item.name);
-}
-```
-
-> [!NOTE]
-> `autoPaginate` automatically preserves persistent query parameters (e.g. `apiKey` or `token`) across page transitions, while cleanly stripping out any parameters (such as `page`) that are overridden by the next page URL.
-
-### 🛡️ Streaming Response Size Limits
-
-Prevent memory exhaustion or denial-of-service from infinite or extremely large responses by setting `maxContentLength`. This enforces download size limits on both standard responses and chunked/SSE streams.
-
-- **Upfront Check**: If the server returns a `Content-Length` header that exceeds the configured `maxContentLength`, Accessio rejects the promise *immediately* before reading any data from the network.
-- **Dynamic Stream Tracking**: For chunked transfer encoding or SSE streams where the total size is not declared in advance, Accessio tracks the cumulative byte size dynamically and aborts the stream as soon as the threshold is exceeded.
-
-```typescript
-try {
-  await api.get('/large-file', {
-    maxContentLength: 10 * 1024 * 1024, // Limit response to 10MB
-    responseType: 'stream',
-  });
-} catch (error) {
-  if (accessio.isAccessioError(error)) {
-    console.error(error.message); // "maxContentLength size of 10485760 exceeded"
+// Add response interceptor
+client.interceptors.response.use(
+  (response) => {
+    console.log('Received response from:', response.config.url);
+    return response;
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      // Handle unauthorized access globally
+    }
+    return Promise.reject(error);
   }
-}
+);
 ```
 
-### 🧪 Runtime Schema Validation
-
-Validate your API payloads at runtime using your favorite validation library (e.g., Zod, ArkType, Superstruct).
+### 8. Schema Validation 🔍
+Pass Zod or Valibot schemas to automatically validate and type responses:
 
 ```typescript
 import { z } from 'zod';
@@ -247,191 +215,52 @@ const UserSchema = z.object({
   email: z.string().email(),
 });
 
-const response = await api.get('/users/123', {
-  schema: UserSchema, // Throws AccessioError (ERR_BAD_RESPONSE) if validation fails
+const response = await accessio.get('https://api.example.com/users/1', {
+  schema: UserSchema // Throws validation errors early if fields mismatch
 });
-
-const user = response.data; // Fully typed as { id: string; name: string; email: string }
-```
-
-Both synchronous (via `.parse()`) and asynchronous (via `.parseAsync()`) validation schemas are supported out-of-the-box.
-
-### 📦 Request Deduplication & Caching
-
-Optimize application performance by preventing duplicate queries and utilizing caching.
-
-```typescript
-const api = accessio.create({
-  dedupe: true, // Merge concurrent requests targeting the same endpoint
-  cache: true, // Enable in-memory cache
-  cacheTTL: 60000, // Cache responses for 60 seconds
-});
-
-// Executes exactly 1 network call, resolves both promises
-const [res1, res2] = await Promise.all([api.get('/heavy-report'), api.get('/heavy-report')]);
-```
-
-> [!IMPORTANT]
-> When multiple requests are deduplicated (i.e. coalesced into a single active request), each caller maintains its own independent `AbortSignal`. If one caller aborts their request, only their promise is rejected with a cancellation error; other concurrent callers are unaffected and their requests continue to resolve successfully.
-
-By default, cached responses are cloned (`cacheClone: true`) to protect the cache against downstream mutations. If you want to bypass cloning and reuse the same object reference, set `cacheClone: false`:
-
-```typescript
-const response = await api.get('/data', {
-  cache: true,
-  cacheClone: false, // Bypasses deep cloning of the cached response object
-});
-```
-
-#### Customizing Memory Cache
-
-Accessio includes an in-memory cache provider (`MemoryCache`) with a default limit of `1000` items (using a Least Recently Used (LRU) policy where keys are updated in insertion order when set or updated). You can instantiate and configure a custom `MemoryCache` limit:
-
-```typescript
-import accessio, { MemoryCache } from 'accessio';
-
-const cache = new MemoryCache(500); // Set a custom limit of 500 items
-
-const api = accessio.create({
-  cache,
-  cacheTTL: 30000 // 30 seconds TTL
-});
-```
-
-### 🔗 Interceptors & Hooks
-
-Modify requests and responses at runtime, or listen to client lifecycles:
-
-```typescript
-const api = accessio.create();
-
-// Add Request Interceptor
-api.interceptors.request.use((config) => {
-  config.headers = config.headers || {};
-  config.headers['X-Request-Timestamp'] = Date.now().toString();
-  return config;
-});
-
-// Add Response Interceptor
-api.interceptors.response.use(
-  (response) => {
-    // Modify output data
-    return response;
-  },
-  (error) => {
-    // Handle global errors (e.g. token refresh)
-    return Promise.reject(error);
-  },
-);
-```
-
-> [!WARNING]
-> Synchronous request interceptors (configured using `{ synchronous: true }` option) must return the config object synchronously and **cannot** return a `Promise`. Returning a `Promise` from a synchronous interceptor will throw an `AccessioError` with code `ERR_BAD_OPTION`.
-
-### 🔄 Request & Response Data Transformation
-
-You can transform the request payload or headers before they are sent, or transform the response payload before it resolves. Accessio allows you to pass either a single transform function or an array of transform functions.
-
-```typescript
-const response = await api.post('/users', { name: 'john' }, {
-  // Transform request data & headers
-  transformRequest: [
-    (data, headers) => {
-      headers['X-Modified-By'] = 'Transformer';
-      return { ...data, name: data.name.toUpperCase() };
-    }
-  ],
-  // Transform response data
-  transformResponse: (data) => {
-    return { ...data, transformedAt: new Date() };
-  }
-});
-```
-
-If any transform function throws an error, the request/response fails:
-- Request transform errors are wrapped in an `AccessioError` with code `ERR_BAD_REQUEST`.
-- Response transform errors are wrapped in an `AccessioError` with code `ERR_BAD_RESPONSE`.
-
-### 🕸️ GraphQL (GQL) Support
-
-Accessio offers a native `.gql()` method to execute GraphQL query or mutation requests easily:
-
-```typescript
-const { data } = await api.gql(
-  '/graphql',
-  `
-  query GetUser($id: ID!) {
-    user(id: $id) {
-      id
-      name
-      email
-    }
-  }
-  `,
-  { id: '123' } // Variables (optional)
-);
-
-console.log(data); // Returns response data containing { user: { ... } }
-```
-
-### 📂 Nested FormData Serialization
-
-When submitting multipart form data via `.postForm()`, Accessio handles nested objects and arrays automatically. By default, it serializes nested values using dot-notation (e.g., `user.profile.name`). You can switch to bracket-notation (e.g., `user[profile][name]`) by enabling the brackets option in `formSerializer` config:
-
-```typescript
-// Dot notation (default): user.profile.name = 'Bob'
-await api.postForm('/submit', {
-  user: { profile: { name: 'Bob' } }
-});
-
-// Bracket notation: user[profile][name] = 'Bob'
-await api.postForm(
-  '/submit',
-  { user: { profile: { name: 'Bob' } } },
-  {
-    formSerializer: { brackets: true },
-  }
-);
 ```
 
 ---
 
-## ⚙️ Configuration Options
+## Configuration API ⚙️
 
-Here is the complete list of config parameters available in `AccessioRequestConfig`:
+Here is a list of popular config parameters available on `AccessioRequestConfig`:
 
-| Option               | Type                                                      | Default               | Description                                                                    |
-| :------------------- | :-------------------------------------------------------- | :-------------------- | :----------------------------------------------------------------------------- |
-| `baseURL`            | `string`                                                  | `undefined`           | Prepended to relative URLs.                                                    |
-| `method`             | `string`                                                  | `'get'`               | HTTP request method (e.g., `'get'`, `'post'`).                                 |
-| `headers`            | `Record`                                                  | `{}`                  | Key-value mapping of custom headers.                                           |
-| `auth`               | `AuthConfig`                                              | `undefined`           | Credentials for HTTP Basic Auth (`username` and `password`).                    |
-| `params`             | `Record`                                                  | `undefined`           | Query parameters appended to the URL.                                          |
-| `paramsSerializer`   | `ParamsSerializer`                                        | `undefined`           | Custom query parameters serializer function.                                   |
-| `paginateItems`      | `string \| ((data: any) => any[])`                        | `undefined`           | Custom extraction key or function to resolve array of items for auto-pagination.|
-| `data`               | `any`                                                     | `undefined`           | The payload to send in the request body.                                       |
-| `formSerializer`     | `{ brackets?: boolean }`                                  | `undefined`           | Options for flat/nested FormData serialization behavior.                       |
-| `timeout`            | `number`                                                  | `0` (disabled)        | Request timeout in milliseconds.                                               |
-| `signal`             | `AbortSignal`                                             | `undefined`           | An abort signal instance to cancel the request.                                |
-| `responseType`       | `'json' \| 'text' \| 'blob' \| 'arraybuffer' \| 'stream'` | `'json'`              | Expected format of the response data.                                          |
-| `transformRequest`   | `TransformFunction \| TransformFunction[]`                | `undefined`           | Custom function(s) to transform request data/headers before sending.           |
-| `transformResponse`  | `TransformFunction \| TransformFunction[]`                | `undefined`           | Custom function(s) to transform response data before resolving.                |
-| `validateStatus`     | `(status: number) => boolean`                             | `undefined`           | Custom function to validate status code (determines if promise is resolved).    |
-| `retry`              | `number`                                                  | `0`                   | Number of times to retry failed requests.                                      |
-| `retryDelay`         | `number`                                                  | `1000`                | Initial delay for exponential backoff (ms).                                    |
-| `maxRetryDelay`      | `number`                                                  | `30000`               | Maximum retry delay cap in milliseconds.                                       |
-| `maxContentLength`   | `number`                                                  | `undefined`           | Maximum allowed content length in bytes (enforced even for chunked streams).  |                                       |
-| `retryOn429`         | `boolean`                                                 | `false`               | Automatically retry on 429 using the `Retry-After` header.                     |
-| `rateLimiter`        | `RateLimiter`                                             | `undefined`           | A rate limiter instance to enqueue requests.                                   |
-| `dedupe`             | `boolean`                                                 | `false`               | Coalesce concurrent duplicate GET requests.                                    |
-| `cache`              | `boolean \| CacheProvider`                                | `false`               | Enable caching using memory or custom provider.                                |
-| `cacheTTL`           | `number`                                                  | `undefined`           | TTL for cached responses in ms.                                                |
-| `cacheClone`         | `boolean`                                                 | `true`                | Clones response data/headers to protect cache from downstream mutations.       |
-| `cacheKeySerializer` | `Function`                                                | `undefined`           | Custom function to generate the cache key.                                     |
-| `schema`             | `SchemaValidator`                                         | `undefined`           | Zod/schema parser to validate response body.                                   |
-| `hooks`              | `AccessioHooks`                                           | `undefined`           | Lifecycle callbacks: `onBeforeRequest`, `onRequestResponse`, `onRequestError`. |
-| `allowedProtocols`   | `string[] \| null`                                        | `['http:', 'https:']` | Protocols allowed for requesting. Set to `null` to disable check.              |
-| `fetch`              | `typeof fetch`                                            | `undefined`           | Custom `fetch` implementation to override global fetch.                        |
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `baseURL` | `string` | `undefined` | Prefixed URL for requests. |
+| `timeout` | `number` | `0` | Request timeout in milliseconds (0 means disabled). |
+| `headers` | `object` | `{}` | Key-value pairs for HTTP request headers. |
+| `responseType`| `'json' \| 'text' \| 'blob' \| 'arraybuffer' \| 'stream'` | `'json'` | Data type expected back from the server. |
+| `retry` | `number` | `0` | Number of times to retry failed requests. |
+| `retryDelay` | `number` | `1000` | Delay between retries in milliseconds. |
+| `maxRetryDelay` | `number` | `30000` | Cap on exponential backoff delays. |
+| `retryOn429` | `boolean` | `false` | Whether to automatically retry on HTTP 429 status code. |
+| `dedupe` | `boolean` | `false` | Enable collapsing of identical concurrent GET requests. |
+| `cache` | `boolean \| CacheProvider` | `false` | Enable in-memory caching of responses. |
+| `cacheTTL` | `number` | `undefined` | Duration (ms) response should remain in cache. |
+| `maxContentLength` | `number` | `undefined` | Max response size in bytes permitted (throws error early). |
+| `schema` | `SchemaValidator` | `undefined` | Schema to run `.parse()` or `.parseAsync()` against. |
+
+---
+
+## Error Handling 🛡️
+
+Errors thrown by Accessio are instances of `AccessioError` which carry metadata about the request and response, with automatic redaction of sensitive parameters (like `api_key` or `password`):
+
+```typescript
+import accessio from 'accessio';
+
+try {
+  await accessio.get('/invalid-endpoint');
+} catch (error) {
+  if (accessio.isAccessioError(error)) {
+    console.error('Status Code:', error.response?.status);
+    console.error('Error Code:', error.code);
+    console.error('Request URL:', error.config?.url); // Redacted query params
+  }
+}
+```
 
 ---
 
