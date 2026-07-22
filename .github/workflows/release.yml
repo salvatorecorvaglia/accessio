@@ -47,31 +47,35 @@ jobs:
         run: |
           node -e "
             const fs = require('fs');
+            const crypto = require('crypto');
             const tag = process.env.TAG_NAME || '';
             const version = tag.startsWith('v') ? tag.slice(1) : tag;
-            const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
-            const lines = changelog.split(/\r?\n/);
-            let startIdx = -1;
-            let endIdx = -1;
-            for (let i = 0; i < lines.length; i++) {
-              if (lines[i].startsWith('## [' + version + ']')) {
-                startIdx = i;
-                continue;
+            let body = '';
+            if (fs.existsSync('CHANGELOG.md')) {
+              const changelog = fs.readFileSync('CHANGELOG.md', 'utf8');
+              const lines = changelog.split(/\r?\n/);
+              let startIdx = -1;
+              let endIdx = -1;
+              for (let i = 0; i < lines.length; i++) {
+                if (lines[i].startsWith('## [' + version + ']')) {
+                  startIdx = i;
+                  continue;
+                }
+                if (startIdx !== -1 && lines[i].startsWith('## [')) {
+                  endIdx = i;
+                  break;
+                }
               }
-              if (startIdx !== -1 && lines[i].startsWith('## [')) {
-                endIdx = i;
-                break;
+              if (startIdx !== -1) {
+                const sectionLines = lines.slice(startIdx + 1, endIdx !== -1 ? endIdx : lines.length);
+                body = sectionLines.join('\n').trim();
               }
             }
-            let body = '';
-            if (startIdx !== -1) {
-              const sectionLines = lines.slice(startIdx + 1, endIdx !== -1 ? endIdx : lines.length);
-              body = sectionLines.join('\n').trim();
-            } else {
+            if (!body) {
               body = 'Release notes for version ' + tag;
             }
             const fsOutput = process.env.GITHUB_OUTPUT;
-            const delimiter = 'EOF_CHANGELOG';
+            const delimiter = 'EOF_' + crypto.randomUUID().replace(/-/g, '');
             fs.appendFileSync(fsOutput, 'body<<' + delimiter + '\n' + body + '\n' + delimiter + '\n');
           "
       - name: Create GitHub Release
