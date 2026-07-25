@@ -239,6 +239,7 @@ Here is a list of popular config parameters available on `AccessioRequestConfig`
 | `dedupe` | `boolean` | `false` | Enable collapsing of identical concurrent GET requests. |
 | `cache` | `boolean \| CacheProvider` | `false` | Enable in-memory caching of responses. |
 | `cacheTTL` | `number` | `undefined` | Duration (ms) response should remain in cache. |
+| `allowedProtocols` | `string[]` | `undefined` | List of permitted URL protocols (e.g., `['https:']`). |
 | `maxContentLength` | `number` | `undefined` | Max response size in bytes permitted (throws error early). |
 | `schema` | `SchemaValidator` | `undefined` | Schema to run `.parse()` or `.parseAsync()` against. |
 
@@ -246,7 +247,7 @@ Here is a list of popular config parameters available on `AccessioRequestConfig`
 
 ## Error Handling 🛡️
 
-Errors thrown by Accessio are instances of `AccessioError` which carry metadata about the request and response, with automatic redaction of sensitive parameters (like `api_key` or `password`):
+Errors thrown by Accessio are instances of `AccessioError` which carry metadata about the request and response, with automatic redaction of sensitive parameters (such as `api_key` or `password`) and headers (such as `authorization`, `proxy-authorization`, `x-api-key`, and `api-key`):
 
 ```typescript
 import accessio from 'accessio';
@@ -258,6 +259,7 @@ try {
     console.error('Status Code:', error.response?.status);
     console.error('Error Code:', error.code);
     console.error('Request URL:', error.config?.url); // Redacted query params
+    console.error('Request Headers:', error.config?.headers); // Redacted sensitive headers
   }
 }
 ```

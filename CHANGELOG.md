@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-25
+
+### Changed
+
+- Updated minimum Node.js runtime requirement to `22.13.0` (with Node 22/24 recommended) and workspace package manager `pnpm` to `v11.x`.
+- Refactored internal request dispatch logic into a unified `executeFetchRequest` helper in `src/core/request.ts` to streamline standard and deduplicated request paths.
+- Refactored `MemoryCache` proactive eviction scanning using `for...of` entry iteration.
+- Updated GitHub Actions release workflow (`release.yml`) for package distribution.
+
+### Fixed
+
+- Fixed `autoPaginate` parameter handling to clone `params`, preventing mutation of frozen parameter objects (`Object.freeze(...)`).
+- Hardened protocol validation in `assertAllowedProtocol` to check protocol-relative URLs (`//domain.com/api`) against `allowedProtocols`.
+- Expanded sensitive header redaction in `AccessioError` to automatically mask `x-api-key`, `api-key`, and `proxy-authorization` headers alongside `authorization`.
+
 ## [3.1.0] - 2026-07-18
 
 ### Added
