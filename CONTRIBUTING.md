@@ -10,10 +10,10 @@ This document outlines the guidelines and workflows for contributing to Accessio
 
 ### Prerequisites
 
-Accessio uses **Node.js (>= 18)** and **pnpm** as its workspace package manager. Make sure you have the following installed:
+Accessio uses **Node.js (>= 22.13.0)** and **pnpm** as its workspace package manager. Make sure you have the following installed:
 
-- Node.js (v20, v22, or v24 recommended)
-- `pnpm` (v10.x recommended)
+- Node.js (v22 or v24 recommended)
+- `pnpm` (v11.x recommended)
 
 ### Setup Instructions
 
