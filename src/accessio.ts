@@ -480,6 +480,7 @@ export class Accessio {
       if (nextUrl) {
         const merged = mergeConfig(currentConfig, { url: nextUrl });
         if (merged.params) {
+          merged.params = { ...merged.params };
           try {
             const dummyBase = 'http://dummy-base.com';
             const parsedUrl = new URL(nextUrl, dummyBase);

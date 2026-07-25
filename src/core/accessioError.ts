@@ -10,7 +10,14 @@ function redactHeaders(headers: unknown, seen?: WeakSet<object>): unknown {
   const out: Record<string, unknown> = {};
   for (const key of Object.keys(headers as Record<string, unknown>)) {
     const value = (headers as Record<string, unknown>)[key];
-    if (/^authorization$/i.test(key) || /^cookie$/i.test(key) || /^set-cookie$/i.test(key)) {
+    if (
+      /^authorization$/i.test(key) ||
+      /^proxy-authorization$/i.test(key) ||
+      /^cookie$/i.test(key) ||
+      /^set-cookie$/i.test(key) ||
+      /^x-api-key$/i.test(key) ||
+      /^api-key$/i.test(key)
+    ) {
       out[key] = '[REDACTED]';
     } else if (value && typeof value === 'object' && !Array.isArray(value)) {
       out[key] = redactHeaders(value, visited);

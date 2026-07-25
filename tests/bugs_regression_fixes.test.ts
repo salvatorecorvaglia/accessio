@@ -680,5 +680,64 @@ describe('Bugs & Regression Fixes Tests', () => {
       expect(handlers[0]).toBeNull();
       expect(handlers[1]).toBeDefined();
     });
+
+    it('autoPaginate does not mutate frozen caller params object', async () => {
+      const client = new Accessio();
+      const mockFetch = vi
+        .fn()
+        .mockResolvedValueOnce({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: () =>
+            Promise.resolve(JSON.stringify({ data: [1], next: 'http://test.com/page2?page=2' })),
+        })
+        .mockResolvedValueOnce({
+          status: 200,
+          statusText: 'OK',
+          headers: new Headers(),
+          text: () => Promise.resolve(JSON.stringify({ data: [2], next: null })),
+        });
+      global.fetch = mockFetch;
+
+      const frozenParams = Object.freeze({ page: 1, limit: 10 });
+      const items: any[] = [];
+      for await (const item of client.autoPaginate('http://test.com/page1', {
+        params: frozenParams,
+      })) {
+        items.push(item);
+      }
+
+      expect(items).toEqual([1, 2]);
+      expect(frozenParams.page).toBe(1);
+    });
+
+    it('assertAllowedProtocol blocks protocol-relative URLs when not in allowedProtocols', async () => {
+      const client = new Accessio({ allowedProtocols: ['https:'] });
+      await expect(client.get('//malicious-domain.com/api')).rejects.toThrow(
+        /URL protocol "http:" is not allowed/,
+      );
+    });
+
+    it('redactHeaders redacts x-api-key, api-key, and proxy-authorization headers', () => {
+      const err = new AccessioError(
+        'Test',
+        'ERR_TEST',
+        {
+          headers: {
+            'x-api-key': 'secret-key-123',
+            'api-key': 'secret-key-456',
+            'proxy-authorization': 'Basic secret-auth',
+          },
+        },
+        null,
+        null,
+      );
+      expect(err.config?.headers).toEqual({
+        'x-api-key': '[REDACTED]',
+        'api-key': '[REDACTED]',
+        'proxy-authorization': '[REDACTED]',
+      });
+    });
   });
 });

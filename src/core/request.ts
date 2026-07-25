@@ -58,7 +58,11 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
   const allowed = config.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
 
   let scheme: string | null = null;
-  const match = /^([a-z][a-z\d+\-.]*):/i.exec(fullURL);
+  let targetURL = fullURL;
+  if (targetURL.startsWith('//')) {
+    targetURL = `http:${targetURL}`;
+  }
+  const match = /^([a-z][a-z\d+\-.]*):/i.exec(targetURL);
   if (match) scheme = `${match[1].toLowerCase()}:`;
   if (!scheme) return;
 
@@ -71,6 +75,51 @@ function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): 
       null,
     );
   }
+}
+
+async function executeFetchRequest(
+  config: AccessioRequestConfig,
+  fullURL: string,
+  flatHeaders: FlatHeaders,
+): Promise<AccessioResponse> {
+  const requestTransforms = buildTransformArray(config.transformRequest);
+  const requestData = await transformData(requestTransforms, config.data, flatHeaders, config);
+
+  if (
+    requestData === null ||
+    requestData === undefined ||
+    (typeof FormData !== 'undefined' && requestData instanceof FormData)
+  ) {
+    removeContentType(flatHeaders);
+  }
+
+  const fetchOptions: RequestInit = {
+    method: (config.method || 'GET').toUpperCase(),
+    headers: buildFetchHeaders(flatHeaders),
+  };
+
+  const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
+  if (
+    methodsWithBody.includes(fetchOptions.method!) &&
+    requestData !== undefined &&
+    requestData !== null
+  ) {
+    fetchOptions.body = requestData as BodyInit;
+  }
+
+  if (config.withCredentials) {
+    fetchOptions.credentials = 'include';
+  }
+
+  if (config.dispatcher) {
+    (fetchOptions as any).dispatcher = config.dispatcher;
+  }
+  if (config.agent) {
+    (fetchOptions as any).agent = config.agent;
+  }
+
+  const requestStartTime = Date.now();
+  return await fetchAdapter(config, fullURL, fetchOptions, requestStartTime);
 }
 
 interface Subscriber {
@@ -166,55 +215,7 @@ export default async function dispatchRequest(
       const recordAbortController = new AbortController();
       const fetchConfig = { ...config, signal: recordAbortController.signal };
 
-      const performRequest = async (): Promise<AccessioResponse> => {
-        const requestTransforms = buildTransformArray(fetchConfig.transformRequest);
-        const requestData = await transformData(
-          requestTransforms,
-          fetchConfig.data,
-          flatHeaders,
-          fetchConfig,
-        );
-
-        if (
-          requestData === null ||
-          requestData === undefined ||
-          (typeof FormData !== 'undefined' && requestData instanceof FormData)
-        ) {
-          removeContentType(flatHeaders);
-        }
-
-        const fetchOptions: RequestInit = {
-          method: (fetchConfig.method || 'GET').toUpperCase(),
-          headers: buildFetchHeaders(flatHeaders),
-        };
-
-        const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
-        if (
-          methodsWithBody.includes(fetchOptions.method!) &&
-          requestData !== undefined &&
-          requestData !== null
-        ) {
-          fetchOptions.body = requestData as BodyInit;
-        }
-
-        if (fetchConfig.withCredentials) {
-          fetchOptions.credentials = 'include';
-        }
-
-        if (fetchConfig.dispatcher) {
-          (fetchOptions as any).dispatcher = fetchConfig.dispatcher;
-        }
-        if (fetchConfig.agent) {
-          (fetchOptions as any).agent = fetchConfig.agent;
-        }
-
-        const requestStartTime = Date.now();
-        const response = await fetchAdapter(fetchConfig, fullURL, fetchOptions, requestStartTime);
-
-        return response;
-      };
-
-      const promise = performRequest();
+      const promise = executeFetchRequest(fetchConfig, fullURL, flatHeaders);
 
       record = {
         promise,
@@ -346,50 +347,7 @@ export default async function dispatchRequest(
     });
   }
 
-  const performRequest = async (): Promise<AccessioResponse> => {
-    const requestTransforms = buildTransformArray(config.transformRequest);
-    const requestData = await transformData(requestTransforms, config.data, flatHeaders, config);
-
-    if (
-      requestData === null ||
-      requestData === undefined ||
-      (typeof FormData !== 'undefined' && requestData instanceof FormData)
-    ) {
-      removeContentType(flatHeaders);
-    }
-
-    const fetchOptions: RequestInit = {
-      method: (config.method || 'GET').toUpperCase(),
-      headers: buildFetchHeaders(flatHeaders),
-    };
-
-    const methodsWithBody = ['POST', 'PUT', 'PATCH', 'DELETE'];
-    if (
-      methodsWithBody.includes(fetchOptions.method!) &&
-      requestData !== undefined &&
-      requestData !== null
-    ) {
-      fetchOptions.body = requestData as BodyInit;
-    }
-
-    if (config.withCredentials) {
-      fetchOptions.credentials = 'include';
-    }
-
-    if (config.dispatcher) {
-      (fetchOptions as any).dispatcher = config.dispatcher;
-    }
-    if (config.agent) {
-      (fetchOptions as any).agent = config.agent;
-    }
-
-    const requestStartTime = Date.now();
-    const response = await fetchAdapter(config, fullURL, fetchOptions, requestStartTime);
-
-    return response;
-  };
-
-  const promise = performRequest();
+  const promise = executeFetchRequest(config, fullURL, flatHeaders);
 
   try {
     const shared = await promise;
