@@ -58,7 +58,7 @@ export function logRequest(config: AccessioRequestConfig, fullUrl: string): void
 }
 
 export function logResponse(response: AccessioResponse): void {
-  if (!response.config || !response.config.debug) return;
+  if (!response.config?.debug) return;
   const status = response.status;
   const statusText = response.statusText || '';
   const duration = response.duration != null ? `${response.duration}ms` : '??';
@@ -83,7 +83,7 @@ export function logResponse(response: AccessioResponse): void {
 }
 
 export function logError(error: AccessioError, config?: AccessioRequestConfig): void {
-  if (!config || !config.debug) return;
+  if (!config?.debug) return;
 
   const parts: string[] = [`🐦‍⬛ [Accessio] ← ❌ ERROR: ${error.message}`];
 

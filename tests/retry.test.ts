@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import AccessioError from '../src/core/accessioError';
-import retryRequest, { defaultRetryCondition, calculateDelay } from '../src/core/retry';
+import retryRequest, { calculateDelay, defaultRetryCondition } from '../src/core/retry';
 
 describe('retry.ts', () => {
   describe('defaultRetryCondition', () => {

@@ -1,19 +1,20 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.8.3/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.5.6/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
     "useIgnoreFile": true
   },
   "files": {
-    "ignore": [
-      "cjs/**",
-      "esm/**",
-      "dist/**",
-      "coverage/**",
-      "package-lock.json",
-      "**/*.d.ts",
-      "node_modules/**"
+    "includes": [
+      "**",
+      "!**/cjs",
+      "!**/esm",
+      "!**/dist",
+      "!**/coverage",
+      "!**/package-lock.json",
+      "!**/*.d.ts",
+      "!**/node_modules"
     ]
   },
   "formatter": {
@@ -34,7 +35,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "recommended": true,
+      "preset": "recommended",
       "correctness": {
         "noUnusedVariables": "warn",
         "noInvalidUseBeforeDeclaration": "error"
@@ -43,17 +44,17 @@
         "noForEach": "off"
       },
       "style": {
-        "noVar": "error",
         "useConst": "warn",
         "useTemplate": "warn",
         "noNonNullAssertion": "off",
         "noParameterAssign": "off"
       },
       "suspicious": {
-        "noConsoleLog": "off",
         "noDebugger": "warn",
         "noDoubleEquals": "error",
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noVar": "error",
+        "noConsole": { "level": "off", "options": { "allow": ["log"] } }
       }
     }
   }

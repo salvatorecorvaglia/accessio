@@ -76,7 +76,9 @@ describe('InterceptorManager', () => {
       expect(mgr.size).toBe(0);
       const liveId = mgr.use(((v: any) => v) as any);
       let visits = 0;
-      mgr.forEach(() => visits++);
+      mgr.forEach(() => {
+        visits++;
+      });
       expect(visits).toBe(1);
       expect(liveId).toBeGreaterThanOrEqual(10_000);
       mgr.eject(liveId);
@@ -92,7 +94,9 @@ describe('InterceptorManager', () => {
       manager.use(() => results.push('c'));
 
       manager.eject(id);
-      manager.forEach((h) => (h as any).fulfilled());
+      manager.forEach((h) => {
+        (h as any).fulfilled();
+      });
       expect(results).toEqual(['a', 'c']);
     });
   });
@@ -117,7 +121,9 @@ describe('InterceptorManager', () => {
       manager.use(() => items.push(1));
       manager.use(() => items.push(2));
 
-      manager.forEach((h) => (h as any).fulfilled());
+      manager.forEach((h) => {
+        (h as any).fulfilled();
+      });
       expect(items).toEqual([1, 2]);
     });
   });

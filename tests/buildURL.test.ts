@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import buildURL, { serializeParams, combineURLs, isAbsoluteURL } from '../src/core/buildURL';
+import buildURL, { combineURLs, isAbsoluteURL, serializeParams } from '../src/core/buildURL';
 
 describe('buildURL', () => {
   it('returns the url as-is when no baseURL or params', () => {

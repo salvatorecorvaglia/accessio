@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import Accessio from '../src/accessio';
-import AccessioError from '../src/core/accessioError';
 import mergeConfig from '../src/core/mergeConfig';
 
 describe('Regression & Enhancements v3 Tests', () => {

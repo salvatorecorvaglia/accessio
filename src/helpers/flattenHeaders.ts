@@ -62,7 +62,7 @@ export function flattenHeaders(
 
   if (headers.common && typeof headers.common === 'object' && !Array.isArray(headers.common)) {
     for (const key in headers.common) {
-      if (Object.prototype.hasOwnProperty.call(headers.common, key)) {
+      if (Object.hasOwn(headers.common, key)) {
         setHeader(merged, key, headers.common[key]);
       }
     }
@@ -74,14 +74,14 @@ export function flattenHeaders(
     !Array.isArray(headers[methodLower])
   ) {
     for (const key in headers[methodLower]) {
-      if (Object.prototype.hasOwnProperty.call(headers[methodLower], key)) {
+      if (Object.hasOwn(headers[methodLower], key)) {
         setHeader(merged, key, headers[methodLower][key]);
       }
     }
   }
 
   for (const key in headers) {
-    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+    if (Object.hasOwn(headers, key)) {
       const value = headers[key];
       const isMethodKey = METHOD_KEYS.has(key);
       const isObjectGroup =
@@ -97,7 +97,7 @@ export function flattenHeaders(
 
 export function removeContentType(headers: Record<string, string | string[]>): void {
   for (const key in headers) {
-    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+    if (Object.hasOwn(headers, key)) {
       if (key.toLowerCase() === 'content-type') {
         delete headers[key];
       }
@@ -108,7 +108,7 @@ export function removeContentType(headers: Record<string, string | string[]>): v
 export function buildFetchHeaders(headers: Record<string, string | string[]>): Headers {
   const fetchHeaders = new Headers();
   for (const key in headers) {
-    if (Object.prototype.hasOwnProperty.call(headers, key)) {
+    if (Object.hasOwn(headers, key)) {
       const value = headers[key];
       if (value === undefined || value === null) continue;
       assertSafeHeader(key, value);

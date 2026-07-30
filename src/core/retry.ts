@@ -166,5 +166,5 @@ async function retryRequest(
   throw lastError;
 }
 
-export { defaultRetryCondition, calculateDelay };
+export { calculateDelay, defaultRetryCondition };
 export default retryRequest;

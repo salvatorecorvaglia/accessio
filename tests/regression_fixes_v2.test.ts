@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import Accessio from '../src/accessio';
-import AccessioError from '../src/core/accessioError';
 import { toFormData } from '../src/helpers/toFormData';
 
 describe('Regression Fixes v2 Tests', () => {

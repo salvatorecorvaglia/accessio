@@ -65,17 +65,16 @@ accessio.create = create;
 
 export default accessio;
 
+export type * from './types';
 export {
   Accessio,
   AccessioError,
-  mergeConfig,
   buildURL,
-  InterceptorManager,
   createInstance,
   createRateLimiter,
+  InterceptorManager,
+  logError,
   logRequest,
   logResponse,
-  logError,
+  mergeConfig,
 };
-
-export type * from './types';

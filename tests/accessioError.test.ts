@@ -127,8 +127,8 @@ describe('AccessioError', () => {
         null,
         null,
       );
-      expect((err.config?.headers as any).Authorization).toBe('[REDACTED]');
-      expect((err.config?.headers as any)['content-type']).toBe('application/json');
+      expect((err.config as any).headers.Authorization).toBe('[REDACTED]');
+      expect((err.config as any).headers['content-type']).toBe('application/json');
     });
 
     it('does not mutate the original config', () => {

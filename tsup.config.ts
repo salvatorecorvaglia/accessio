@@ -1,6 +1,5 @@
 import { readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import { dirname } from 'node:path';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'tsup';
 

@@ -93,11 +93,7 @@ export default function buildURL(
         /(?::([a-zA-Z_][a-zA-Z0-9_]*))|(?:{([a-zA-Z_][a-zA-Z0-9_]*)})/g,
         (match, p1, p2) => {
           const key = p1 || p2;
-          if (
-            key &&
-            Object.prototype.hasOwnProperty.call(unusedParams, key) &&
-            unusedParams[key] !== undefined
-          ) {
+          if (key && Object.hasOwn(unusedParams, key) && unusedParams[key] !== undefined) {
             const val = unusedParams[key];
             delete unusedParams[key];
             return encodeURIComponent(String(val));
@@ -123,4 +119,4 @@ export default function buildURL(
   return fullURL;
 }
 
-export { serializeParams, combineURLs, isAbsoluteURL };
+export { combineURLs, isAbsoluteURL, serializeParams };

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MemoryCache, defaultMemoryCache } from '../src/helpers/memoryCache';
+import { defaultMemoryCache, MemoryCache } from '../src/helpers/memoryCache';
 
 describe('MemoryCache', () => {
   let cache: MemoryCache;

@@ -27,11 +27,11 @@ vi.mock('../src/helpers/debug', () => ({
 import accessio, {
   Accessio,
   AccessioError,
-  mergeConfig,
   buildURL,
-  InterceptorManager,
   createInstance,
   createRateLimiter,
+  InterceptorManager,
+  mergeConfig,
 } from '../src/index';
 
 describe('index.ts — default instance and exports', () => {
