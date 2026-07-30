@@ -31,7 +31,6 @@
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": ".",
-    "baseUrl": ".",
     "paths": {
       "accessio": ["./src/index.ts"]
     }
