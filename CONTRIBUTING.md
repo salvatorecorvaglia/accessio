@@ -93,10 +93,4 @@ When submitting a Pull Request, please ensure:
 
 ---
 
-## Need Help? ❓
-
-If you have questions about the codebase, API design, or anything else, feel free to open a GitHub Discussion or create an issue. We are here to help!
-
----
-
 Happy coding! 🎯
