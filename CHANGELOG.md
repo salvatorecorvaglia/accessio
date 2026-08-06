@@ -31,7 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Updated GitHub Actions CI workflows to dynamically cancel in-progress runs only on pull request events.
-- Configured explicit registry URL (`https://registry.npmjs.org`) across package publication and release workflows.
 - Expanded release verification coverage in GitHub workflows to include type checking and browser testing.
 
 ### Fixed
@@ -213,10 +212,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Propagated standard stream cancellation to internal Reader stream in fetchAdapter.
 - Avoided retrying Node streams containing a `.pipe` method in retry request utility.
 
-### Changed
-
-- Migrated package publishing to npmjs and implemented automated GitHub Pages deployment workflow.
-
 ## [1.4.0] - 2026-05-21
 
 ### Added
@@ -301,4 +296,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - First implementation of Accessio.
-- Initial stable release published to npm.
+
+### Chore
+
+- Promoted package version to 1.0.0 for initial official npm release.
