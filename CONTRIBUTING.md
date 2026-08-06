@@ -1,8 +1,6 @@
 # Contributing to Accessio 🎯
 
-First off, thank you for taking the time to contribute! Accessio is built on open source, and we appreciate all contributions, whether they are fixing bugs, improving documentation, adding new features, or raising issues.
-
-This document outlines the guidelines and workflows for contributing to Accessio.
+Thank you for your interest in contributing to **Accessio**! We welcome contributions, bug reports, feature requests, and security improvements from the community.
 
 ---
 
