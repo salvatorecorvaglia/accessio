@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-08-07
+
+### Added
+
+- Added `onDownloadProgress` callback support in `AccessioRequestConfig` to track real-time download progress (`loaded`, `total`, `bytes`, `progress`) during response body streaming.
+- Added `maxRedirects` option in `AccessioRequestConfig` with automatic redirect tracking and loop detection.
+- Added granular subpath exports in `package.json` for helper and core utilities (`accessio/helpers/rateLimiter`, `accessio/helpers/debug`, `accessio/core/buildURL`, `accessio/core/mergeConfig`, `accessio/core/request`, `accessio/core/retry`, `accessio/helpers/parseHeaders`, `accessio/helpers/settle`, `accessio/helpers/transformData`).
+- Added standalone package verification script `scripts/verify-package.mjs` and npm script `pnpm run verify:package` to validate bundle outputs, entry points, and TypeScript declaration files prior to release.
+- Added comprehensive regression test suites for download progress, redirect limits, cache settlement, logic fixes, and shorthand config overloads (`tests/downloadProgress.test.ts`, `tests/redirects.test.ts`, `tests/cacheSettle.test.ts`, `tests/logicFixes.test.ts`, `tests/shorthandConfig.test.ts`).
+
+### Changed
+
+- Updated GitHub Actions workflows (`ci.yml`, `publish-npm.yml`, `release.yml`) to run package verification via `pnpm run verify:package`.
+- Refactored `Accessio` class shorthand methods to consistently merge instance defaults with per-request configuration options.
+
+### Fixed
+
+- Fixed response cache settlement handling in `request.ts` when interacting with custom interceptors and inflight request deduplication subscribers.
+- Hardened rate limiter queue eviction and cancellation listener cleanup under high concurrent load.
+- Hardened protocol validation for relative and protocol-relative request URLs.
+
 ## [3.2.0] - 2026-07-25
 
 ### Changed

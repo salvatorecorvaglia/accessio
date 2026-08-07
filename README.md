@@ -22,6 +22,7 @@
 - 👥 **Request Deduplication** — De-duplicates active identical inflight GET requests to optimize performance.
 - 💾 **Response Caching** — Built-in Memory Cache with TTL and mutation protection (cloning) or plug in your own custom cache store.
 - 🔍 **Schema Validation** — Seamless validation hooks using Zod, Valibot, or custom schemas.
+- 📊 **Download Progress Tracking** — Real-time progress monitoring (`onDownloadProgress`) during response streaming.
 
 ---
 
@@ -220,6 +221,17 @@ const response = await accessio.get('https://api.example.com/users/1', {
 });
 ```
 
+### 9. Download Progress Tracking 📊
+Monitor response payload download progress in real time using the `onDownloadProgress` callback:
+
+```typescript
+const response = await accessio.get('https://api.example.com/large-dataset.json', {
+  onDownloadProgress: (progress) => {
+    console.log(`Downloaded ${progress.loaded} of ${progress.total ?? 'unknown'} bytes (${progress.progress}%);
+  }
+});
+```
+
 ---
 
 ## Configuration API ⚙️
@@ -241,6 +253,8 @@ Here is a list of popular config parameters available on `AccessioRequestConfig`
 | `cacheTTL` | `number` | `undefined` | Duration (ms) response should remain in cache. |
 | `allowedProtocols` | `string[]` | `undefined` | List of permitted URL protocols (e.g., `['https:']`). |
 | `maxContentLength` | `number` | `undefined` | Max response size in bytes permitted (throws error early). |
+| `maxRedirects` | `number` | `undefined` | Maximum number of HTTP redirects to follow automatically. |
+| `onDownloadProgress` | `(progress: DownloadProgressEvent) => void` | `undefined` | Callback invoked with real-time download progress details. |
 | `schema` | `SchemaValidator` | `undefined` | Schema to run `.parse()` or `.parseAsync()` against. |
 
 ---

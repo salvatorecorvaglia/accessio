@@ -50,6 +50,7 @@ We use a modern toolchain for linting, formatting, type checking, and testing. P
 | `pnpm test` | Runs the test suite in Node.js environment via `vitest`. |
 | `pnpm run test:browser` | Runs the test suite in a simulated browser environment. |
 | `pnpm run test:coverage` | Runs tests and prints coverage statistics. |
+| `pnpm run verify:package` | Validates build artifacts, subpath exports, and TypeScript declaration files. |
 
 ### Adding Features or Bug Fixes
 
@@ -72,6 +73,7 @@ We use a modern toolchain for linting, formatting, type checking, and testing. P
    pnpm run typecheck
    pnpm test
    pnpm run test:browser
+   pnpm run verify:package
    ```
 
 4. **Document Changes:**
