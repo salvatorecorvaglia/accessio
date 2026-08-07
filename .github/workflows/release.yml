@@ -101,4 +101,6 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - name: Verify built package loads
+        run: pnpm run verify:package
       - run: pnpm publish --access public --provenance --no-git-checks

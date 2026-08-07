@@ -39,6 +39,16 @@ function deepMerge(...sources: any[]): Record<string, any> {
 const requestOnlyKeys = new Set<string>(['url', 'data', 'signal']);
 const deepMergeKeys = new Set<string>(['headers', 'params', 'hooks']);
 
+/**
+ * Arrays are copied rather than shared. `transformRequest`/`transformResponse` live on the
+ * module-level `defaults` object, so assigning the reference straight through meant every
+ * instance shared one array — `instance.defaults.transformRequest.push(fn)` mutated the
+ * transforms of every other instance, including the global default export.
+ */
+function copyArrays<T>(value: T): T {
+  return (Array.isArray(value) ? [...value] : value) as T;
+}
+
 export default function mergeConfig(
   config1: AccessioRequestConfig = {},
   config2: AccessioRequestConfig = {},
@@ -49,7 +59,7 @@ export default function mergeConfig(
   for (let i = 0; i < keys1.length; i++) {
     const key = keys1[i];
     if (requestOnlyKeys.has(key)) continue;
-    merged[key] = config1[key as keyof AccessioRequestConfig];
+    merged[key] = copyArrays(config1[key as keyof AccessioRequestConfig]);
   }
 
   const keys2 = Object.keys(config2);
@@ -61,7 +71,7 @@ export default function mergeConfig(
         const val1 = config1[key as keyof AccessioRequestConfig];
         merged[key] = deepMerge(val1 || {}, val2);
       } else {
-        merged[key] = val2;
+        merged[key] = copyArrays(val2);
       }
     }
   }

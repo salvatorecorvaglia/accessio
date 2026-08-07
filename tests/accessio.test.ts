@@ -77,9 +77,11 @@ describe('Accessio class', () => {
       expect(res.config.method).toBe('post');
     });
 
-    it('throws AccessioError when no url or baseURL is provided', () => {
+    it('rejects with AccessioError when no url or baseURL is provided', async () => {
       const bare = new Accessio();
-      expect(() => bare.request({})).toThrow('Request URL is required');
+      // Must reject, not throw synchronously — otherwise `.catch()` cannot intercept it.
+      expect(() => bare.request({}).catch(() => {})).not.toThrow();
+      await expect(bare.request({})).rejects.toThrow('Request URL is required');
     });
 
     it('merges with instance defaults', async () => {

@@ -149,13 +149,23 @@ function redactURL(url: string | undefined): string | undefined {
   return redacted;
 }
 
+/**
+ * Strips credentials from a config before it is attached to an error.
+ *
+ * Errors routinely get serialized into logs and crash reporters, so every field that can
+ * carry a secret is scrubbed: headers, query params, inline URL credentials, and the
+ * request body. Applies to errors only — a successful `response.config` is returned
+ * unredacted so callers can read back the headers and body they sent.
+ */
 export function redactConfig(config: AccessioRequestConfig | null): AccessioRequestConfig | null {
   if (!config) return config;
   const clone = { ...config } as AccessioRequestConfig & { auth?: unknown };
   if ('auth' in clone) clone.auth = undefined;
   if (clone.headers) clone.headers = redactHeaders(clone.headers) as typeof clone.headers;
   if (clone.params) clone.params = redactParams(clone.params) as typeof clone.params;
+  if (clone.data !== undefined && clone.data !== null) clone.data = redactBody(clone.data);
   if (clone.url) clone.url = redactURL(clone.url);
+  if (clone.baseURL) clone.baseURL = redactURL(clone.baseURL);
   if (clone._builtUrl) clone._builtUrl = redactURL(clone._builtUrl);
   return clone;
 }

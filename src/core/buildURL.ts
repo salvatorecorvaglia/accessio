@@ -34,10 +34,14 @@ function serializeParams(
       if (visited.has(value)) {
         return;
       }
+      // Tracks the current *path*, not everything ever seen: releasing the mark on the way
+      // out still breaks cycles, while letting the same object appear under two different
+      // keys (`{ a: shared, b: shared }`) serialize both times instead of dropping one.
       visited.add(value);
       Object.keys(value as Record<string, unknown>).forEach((key) => {
         encode(`${prefix}[${key}]`, (value as Record<string, unknown>)[key], visited);
       });
+      visited.delete(value);
     } else {
       const encodedValue = value instanceof Date ? value.toISOString() : value;
       parts.push(`${encodeURIComponent(prefix)}=${encodeURIComponent(encodedValue as string)}`);

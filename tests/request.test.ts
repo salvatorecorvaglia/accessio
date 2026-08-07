@@ -389,7 +389,7 @@ describe('dispatchRequest (request.ts)', () => {
       ).rejects.toMatchObject({ code: 'ERR_BAD_OPTION' });
     });
 
-    it('scrubs auth from response.config', async () => {
+    it('returns the caller config unredacted on a successful response', async () => {
       mockFetch({ ok: true });
       const res = await dispatchRequest({
         url: 'https://api.test.com/x',
@@ -398,8 +398,26 @@ describe('dispatchRequest (request.ts)', () => {
         auth: { username: 'u', password: 'p' },
         transformResponse: [(d: any) => (typeof d === 'string' ? JSON.parse(d) : d)],
       });
-      expect((res.config as any).auth).toBeUndefined();
-      expect((res.config.headers as any).Authorization).toBe('[REDACTED]');
+      // Callers must be able to read back the headers they sent. Redaction applies to
+      // errors, which are what end up in logs and crash reporters.
+      expect((res.config.headers as any).Authorization).toBe('Bearer s3cret');
+    });
+
+    it('redacts credentials on the error path instead', async () => {
+      mockFetch({ nope: true }, { status: 500 });
+      const err: any = await dispatchRequest({
+        url: 'https://api.test.com/x',
+        method: 'post',
+        headers: { Authorization: 'Bearer s3cret' },
+        data: { user: 'u', password: 'hunter2' },
+        validateStatus: (s: number) => s >= 200 && s < 300,
+      }).catch((e: any) => e);
+
+      expect(err.isAccessioError).toBe(true);
+      expect((err.config.headers as any).Authorization).toBe('[REDACTED]');
+      expect((err.config.data as any).password).toBe('[REDACTED]');
+      expect((err.config.data as any).user).toBe('u');
+      expect(JSON.stringify(err.toJSON())).not.toContain('hunter2');
     });
 
     it('preserves raw body in error when JSON parse fails', async () => {
@@ -569,7 +587,8 @@ describe('dispatchRequest (request.ts)', () => {
       expect(respA).not.toBe(respB);
       expect((respA.config as any).meta.caller).toBe('A');
       expect((respB.config as any).meta.caller).toBe('B');
-      expect((respA.config as any).headers.Authorization).toBe('[REDACTED]');
+      // Each consumer sees its own config, unredacted (redaction is error-only).
+      expect((respA.config as any).headers.Authorization).toBe('Bearer X');
     });
 
     it('clears dedupe entry on rejection', async () => {

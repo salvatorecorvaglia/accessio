@@ -82,6 +82,8 @@ async function retryRequest(
   const retryCondition: RetryConditionFunction = config.retryCondition ?? defaultRetryCondition;
 
   let lastError: any;
+  // `retryOn429` is an independent opt-in: it grants up to 3 retries for 429 responses
+  // even when `retry` is 0, without making any other error retryable.
   const actualMaxRetries = Math.max(maxRetries, config.retryOn429 ? 3 : 0);
 
   for (let attempt = 0; attempt <= actualMaxRetries; attempt++) {
@@ -113,8 +115,9 @@ async function retryRequest(
       let delay = calculateDelay(attempt, retryDelay, config.maxRetryDelay ?? 30000);
 
       if (config.retryOn429 && (error as any).response?.status === 429) {
+        // `parseHeaders` lower-cases every key, so only the lower-case lookup can match.
         const headers = (error as any).response?.headers;
-        const retryAfterStr = headers?.['retry-after'] || headers?.['Retry-After'];
+        const retryAfterStr = headers?.['retry-after'];
         if (retryAfterStr) {
           const parsed = Number.parseInt(retryAfterStr, 10);
           if (!Number.isNaN(parsed)) {
@@ -132,8 +135,13 @@ async function retryRequest(
         }
       }
 
+      // A throwing observer must not replace the error being retried, nor abort the loop.
       if (typeof config.onRetry === 'function') {
-        (config.onRetry as OnRetryFunction)(attempt + 1, error as AccessioError, config);
+        try {
+          (config.onRetry as OnRetryFunction)(attempt + 1, error as AccessioError, config);
+        } catch {
+          // onRetry is a notification hook; its failure is not the request's failure.
+        }
       }
 
       try {

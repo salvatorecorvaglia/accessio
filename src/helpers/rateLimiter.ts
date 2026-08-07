@@ -1,8 +1,25 @@
+import { ERR_CANCELED } from '../constants/errorCodes';
+import AccessioError from '../core/accessioError';
 import type { AccessioRequestConfig, AccessioResponse, RateLimiter } from '../types';
 
 interface QueueItem {
   resolve: () => void;
   reject: (reason: Error) => void;
+}
+
+/**
+ * Wraps a cancellation reason as an `AccessioError` carrying `ERR_CANCELED`.
+ *
+ * Rejecting with a bare `Error` made aborts that happened while a request was still queued
+ * invisible to `accessio.isCancel()` and to `defaultRetryCondition` (which keys off
+ * `error.code`), so a cancelled request looked like an unclassified failure.
+ */
+function cancelledError(reason: unknown, fallback: string): AccessioError {
+  const message =
+    reason instanceof Error ? reason.message : typeof reason === 'string' ? reason : fallback;
+  const err = new AccessioError(message, ERR_CANCELED, null, null, null);
+  if (reason instanceof Error) err.cause = reason;
+  return err;
 }
 
 export function createRateLimiter(
@@ -31,11 +48,11 @@ export function createRateLimiter(
 
   function acquire(signal?: AbortSignal): Promise<void> {
     if (destroyed) {
-      return Promise.reject(new Error('[Accessio] Rate limiter has been destroyed'));
+      return Promise.reject(cancelledError(null, '[Accessio] Rate limiter has been destroyed'));
     }
 
     if (signal?.aborted) {
-      return Promise.reject(signal.reason || new Error('Request aborted'));
+      return Promise.reject(cancelledError(signal.reason, 'Request aborted'));
     }
 
     if (active < maxConcurrent) {
@@ -75,7 +92,7 @@ export function createRateLimiter(
           if (index !== -1) {
             queue.splice(index, 1);
           }
-          reject(signal.reason || new Error('Request aborted'));
+          reject(cancelledError(signal.reason, 'Request aborted'));
         };
         signal.addEventListener('abort', onAbort, { once: true });
       }
@@ -96,7 +113,10 @@ export function createRateLimiter(
 
   function destroy(): void {
     destroyed = true;
-    const reason = new Error('[Accessio] Rate limiter destroyed — pending request cancelled');
+    const reason = cancelledError(
+      null,
+      '[Accessio] Rate limiter destroyed — pending request cancelled',
+    );
     while (queue.length > 0) {
       queue.shift()!.reject(reason);
     }

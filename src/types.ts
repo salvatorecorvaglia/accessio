@@ -87,6 +87,14 @@ export interface AccessioRequestConfig {
   _builtUrl?: string;
   maxContentLength?: number;
   allowedProtocols?: string[] | null;
+  /**
+   * Maximum redirects to follow. When set, redirects are followed manually so every hop
+   * is re-checked against `allowedProtocols` and credential headers are dropped on
+   * cross-origin hops. `0` returns the 3xx response without following it. Leave unset to
+   * let `fetch` follow redirects itself (intermediate hops are then not re-validated).
+   * Not supported in browsers, which return opaque redirect responses.
+   */
+  maxRedirects?: number;
   dispatcher?: unknown;
   agent?: unknown;
   dedupe?: boolean;
@@ -106,6 +114,11 @@ export interface AccessioRequestConfig {
   formSerializer?: { brackets?: boolean };
   cacheClone?: boolean;
   paginateItems?: string | ((data: any) => any[]);
+  /**
+   * Upper bound on pages fetched by `autoPaginate` (default 1000). Guards against an API
+   * whose `next` link never terminates; a repeated URL is rejected immediately regardless.
+   */
+  maxPages?: number;
 }
 
 export interface AccessioResponse<T = unknown> {

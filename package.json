@@ -27,61 +27,110 @@
   },
   "exports": {
     ".": {
-      "types": "./esm/index.d.ts",
-      "import": "./esm/index.js",
-      "require": "./cjs/index.cjs"
+      "import": {
+        "types": "./esm/index.d.ts",
+        "default": "./esm/index.js"
+      },
+      "require": {
+        "types": "./cjs/index.d.cts",
+        "default": "./cjs/index.cjs"
+      }
     },
     "./helpers/rateLimiter": {
-      "types": "./esm/helpers/rateLimiter.d.ts",
-      "import": "./esm/helpers/rateLimiter.js",
-      "require": "./cjs/helpers/rateLimiter.cjs"
+      "import": {
+        "types": "./esm/helpers/rateLimiter.d.ts",
+        "default": "./esm/helpers/rateLimiter.js"
+      },
+      "require": {
+        "types": "./cjs/helpers/rateLimiter.d.cts",
+        "default": "./cjs/helpers/rateLimiter.cjs"
+      }
     },
     "./helpers/debug": {
-      "types": "./esm/helpers/debug.d.ts",
-      "import": "./esm/helpers/debug.js",
-      "require": "./cjs/helpers/debug.cjs"
+      "import": {
+        "types": "./esm/helpers/debug.d.ts",
+        "default": "./esm/helpers/debug.js"
+      },
+      "require": {
+        "types": "./cjs/helpers/debug.d.cts",
+        "default": "./cjs/helpers/debug.cjs"
+      }
     },
     "./core/buildURL": {
-      "types": "./esm/core/buildURL.d.ts",
-      "import": "./esm/core/buildURL.js",
-      "require": "./cjs/core/buildURL.cjs"
+      "import": {
+        "types": "./esm/core/buildURL.d.ts",
+        "default": "./esm/core/buildURL.js"
+      },
+      "require": {
+        "types": "./cjs/core/buildURL.d.cts",
+        "default": "./cjs/core/buildURL.cjs"
+      }
     },
     "./core/mergeConfig": {
-      "types": "./esm/core/mergeConfig.d.ts",
-      "import": "./esm/core/mergeConfig.js",
-      "require": "./cjs/core/mergeConfig.cjs"
+      "import": {
+        "types": "./esm/core/mergeConfig.d.ts",
+        "default": "./esm/core/mergeConfig.js"
+      },
+      "require": {
+        "types": "./cjs/core/mergeConfig.d.cts",
+        "default": "./cjs/core/mergeConfig.cjs"
+      }
     },
     "./core/request": {
-      "types": "./esm/core/request.d.ts",
-      "import": "./esm/core/request.js",
-      "require": "./cjs/core/request.cjs"
+      "import": {
+        "types": "./esm/core/request.d.ts",
+        "default": "./esm/core/request.js"
+      },
+      "require": {
+        "types": "./cjs/core/request.d.cts",
+        "default": "./cjs/core/request.cjs"
+      }
     },
     "./core/retry": {
-      "types": "./esm/core/retry.d.ts",
-      "import": "./esm/core/retry.js",
-      "require": "./cjs/core/retry.cjs"
+      "import": {
+        "types": "./esm/core/retry.d.ts",
+        "default": "./esm/core/retry.js"
+      },
+      "require": {
+        "types": "./cjs/core/retry.d.cts",
+        "default": "./cjs/core/retry.cjs"
+      }
     },
     "./helpers/parseHeaders": {
-      "types": "./esm/helpers/parseHeaders.d.ts",
-      "import": "./esm/helpers/parseHeaders.js",
-      "require": "./cjs/helpers/parseHeaders.cjs"
+      "import": {
+        "types": "./esm/helpers/parseHeaders.d.ts",
+        "default": "./esm/helpers/parseHeaders.js"
+      },
+      "require": {
+        "types": "./cjs/helpers/parseHeaders.d.cts",
+        "default": "./cjs/helpers/parseHeaders.cjs"
+      }
     },
     "./helpers/settle": {
-      "types": "./esm/helpers/settle.d.ts",
-      "import": "./esm/helpers/settle.js",
-      "require": "./cjs/helpers/settle.cjs"
+      "import": {
+        "types": "./esm/helpers/settle.d.ts",
+        "default": "./esm/helpers/settle.js"
+      },
+      "require": {
+        "types": "./cjs/helpers/settle.d.cts",
+        "default": "./cjs/helpers/settle.cjs"
+      }
     },
     "./helpers/transformData": {
-      "types": "./esm/helpers/transformData.d.ts",
-      "import": "./esm/helpers/transformData.js",
-      "require": "./cjs/helpers/transformData.cjs"
+      "import": {
+        "types": "./esm/helpers/transformData.d.ts",
+        "default": "./esm/helpers/transformData.js"
+      },
+      "require": {
+        "types": "./cjs/helpers/transformData.d.cts",
+        "default": "./cjs/helpers/transformData.cjs"
+      }
     }
   },
   "files": [
     "src/",
     "cjs/",
-    "esm/",
-    "index.d.ts"
+    "esm/"
   ],
   "scripts": {
     "build:cjs": "tsup",
@@ -95,7 +144,8 @@
     "test:coverage": "vitest run --coverage",
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "release:npm": "gh workflow run publish-npm.yml -f publish_tag=$(git describe --tags --abbrev=0)",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "verify:package": "node scripts/verify-package.mjs"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",

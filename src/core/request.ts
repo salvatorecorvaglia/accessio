@@ -1,13 +1,18 @@
-import { ERR_BAD_OPTION } from '../constants/errorCodes';
 import { setBasicAuth } from '../helpers/auth';
 import { buildFetchHeaders, flattenHeaders, removeContentType } from '../helpers/flattenHeaders';
 import { defaultMemoryCache } from '../helpers/memoryCache';
 import settle from '../helpers/settle';
 import transformData from '../helpers/transformData';
-import type { AccessioRequestConfig, AccessioResponse, TransformFunction } from '../types';
-import AccessioError, { redactConfig } from './accessioError';
+import type {
+  AccessioRequestConfig,
+  AccessioResponse,
+  CacheProvider,
+  TransformFunction,
+} from '../types';
+import AccessioError from './accessioError';
 import buildURL from './buildURL';
 import fetchAdapter from './fetchAdapter';
+import { assertAllowedProtocol } from './protocol';
 
 type HeadersConfig = Record<string, Record<string, string | string[]>>;
 type FlatHeaders = Record<string, string | string[]>;
@@ -51,30 +56,83 @@ function buildTransformArray(
   return [transform];
 }
 
-const DEFAULT_ALLOWED_PROTOCOLS = ['http:', 'https:'];
+function resolveCacheProvider(cache: AccessioRequestConfig['cache']): CacheProvider {
+  return typeof cache === 'object' ? cache : defaultMemoryCache;
+}
 
-function assertAllowedProtocol(fullURL: string, config: AccessioRequestConfig): void {
-  if (config.allowedProtocols === null) return;
-  const allowed = config.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
-
-  let scheme: string | null = null;
-  let targetURL = fullURL;
-  if (targetURL.startsWith('//')) {
-    targetURL = `http:${targetURL}`;
-  }
-  const match = /^([a-z][a-z\d+\-.]*):/i.exec(targetURL);
-  if (match) scheme = `${match[1].toLowerCase()}:`;
-  if (!scheme) return;
-
-  if (!allowed.includes(scheme)) {
-    throw new AccessioError(
-      `URL protocol "${scheme}" is not allowed. Allowed: ${allowed.join(', ')}. Set config.allowedProtocols to extend, or null to disable the check.`,
-      ERR_BAD_OPTION,
+function settleResponse(
+  response: AccessioResponse,
+  config: AccessioRequestConfig,
+): Promise<AccessioResponse> {
+  return new Promise<AccessioResponse>((resolve, reject) => {
+    settle(
+      resolve as (value: AccessioResponse) => void,
+      reject as (reason: AccessioError) => void,
+      response,
       config,
-      null,
-      null,
+    );
+  });
+}
+
+/**
+ * Turns a raw adapter response into the value handed back to one caller: applies
+ * `transformResponse`, enforces `validateStatus`, and stores the result if caching is on.
+ *
+ * The cache write happens *after* settling on purpose. Storing first meant a 4xx/5xx was
+ * written to the cache and then replayed to later callers as a resolved success, silently
+ * bypassing `validateStatus`.
+ *
+ * `cloneRaw` is set only for the dedupe fan-out, where a single adapter response is shared
+ * by several callers and each needs an independent copy. A single-consumer response is its
+ * caller's alone, so cloning it would be pure overhead.
+ */
+async function finalizeAndSettle(
+  raw: AccessioResponse,
+  config: AccessioRequestConfig,
+  options: { isGet: boolean; cacheKey: string; cloneRaw: boolean },
+): Promise<AccessioResponse> {
+  const source = options.cloneRaw && config.cacheClone !== false ? cloneResponse(raw) : raw;
+  const response = finalizeResponse(source, config);
+
+  response.data = await transformData(
+    buildTransformArray(config.transformResponse),
+    response.data,
+    response.headers,
+    config,
+    'response',
+  );
+
+  const settled = await settleResponse(response, config);
+
+  // Schema validation runs on the transformed data of an accepted response: validating the
+  // raw adapter output meant schemas saw pre-transform values (often still a string), and
+  // a failing status surfaced as a schema error rather than the status error.
+  if (config.schema) {
+    try {
+      settled.data =
+        typeof config.schema.parseAsync === 'function'
+          ? await config.schema.parseAsync(settled.data)
+          : config.schema.parse(settled.data);
+    } catch (schemaError) {
+      throw AccessioError.from(
+        schemaError instanceof Error ? schemaError : new Error(String(schemaError)),
+        AccessioError.ERR_BAD_RESPONSE,
+        config,
+        settled.request,
+        settled,
+      );
+    }
+  }
+
+  if (options.isGet && config.cache) {
+    await resolveCacheProvider(config.cache).set(
+      options.cacheKey,
+      config.cacheClone !== false ? cloneResponse(settled) : settled,
+      config.cacheTTL,
     );
   }
+
+  return settled;
 }
 
 async function executeFetchRequest(
@@ -193,18 +251,20 @@ export default async function dispatchRequest(
     isGet && (config.cache || config.dedupe) ? buildCacheKey(config, fullURL, flatHeaders) : '';
 
   if (isGet && config.cache) {
-    const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
-    const cached = await cacheProvider.get(cacheKey);
+    const cached = await resolveCacheProvider(config.cache).get(cacheKey);
     if (cached) {
       const clonedCached = config.cacheClone !== false ? cloneResponse(cached) : cached;
       const cachedView: AccessioResponse = {
         ...clonedCached,
-        config: redactConfig(config) as typeof clonedCached.config,
+        config,
       };
+      // Replayed responses go through validateStatus too, so a caller that tightened
+      // validateStatus is not handed a status it would have rejected on a live request.
+      const settled = await settleResponse(cachedView, config);
       if (config.hooks?.onRequestResponse) {
-        await config.hooks.onRequestResponse(cachedView);
+        await config.hooks.onRequestResponse(settled);
       }
-      return cachedView;
+      return settled;
     }
   }
 
@@ -235,35 +295,10 @@ export default async function dispatchRequest(
               sub.signal.removeEventListener('abort', sub.onAbort);
             }
             try {
-              const clonedShared = sub.config.cacheClone !== false ? cloneResponse(shared) : shared;
-              const response = finalizeResponse(clonedShared, sub.config);
-
-              const responseTransforms = buildTransformArray(sub.config.transformResponse);
-              response.data = await transformData(
-                responseTransforms,
-                response.data,
-                response.headers,
-                sub.config,
-                'response',
-              );
-
-              if (isGet && sub.config.cache) {
-                const cacheProvider =
-                  typeof sub.config.cache === 'object' ? sub.config.cache : defaultMemoryCache;
-                await cacheProvider.set(
-                  cacheKey,
-                  sub.config.cacheClone !== false ? cloneResponse(response) : response,
-                  sub.config.cacheTTL,
-                );
-              }
-
-              const settled = await new Promise<AccessioResponse>((resolve, reject) => {
-                settle(
-                  resolve as (value: AccessioResponse) => void,
-                  reject as (reason: AccessioError) => void,
-                  response,
-                  sub.config,
-                );
+              const settled = await finalizeAndSettle(shared, sub.config, {
+                isGet,
+                cacheKey,
+                cloneRaw: true,
               });
 
               if (sub.config.hooks?.onRequestResponse) {
@@ -351,35 +386,7 @@ export default async function dispatchRequest(
 
   try {
     const shared = await promise;
-    const clonedShared = config.cacheClone !== false ? cloneResponse(shared) : shared;
-    const response = finalizeResponse(clonedShared, config);
-
-    const responseTransforms = buildTransformArray(config.transformResponse);
-    response.data = await transformData(
-      responseTransforms,
-      response.data,
-      response.headers,
-      config,
-      'response',
-    );
-
-    if (isGet && config.cache) {
-      const cacheProvider = typeof config.cache === 'object' ? config.cache : defaultMemoryCache;
-      await cacheProvider.set(
-        cacheKey,
-        config.cacheClone !== false ? cloneResponse(response) : response,
-        config.cacheTTL,
-      );
-    }
-
-    const settled = await new Promise<AccessioResponse>((resolve, reject) => {
-      settle(
-        resolve as (value: AccessioResponse) => void,
-        reject as (reason: AccessioError) => void,
-        response,
-        config,
-      );
-    });
+    const settled = await finalizeAndSettle(shared, config, { isGet, cacheKey, cloneRaw: false });
 
     if (config.hooks?.onRequestResponse) {
       await config.hooks.onRequestResponse(settled);
@@ -423,12 +430,20 @@ function cloneResponse(response: AccessioResponse): AccessioResponse {
   };
 }
 
+/**
+ * Attaches the caller's own config to a response.
+ *
+ * Deliberately unredacted: this is the config the caller already holds, and redacting it
+ * made `response.config.headers` read `[REDACTED]`, so callers could not inspect the
+ * headers they had just sent. Redaction is applied to errors (see `redactConfig`), which
+ * are the values that leak into logs and crash reporters.
+ */
 function finalizeResponse(
   shared: AccessioResponse,
   config: AccessioRequestConfig,
 ): AccessioResponse {
   return {
     ...shared,
-    config: redactConfig(config) as typeof shared.config,
+    config,
   };
 }

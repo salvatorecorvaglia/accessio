@@ -22,13 +22,26 @@ function collectEntries(dir: string, base: string = dir): Record<string, string>
 
 const srcDir = join(__dirname, 'src');
 
+/**
+ * `bundle` MUST stay true.
+ *
+ * With `bundle: false` esbuild transpiles each file but leaves relative import specifiers
+ * exactly as written in the source — extensionless. The emitted files are `.cjs`/`.js`, so
+ * `require("./accessio")` could not resolve `accessio.cjs` and `import "./accessio"` failed
+ * ESM resolution with ERR_MODULE_NOT_FOUND. Both published entry points failed to load at
+ * all. Bundling resolves every specifier at build time, which sidesteps the mismatch.
+ *
+ * `splitting` keeps shared modules in common chunks so the multiple entry points declared
+ * in package.json#exports do not each inline a private copy of the core.
+ */
 export default defineConfig([
   {
     entry: collectEntries(srcDir),
     format: ['cjs'],
     outDir: 'cjs',
     outExtension: () => ({ js: '.cjs' }),
-    bundle: false,
+    bundle: true,
+    splitting: true,
     clean: true,
     dts: true,
     silent: false,
@@ -42,7 +55,8 @@ export default defineConfig([
     format: ['esm'],
     outDir: 'esm',
     outExtension: () => ({ js: '.js' }),
-    bundle: false,
+    bundle: true,
+    splitting: true,
     clean: true,
     dts: true,
     silent: false,

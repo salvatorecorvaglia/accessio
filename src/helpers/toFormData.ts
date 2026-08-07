@@ -27,6 +27,8 @@ export function toFormData(
     if (visited.has(obj)) {
       return fd;
     }
+    // Marks the current path only — unmarking on the way out breaks cycles while still
+    // emitting an object that legitimately appears under two different keys.
     visited.add(obj);
 
     Object.keys(obj).forEach((key) => {
@@ -38,6 +40,8 @@ export function toFormData(
       }
       toFormData(obj[key], fd, formKey, visited, options);
     });
+
+    visited.delete(obj);
   } else {
     fd.append(namespace || '', obj);
   }

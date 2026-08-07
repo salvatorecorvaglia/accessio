@@ -63,3 +63,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
       - run: pnpm pack --dry-run
+      # `pack --dry-run` lists files but never loads them. These actually require/import
+      # the built entry points, which is the only way to catch a build that emits
+      # unresolvable import specifiers.
+      - name: Verify built package loads
+        run: pnpm run verify:package
+      - name: Lint package metadata
+        run: npx --yes publint

@@ -1,6 +1,142 @@
 import parseHeaders from '../helpers/parseHeaders';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 import AccessioError from './accessioError';
+import { assertAllowedProtocol } from './protocol';
+
+const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+
+/** Headers that must not be replayed to a different origin after a redirect. */
+const CREDENTIAL_HEADERS = ['authorization', 'cookie', 'proxy-authorization'];
+
+function sameOrigin(a: string, b: string): boolean {
+  try {
+    return new URL(a).origin === new URL(b).origin;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Follows redirects manually so each hop can be re-validated against the protocol
+ * allow-list, and so credentials are dropped when a redirect crosses origins.
+ *
+ * Only engaged when `config.maxRedirects` is set. Left unset, `fetch` follows redirects
+ * itself and intermediate hops are NOT re-checked — the allow-list then applies to the
+ * initial URL only.
+ */
+async function fetchFollowingRedirects(
+  config: AccessioRequestConfig,
+  fetchImpl: typeof fetch,
+  startURL: string,
+  fetchOptions: RequestInit,
+): Promise<Response> {
+  const max = config.maxRedirects;
+
+  if (max === undefined) {
+    return await fetchImpl(startURL, fetchOptions);
+  }
+
+  if (typeof max !== 'number' || !Number.isInteger(max) || max < 0) {
+    throw new AccessioError(
+      `Invalid maxRedirects value: ${max}. Expected a non-negative integer.`,
+      AccessioError.ERR_BAD_OPTION_VALUE,
+      config,
+      null,
+      null,
+    );
+  }
+
+  let currentURL = startURL;
+  let method = (fetchOptions.method || 'GET').toUpperCase();
+  let body = fetchOptions.body;
+  const headers = new Headers(fetchOptions.headers as HeadersInit | undefined);
+
+  for (let hop = 0; ; hop++) {
+    // A fresh Headers per hop: `headers` is mutated between hops (credentials are dropped
+    // on cross-origin redirects), and sharing one instance would retroactively alter the
+    // headers already handed to an earlier fetch call.
+    const response = await fetchImpl(currentURL, {
+      ...fetchOptions,
+      method,
+      body,
+      headers: new Headers(headers),
+      redirect: 'manual',
+    });
+
+    // Browsers return an opaque stub for `redirect: 'manual'`: status 0, no Location,
+    // unreadable body. Manual following is impossible there, so say so plainly rather
+    // than silently returning an unusable response.
+    if (response.type === 'opaqueredirect' || (response.status === 0 && !response.ok)) {
+      throw new AccessioError(
+        'config.maxRedirects is not supported in this environment: the fetch implementation ' +
+          'returns opaque redirect responses. Omit maxRedirects to let fetch follow redirects.',
+        AccessioError.ERR_NOT_SUPPORT,
+        config,
+        response,
+        null,
+      );
+    }
+
+    if (!REDIRECT_STATUSES.has(response.status)) return response;
+
+    const location = response.headers.get('location');
+    // A 3xx with no Location is not actionable — hand it back and let validateStatus rule.
+    if (!location) return response;
+
+    // maxRedirects: 0 means "do not follow"; the 3xx itself is the result.
+    if (max === 0) return response;
+
+    if (hop >= max) {
+      throw new AccessioError(
+        `Maximum number of redirects exceeded (${max})`,
+        AccessioError.ERR_FR_TOO_MANY_REDIRECTS,
+        config,
+        response,
+        null,
+      );
+    }
+
+    let nextURL: string;
+    try {
+      nextURL = new URL(location, currentURL).toString();
+    } catch {
+      throw new AccessioError(
+        `Invalid redirect location: ${location}`,
+        AccessioError.ERR_INVALID_URL,
+        config,
+        response,
+        null,
+      );
+    }
+
+    assertAllowedProtocol(nextURL, config);
+
+    if (!sameOrigin(nextURL, currentURL)) {
+      for (const name of CREDENTIAL_HEADERS) headers.delete(name);
+    }
+
+    // 303 always downgrades to GET; 301/302 do so for POST, matching fetch and browsers.
+    // 307/308 preserve both method and body by definition.
+    if (
+      response.status === 303 ||
+      ((response.status === 301 || response.status === 302) && method === 'POST')
+    ) {
+      method = 'GET';
+      body = undefined;
+      headers.delete('content-type');
+      headers.delete('content-length');
+    }
+
+    // Cancel the discarded 3xx body so the connection is released.
+    try {
+      await response.body?.cancel();
+    } catch {
+      // ignore
+    }
+
+    currentURL = nextURL;
+  }
+}
 
 async function readResponseData(
   fetchResponse: Response,
@@ -97,6 +233,12 @@ function setupAbort(config: AccessioRequestConfig, fetchOptions: RequestInit): A
     );
   }, timeoutValue);
 
+  // For `responseType: 'stream'` the timer is cleared when the stream finishes, so a
+  // consumer that abandons the stream would otherwise leave a pending timer holding the
+  // Node event loop open. An in-flight request is kept alive by its own socket, so
+  // unref'ing the timer costs nothing while the request is genuinely running.
+  (timeoutId as unknown as { unref?: () => void })?.unref?.();
+
   let onUserAbort: (() => void) | null = null;
 
   if (config.signal) {
@@ -137,35 +279,37 @@ function wrapResponseStream(fetchResponse: Response, config: AccessioRequestConf
   let loaded = 0;
 
   const reader = fetchResponse.body.getReader();
+  // One chunk per `pull` — driven by consumer demand. Reading the whole body inside
+  // `start` would discard backpressure and buffer the entire response in the controller's
+  // queue, which defeats `responseType: 'stream'` for large payloads.
   const stream = new ReadableStream({
-    async start(controller) {
+    async pull(controller) {
       try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) {
-            controller.close();
-            break;
-          }
-          loaded += value.byteLength;
-
-          if (hasLimit && loaded > config.maxContentLength!) {
-            const limitError = new AccessioError(
-              `maxContentLength size of ${config.maxContentLength} exceeded`,
-              AccessioError.ERR_BAD_RESPONSE,
-              config,
-              fetchResponse,
-              null,
-            );
-            controller.error(limitError);
-            throw limitError;
-          }
-
-          if (hasProgress) {
-            config.onDownloadProgress!({ loaded, total });
-          }
-
-          controller.enqueue(value);
+        const { done, value } = await reader.read();
+        if (done) {
+          controller.close();
+          return;
         }
+        loaded += value.byteLength;
+
+        if (hasLimit && loaded > config.maxContentLength!) {
+          const limitError = new AccessioError(
+            `maxContentLength size of ${config.maxContentLength} exceeded`,
+            AccessioError.ERR_BAD_RESPONSE,
+            config,
+            fetchResponse,
+            null,
+          );
+          controller.error(limitError);
+          await reader.cancel(limitError).catch(() => {});
+          return;
+        }
+
+        if (hasProgress) {
+          config.onDownloadProgress!({ loaded, total });
+        }
+
+        controller.enqueue(value);
       } catch (e) {
         controller.error(e);
       }
@@ -225,6 +369,18 @@ function classifyFetchError(
   );
 }
 
+/**
+ * Module-level on purpose. A registry created per stream becomes unreachable as soon as
+ * the wrapping function returns, and the spec does not require an unreachable registry's
+ * callbacks to ever run — the GC-based fallback silently never fired.
+ */
+const streamCleanupRegistry =
+  typeof FinalizationRegistry !== 'undefined'
+    ? new FinalizationRegistry((cleanupFn: () => void) => {
+        cleanupFn();
+      })
+    : null;
+
 function wrapStreamWithCleanup(stream: any, cleanup: () => void): any {
   if (!stream) return stream;
 
@@ -236,12 +392,7 @@ function wrapStreamWithCleanup(stream: any, cleanup: () => void): any {
     }
   };
 
-  if (typeof FinalizationRegistry !== 'undefined') {
-    const registry = new FinalizationRegistry((cleanupFn: () => void) => {
-      cleanupFn();
-    });
-    registry.register(stream, onceCleanup);
-  }
+  streamCleanupRegistry?.register(stream, onceCleanup);
 
   if (typeof stream.cancel === 'function') {
     const originalCancel = stream.cancel;
@@ -356,23 +507,27 @@ export default async function fetchAdapter(
 
   try {
     const fetchImpl = config.fetch || fetch;
-    const rawResponse = await fetchImpl(fullURL, fetchOptions);
-    const fetchResponse = wrapResponseStream(rawResponse, config);
+    const rawResponse = await fetchFollowingRedirects(config, fetchImpl, fullURL, fetchOptions);
 
-    const contentLength = fetchResponse.headers.get('content-length');
+    // Checked before wrapping: `wrapResponseStream` locks the body with `getReader()`, and
+    // bailing out afterwards left that reader dangling with the connection unreleased.
+    const contentLength = rawResponse.headers.get('content-length');
     if (
       contentLength &&
       config.maxContentLength &&
       Number.parseInt(contentLength, 10) > config.maxContentLength
     ) {
+      await rawResponse.body?.cancel().catch(() => {});
       throw new AccessioError(
         `maxContentLength size of ${config.maxContentLength} exceeded`,
         AccessioError.ERR_BAD_RESPONSE,
         config,
-        fetchResponse,
+        rawResponse,
         null,
       );
     }
+
+    const fetchResponse = wrapResponseStream(rawResponse, config);
 
     let responseData: unknown;
     try {
@@ -381,13 +536,8 @@ export default async function fetchAdapter(
         isStream = true;
         responseData = wrapStreamWithCleanup(responseData, abort.cleanup);
       }
-      if (config.schema) {
-        if (typeof config.schema.parseAsync === 'function') {
-          responseData = await config.schema.parseAsync(responseData);
-        } else {
-          responseData = config.schema.parse(responseData);
-        }
-      }
+      // `config.schema` is applied later, in the request pipeline, so it validates the data
+      // the caller actually receives — after `transformResponse` and after the status check.
     } catch (readError) {
       if (readError instanceof AccessioError) throw readError;
       throw AccessioError.from(

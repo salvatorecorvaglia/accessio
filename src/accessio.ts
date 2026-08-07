@@ -13,6 +13,7 @@ import type {
   AccessioResponse,
   InterceptorHandler,
   Interceptors,
+  Method,
 } from './types';
 
 function runRequestInterceptorsSync(
@@ -82,6 +83,28 @@ function runRequestInterceptorsAsync(
   return promise as Promise<AccessioRequestConfig>;
 }
 
+/**
+ * Builds a per-call config from the caller's config plus the fixed fields a shorthand
+ * method supplies (`method`, `url`, sometimes `data`).
+ *
+ * This deliberately does NOT use `mergeConfig`: that helper strips `url`, `data` and
+ * `signal` from its first argument so that an instance's *defaults* cannot leak
+ * request-scoped values into every call. The caller's config is not a defaults object,
+ * so running it through `mergeConfig` silently discarded the caller's `signal` (making
+ * requests uncancellable) and `data` (dropping `delete` bodies). `request()` still
+ * merges the result against `this.defaults`, which is where that stripping belongs.
+ */
+function withRequestFields(
+  config: AccessioRequestConfig | undefined,
+  fields: { method: Method; url: string; data?: unknown },
+): AccessioRequestConfig {
+  const merged: AccessioRequestConfig = { ...config, method: fields.method, url: fields.url };
+  if (fields.data !== undefined) {
+    merged.data = fields.data;
+  }
+  return merged;
+}
+
 function dispatchAndRetry(cfg: AccessioRequestConfig): Promise<AccessioResponse> {
   const fullUrl = buildURL(cfg.url ?? '', cfg.baseURL, cfg.params, cfg.paramsSerializer);
   logRequest(cfg, fullUrl);
@@ -140,13 +163,17 @@ export class Accessio {
 
     mergedConfig.method = (mergedConfig.method || 'get').toLowerCase();
 
+    // Rejected rather than thrown: every other failure path in `request()` surfaces as a
+    // rejected promise, so throwing here would escape `client.request(...).catch(handler)`.
     if (!mergedConfig.url && !mergedConfig.baseURL) {
-      throw new AccessioError(
-        'Request URL is required. Provide a `url` or `baseURL` in the config.',
-        AccessioError.ERR_BAD_OPTION,
-        mergedConfig,
-        null,
-        null,
+      return Promise.reject(
+        new AccessioError(
+          'Request URL is required. Provide a `url` or `baseURL` in the config.',
+          AccessioError.ERR_BAD_OPTION,
+          mergedConfig,
+          null,
+          null,
+        ),
       );
     }
 
@@ -261,19 +288,19 @@ export class Accessio {
   }
 
   get<T = any>(url: string, config?: AccessioRequestConfig): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'get', url }));
+    return this.request<T>(withRequestFields(config, { method: 'get', url }));
   }
 
   delete<T = any>(url: string, config?: AccessioRequestConfig): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'delete', url }));
+    return this.request<T>(withRequestFields(config, { method: 'delete', url }));
   }
 
   head<T = any>(url: string, config?: AccessioRequestConfig): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'head', url }));
+    return this.request<T>(withRequestFields(config, { method: 'head', url }));
   }
 
   options<T = any>(url: string, config?: AccessioRequestConfig): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'options', url }));
+    return this.request<T>(withRequestFields(config, { method: 'options', url }));
   }
 
   post<T = any>(
@@ -281,7 +308,7 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'post', url, data }));
+    return this.request<T>(withRequestFields(config, { method: 'post', url, data }));
   }
 
   put<T = any>(
@@ -289,7 +316,7 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'put', url, data }));
+    return this.request<T>(withRequestFields(config, { method: 'put', url, data }));
   }
 
   patch<T = any>(
@@ -297,7 +324,7 @@ export class Accessio {
     data?: any,
     config?: AccessioRequestConfig,
   ): Promise<AccessioResponse<T>> {
-    return this.request<T>(mergeConfig(config || {}, { method: 'patch', url, data }));
+    return this.request<T>(withRequestFields(config, { method: 'patch', url, data }));
   }
 
   private formRequest<T = any>(
@@ -311,14 +338,14 @@ export class Accessio {
       data && !(data instanceof FormData)
         ? toFormData(data, undefined, undefined, undefined, { brackets: useBrackets })
         : data;
-    return this.request<T>(
-      mergeConfig(config || {}, {
-        method,
-        url,
-        data: formData,
+    const merged = withRequestFields(config, { method, url, data: formData });
+    merged.headers = mergeConfig(
+      { headers: config?.headers },
+      {
         headers: { 'Content-Type': 'multipart/form-data' },
-      }),
-    );
+      },
+    ).headers;
+    return this.request<T>(merged);
   }
 
   postForm<T = any>(
@@ -349,10 +376,8 @@ export class Accessio {
     url: string,
     config?: AccessioRequestConfig,
   ): AsyncGenerator<T, void, unknown> {
-    const merged = mergeConfig(config || {}, { method: 'get', url, responseType: 'stream' });
-    if (config?.signal) {
-      merged.signal = config.signal;
-    }
+    const merged = withRequestFields(config, { method: 'get', url });
+    merged.responseType = 'stream';
     const response = await this.request<any>(merged);
     if (!response.data) return;
 
@@ -442,7 +467,36 @@ export class Accessio {
     let nextUrl: string | null = url;
     let currentConfig = config || {};
 
+    // An API that returns a `next` link pointing at the current (or an earlier) page would
+    // otherwise spin forever. Both guards are needed: `visited` catches tight cycles
+    // immediately, `maxPages` bounds chains that never repeat a URL but never end either.
+    const maxPages = config?.maxPages ?? 1000;
+    const visited = new Set<string>();
+    let pageCount = 0;
+
     while (nextUrl) {
+      if (visited.has(nextUrl)) {
+        throw new AccessioError(
+          `Pagination cycle detected: ${nextUrl} was already requested. ` +
+            'Check the `next` link returned by the API.',
+          AccessioError.ERR_BAD_RESPONSE,
+          currentConfig,
+          null,
+          null,
+        );
+      }
+      visited.add(nextUrl);
+
+      if (++pageCount > maxPages) {
+        throw new AccessioError(
+          `Pagination exceeded maxPages (${maxPages}). Raise config.maxPages if this is expected.`,
+          AccessioError.ERR_BAD_RESPONSE,
+          currentConfig,
+          null,
+          null,
+        );
+      }
+
       const response: AccessioResponse<any> = await this.get(nextUrl, currentConfig);
 
       const data = response.data;
@@ -478,7 +532,7 @@ export class Accessio {
           : null;
 
       if (nextUrl) {
-        const merged = mergeConfig(currentConfig, { url: nextUrl });
+        const merged: AccessioRequestConfig = { ...currentConfig, url: nextUrl };
         if (merged.params) {
           merged.params = { ...merged.params };
           try {
@@ -490,9 +544,6 @@ export class Accessio {
           } catch {
             merged.params = {};
           }
-        }
-        if (currentConfig.signal) {
-          merged.signal = currentConfig.signal;
         }
         currentConfig = merged;
       }
