@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-08-11
+
+### Changed
+
+- Updated devDependencies: `@types/node` to `26.2.0`.
+- Added `postcss` (`^8.5.23`) override in `pnpm-workspace.yaml`.
+
 ## [4.0.0] - 2026-08-07
 
 ### Added
