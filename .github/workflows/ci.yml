@@ -3,11 +3,17 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -49,24 +55,13 @@ jobs:
       - run: pnpm test
       - run: pnpm run test:browser
 
-  build:
-    name: Build
+  dependency-review:
+    name: Dependency Review
     runs-on: ubuntu-latest
-    needs: [lint, test]
+    if: github.event_name == 'pull_request'
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run build
-      - run: pnpm pack --dry-run
-      # `pack --dry-run` lists files but never loads them. These actually require/import
-      # the built entry points, which is the only way to catch a build that emits
-      # unresolvable import specifiers.
-      - name: Verify built package loads
-        run: pnpm run verify:package
-      - name: Lint package metadata
-        run: npx --yes publint
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+

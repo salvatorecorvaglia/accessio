@@ -12,29 +12,29 @@ permissions:
   id-token: write
 
 jobs:
-  ci:
-    name: CI
+  validate:
+    name: Validate Tag Ref & Package Version
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [22, 24]
-      fail-fast: false
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: 'pnpm'
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run lint
-      - run: pnpm run typecheck
-      - run: pnpm test
-      - run: pnpm run test:browser
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Validate tag format and version match
+        run: |
+          if [[ "$GITHUB_REF" != refs/tags/v* ]]; then
+            echo "::error::Release workflow must be run on a version tag ref starting with 'v' (e.g. refs/tags/v1.0.0)"
+            exit 1
+          fi
+          TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          PKG_VERSION=$(jq -r .version package.json)
+          echo "Tag version: $TAG_VERSION | package.json version: $PKG_VERSION"
+          if [[ "$TAG_VERSION" != "$PKG_VERSION" ]]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match package.json version ($PKG_VERSION)"
+            exit 1
+          fi
 
   release:
     name: Create GitHub Release
-    needs: ci
+    needs: validate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -89,7 +89,7 @@ jobs:
 
   publish-npm:
     name: Publish unscoped to npmjs
-    needs: [ci, release]
+    needs: [release]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -101,6 +101,9 @@ jobs:
           cache: 'pnpm'
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+      - run: pnpm pack --dry-run
       - name: Verify built package loads
         run: pnpm run verify:package
+      - name: Lint package metadata
+        run: npx --yes publint
       - run: pnpm publish --access public --provenance --no-git-checks
