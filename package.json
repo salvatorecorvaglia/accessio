@@ -148,7 +148,7 @@
     "verify:package": "node scripts/verify-package.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.7",
+    "@biomejs/biome": "2.5.8",
     "@types/node": "^26.2.0",
     "@vitest/coverage-v8": "^4.1.10",
     "jsdom": "^30.0.1",
