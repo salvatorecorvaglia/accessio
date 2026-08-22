@@ -121,7 +121,7 @@ async function retryRequest(
         if (retryAfterStr) {
           const parsed = Number.parseInt(retryAfterStr, 10);
           if (!Number.isNaN(parsed)) {
-            delay = parsed * 1000;
+            delay = Math.max(0, parsed * 1000);
           } else {
             const date = new Date(retryAfterStr);
             if (!Number.isNaN(date.getTime())) {

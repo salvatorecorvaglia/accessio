@@ -204,4 +204,73 @@ describe('Accessio streaming', () => {
     // Verify cleanup was run
     expect(signalListenersCount).toBe(0);
   });
+
+  it('handles a data: field whose multi-byte UTF-8 character is split across the chunk boundary', async () => {
+    // "café" — the é is a 2-byte UTF-8 sequence (0xC3 0xA9). Splitting the encoded bytes
+    // between the byte pair would corrupt the character unless the decoder is fed with
+    // `{ stream: true }` and its byte buffer carried across `decoder.decode()` calls.
+    const encoder = new TextEncoder();
+    const fullBytes = encoder.encode('data: {"text": "café"}\n');
+    // Split so the 0xC3 byte of "é" ends one chunk and 0xA9 starts the next.
+    const splitIndex = fullBytes.indexOf(0xc3) + 1;
+    const mockStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(fullBytes.slice(0, splitIndex));
+        controller.enqueue(fullBytes.slice(splitIndex));
+        controller.close();
+      },
+    });
+
+    const client = new Accessio();
+    vi.spyOn(client, 'request').mockResolvedValue({
+      data: mockStream,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+      request: {} as any,
+      duration: 0,
+    });
+
+    const items: any[] = [];
+    for await (const chunk of client.stream('/stream')) {
+      items.push(chunk);
+    }
+
+    expect(items).toEqual([{ text: 'café' }]);
+  });
+
+  it('treats interleaved SSE event:/id: fields as plain text lines, not as part of data:', async () => {
+    // The parser has no special handling for `event:`/`id:` fields — it only recognizes
+    // `data:`-prefixed lines and bare JSON lines. This pins down that documented behavior:
+    // non-`data:` fields are yielded as their own (trimmed) string chunks rather than being
+    // attached to the `data:` payload or silently dropped.
+    const encoder = new TextEncoder();
+    const mockStream = new ReadableStream({
+      start(controller) {
+        controller.enqueue(
+          encoder.encode('event: message\nid: 1\ndata: {"val": 1}\n\ndata: {"val": 2}\n'),
+        );
+        controller.close();
+      },
+    });
+
+    const client = new Accessio();
+    vi.spyOn(client, 'request').mockResolvedValue({
+      data: mockStream,
+      status: 200,
+      statusText: 'OK',
+      headers: {},
+      config: {},
+      request: {} as any,
+      duration: 0,
+    });
+
+    const items: any[] = [];
+    for await (const chunk of client.stream('/stream')) {
+      items.push(chunk);
+    }
+
+    expect(items).toEqual(['event: message', 'id: 1', { val: 1 }, { val: 2 }]);
+  });
 });

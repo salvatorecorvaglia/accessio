@@ -50,6 +50,20 @@ describe('buildURL', () => {
     );
   });
 
+  it('does not treat a literal colon-suffixed path segment as a placeholder', () => {
+    const result = buildURL('/v1/files/123:download', undefined, { download: 'true' });
+    expect(result).toBe('/v1/files/123:download?download=true');
+  });
+
+  it('still substitutes genuine :name path placeholders', () => {
+    const result = buildURL('/users/:id/posts/:postId', undefined, {
+      id: '42',
+      postId: '7',
+      extra: 'x',
+    });
+    expect(result).toBe('/users/42/posts/7?extra=x');
+  });
+
   it('uses custom paramsSerializer', () => {
     const serializer = (params: Record<string, unknown>) =>
       `custom=${Object.keys(params).join(',')}`;

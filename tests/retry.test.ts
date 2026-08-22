@@ -297,6 +297,21 @@ describe('retry.ts', () => {
       expect(elapsed).toBeGreaterThanOrEqual(900);
     }, 5000);
 
+    it('clamps a negative numeric Retry-After to an immediate retry instead of a negative delay', async () => {
+      const dispatch = vi
+        .fn()
+        .mockRejectedValueOnce(make429({ 'retry-after': '-5' }))
+        .mockResolvedValueOnce({ status: 200 });
+
+      const start = Date.now();
+      const res = await retryRequest(dispatch, { retryOn429: true, retryDelay: 1 });
+      const elapsed = Date.now() - start;
+
+      expect(res).toEqual({ status: 200 });
+      expect(dispatch).toHaveBeenCalledTimes(2);
+      expect(elapsed).toBeLessThan(500);
+    }, 5000);
+
     it('honors HTTP-date Retry-After', async () => {
       // HTTP-date is second-precision; pad with 2s so the rounded value stays in the future.
       const future = new Date(Date.now() + 2000).toUTCString();

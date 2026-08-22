@@ -1,5 +1,5 @@
 import type AccessioError from '../core/accessioError';
-import { redactBody } from '../core/accessioError';
+import { redactBody, redactParams, redactURL } from '../core/accessioError';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 
 function formatBytes(bytes: number): string {
@@ -15,7 +15,7 @@ function sanitizeConfigForLog(config: AccessioRequestConfig): {
   retry: number | undefined;
 } {
   return {
-    params: config.params,
+    params: config.params && (redactParams(config.params) as Record<string, unknown>),
     timeout: config.timeout,
     retry: config.retry,
   };
@@ -27,12 +27,16 @@ export function logRequest(config: AccessioRequestConfig, fullUrl: string): void
   const safe = sanitizeConfigForLog(config);
 
   const method = (config.method || 'GET').toUpperCase();
-  const url = fullUrl || config.url || '';
+  const url = redactURL(fullUrl || config.url || '') || '';
 
   const parts: string[] = [`🐦‍⬛ [Accessio] → ${method} ${url}`];
 
   if (safe.params && Object.keys(safe.params).length > 0) {
-    parts.push(`   Params: ${JSON.stringify(safe.params)}`);
+    try {
+      parts.push(`   Params: ${JSON.stringify(safe.params)}`);
+    } catch {
+      parts.push('   Params: [unserializable params]');
+    }
   }
 
   if (config.data && typeof config.data === 'object') {

@@ -38,6 +38,7 @@ function deepMerge(...sources: any[]): Record<string, any> {
 
 const requestOnlyKeys = new Set<string>(['url', 'data', 'signal']);
 const deepMergeKeys = new Set<string>(['headers', 'params', 'hooks']);
+const unsafeKeys = new Set<string>(['__proto__', 'constructor', 'prototype']);
 
 /**
  * Arrays are copied rather than shared. `transformRequest`/`transformResponse` live on the
@@ -58,13 +59,14 @@ export default function mergeConfig(
   const keys1 = Object.keys(config1);
   for (let i = 0; i < keys1.length; i++) {
     const key = keys1[i];
-    if (requestOnlyKeys.has(key)) continue;
+    if (requestOnlyKeys.has(key) || unsafeKeys.has(key)) continue;
     merged[key] = copyArrays(config1[key as keyof AccessioRequestConfig]);
   }
 
   const keys2 = Object.keys(config2);
   for (let i = 0; i < keys2.length; i++) {
     const key = keys2[i];
+    if (unsafeKeys.has(key)) continue;
     const val2 = config2[key as keyof AccessioRequestConfig];
     if (val2 !== undefined) {
       if (deepMergeKeys.has(key)) {

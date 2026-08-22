@@ -26,6 +26,17 @@ describe('parseHeaders', () => {
     expect(Object.keys(result).length).toBe(1);
   });
 
+  it('merges a duplicate header into an array even when the first value is an empty string', () => {
+    const mockHeaders = {
+      forEach(fn: (value: string, key: string) => void) {
+        fn('', 'X-Foo');
+        fn('bar', 'X-Foo');
+      },
+    };
+    const result = parseHeaders(mockHeaders as any);
+    expect(result['x-foo']).toEqual(['', 'bar']);
+  });
+
   it('parses Headers-like object with forEach', () => {
     const mockHeaders = {
       forEach(fn: (value: string, key: string) => void) {

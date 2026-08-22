@@ -54,6 +54,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm test
       - run: pnpm run test:browser
+      - if: matrix.node-version == 22
+        run: pnpm run test:coverage
 
   dependency-review:
     name: Dependency Review

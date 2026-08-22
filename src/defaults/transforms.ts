@@ -39,6 +39,14 @@ export function defaultTransformRequest(
   return data;
 }
 
+/**
+ * Only reached when the response's `content-type` was not `application/json` — the adapter
+ * (`fetchAdapter.ts`'s `readResponseData`) already parses `application/json` bodies itself
+ * and throws `ERR_BAD_RESPONSE` there if that parse fails. A malformed body on a
+ * non-JSON-labeled response is therefore intentionally passed through as text here rather
+ * than raising an error: a hard failure would be surprising for content the server never
+ * claimed was JSON in the first place.
+ */
 export function defaultTransformResponse(data: unknown, _headers?: any, config?: any): unknown {
   if (config && config.responseType === 'text') {
     return data;

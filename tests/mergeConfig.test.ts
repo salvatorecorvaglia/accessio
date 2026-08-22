@@ -54,6 +54,29 @@ describe('mergeConfig', () => {
     const result = mergeConfig();
     expect(result).toEqual({});
   });
+
+  it('does not let a __proto__ key in config1 or config2 change the prototype of the result', () => {
+    const malicious1 = JSON.parse(
+      '{"__proto__":{"allowedProtocols":null},"baseURL":"https://a.com"}',
+    );
+    const result1 = mergeConfig(malicious1, {});
+    expect(Object.getPrototypeOf(result1)).toBe(Object.prototype);
+    expect((result1 as any).allowedProtocols).toBeUndefined();
+
+    const malicious2 = JSON.parse(
+      '{"url":"file:///etc/passwd","__proto__":{"allowedProtocols":null}}',
+    );
+    const result2 = mergeConfig({ allowedProtocols: ['https:'] } as any, malicious2);
+    expect(Object.getPrototypeOf(result2)).toBe(Object.prototype);
+    expect((result2 as any).allowedProtocols).toEqual(['https:']);
+  });
+
+  it('does not let constructor/prototype keys pollute the result', () => {
+    const malicious = JSON.parse('{"constructor":{"evil":true},"prototype":{"evil":true}}');
+    const result = mergeConfig(malicious, {});
+    expect((result as any).constructor).toBe(Object);
+    expect((result as any).prototype).toBeUndefined();
+  });
 });
 
 describe('deepMerge', () => {

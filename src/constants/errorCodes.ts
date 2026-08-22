@@ -10,6 +10,7 @@ const ErrorCodes = {
   ERR_CANCELED: 'ERR_CANCELED',
   ERR_NOT_SUPPORT: 'ERR_NOT_SUPPORT',
   ERR_INVALID_URL: 'ERR_INVALID_URL',
+  ERR_RATE_LIMIT_QUEUE_FULL: 'ERR_RATE_LIMIT_QUEUE_FULL',
 } as const;
 
 export default ErrorCodes;
@@ -26,4 +27,5 @@ export const {
   ERR_CANCELED,
   ERR_NOT_SUPPORT,
   ERR_INVALID_URL,
+  ERR_RATE_LIMIT_QUEUE_FULL,
 } = ErrorCodes;

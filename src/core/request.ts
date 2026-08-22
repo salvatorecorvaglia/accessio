@@ -75,6 +75,36 @@ function settleResponse(
 }
 
 /**
+ * Runs `config.schema` against a settled response's data, in place.
+ *
+ * Shared by the live-fetch path (validating freshly transformed data) and the cache-hit
+ * path (validating a replayed response) so a caller that supplies a stricter `schema` than
+ * the call that originally populated the cache still gets it enforced, instead of silently
+ * receiving unvalidated cached data.
+ */
+async function applySchema(
+  settled: AccessioResponse,
+  config: AccessioRequestConfig,
+): Promise<AccessioResponse> {
+  if (!config.schema) return settled;
+  try {
+    settled.data =
+      typeof config.schema.parseAsync === 'function'
+        ? await config.schema.parseAsync(settled.data)
+        : config.schema.parse(settled.data);
+    return settled;
+  } catch (schemaError) {
+    throw AccessioError.from(
+      schemaError instanceof Error ? schemaError : new Error(String(schemaError)),
+      AccessioError.ERR_BAD_RESPONSE,
+      config,
+      settled.request,
+      settled,
+    );
+  }
+}
+
+/**
  * Turns a raw adapter response into the value handed back to one caller: applies
  * `transformResponse`, enforces `validateStatus`, and stores the result if caching is on.
  *
@@ -107,22 +137,7 @@ async function finalizeAndSettle(
   // Schema validation runs on the transformed data of an accepted response: validating the
   // raw adapter output meant schemas saw pre-transform values (often still a string), and
   // a failing status surfaced as a schema error rather than the status error.
-  if (config.schema) {
-    try {
-      settled.data =
-        typeof config.schema.parseAsync === 'function'
-          ? await config.schema.parseAsync(settled.data)
-          : config.schema.parse(settled.data);
-    } catch (schemaError) {
-      throw AccessioError.from(
-        schemaError instanceof Error ? schemaError : new Error(String(schemaError)),
-        AccessioError.ERR_BAD_RESPONSE,
-        config,
-        settled.request,
-        settled,
-      );
-    }
-  }
+  await applySchema(settled, config);
 
   if (options.isGet && config.cache) {
     await resolveCacheProvider(config.cache).set(
@@ -258,13 +273,23 @@ export default async function dispatchRequest(
         ...clonedCached,
         config,
       };
-      // Replayed responses go through validateStatus too, so a caller that tightened
-      // validateStatus is not handed a status it would have rejected on a live request.
-      const settled = await settleResponse(cachedView, config);
-      if (config.hooks?.onRequestResponse) {
-        await config.hooks.onRequestResponse(settled);
+      try {
+        // Replayed responses go through validateStatus too, so a caller that tightened
+        // validateStatus is not handed a status it would have rejected on a live request.
+        const settled = await settleResponse(cachedView, config);
+        // A caller can supply a stricter `schema` than the one active when the cache
+        // was populated, so it's re-applied on every cache hit, not just at write time.
+        await applySchema(settled, config);
+        if (config.hooks?.onRequestResponse) {
+          await config.hooks.onRequestResponse(settled);
+        }
+        return settled;
+      } catch (error) {
+        if (config.hooks?.onRequestError && error instanceof AccessioError) {
+          await config.hooks.onRequestError(error);
+        }
+        throw error;
       }
-      return settled;
     }
   }
 
@@ -318,7 +343,13 @@ export default async function dispatchRequest(
                 );
               }
               if (sub.config.hooks?.onRequestError && finalError instanceof AccessioError) {
-                await sub.config.hooks.onRequestError(finalError);
+                try {
+                  await sub.config.hooks.onRequestError(finalError);
+                } catch {
+                  // A failing error hook must not block subscriber delivery or produce an
+                  // unhandled rejection here — mirrors the `.catch()` on the same hook call
+                  // in the sibling reject-branch below.
+                }
               }
               sub.reject(finalError);
             }
@@ -395,7 +426,11 @@ export default async function dispatchRequest(
     return settled;
   } catch (error) {
     if (config.hooks?.onRequestError && error instanceof AccessioError) {
-      await config.hooks.onRequestError(error);
+      try {
+        await config.hooks.onRequestError(error);
+      } catch {
+        // A failing error hook must not mask the original request error.
+      }
     }
     throw error;
   }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import AccessioError from '../src/core/accessioError';
 import { createRateLimiter, rateLimitedRequest } from '../src/helpers/rateLimiter';
 
 describe('createRateLimiter', () => {
@@ -102,6 +103,24 @@ describe('createRateLimiter', () => {
     await a;
     limiter.release();
     await b;
+  });
+
+  it('rejects queue overflow with a classifiable AccessioError', async () => {
+    const limiter = createRateLimiter(1, 1);
+    await limiter.acquire();
+    const queued = limiter.acquire();
+
+    try {
+      await limiter.acquire();
+      throw new Error('expected acquire() to reject');
+    } catch (err) {
+      expect(err).toBeInstanceOf(AccessioError);
+      expect((err as AccessioError).isAccessioError).toBe(true);
+      expect((err as AccessioError).code).toBe('ERR_RATE_LIMIT_QUEUE_FULL');
+    }
+
+    limiter.release();
+    await queued;
   });
 
   it('handles long churn without leaking queue entries', async () => {

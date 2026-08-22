@@ -1,31 +1,36 @@
 import ErrorCodes from '../constants/errorCodes';
+import { withCycleGuard } from '../helpers/cycleGuard';
 import type { AccessioRequestConfig, AccessioResponse } from '../types';
 
 function redactHeaders(headers: unknown, seen?: WeakSet<object>): unknown {
   if (!headers || typeof headers !== 'object') return headers;
   const visited = seen ?? new WeakSet<object>();
-  if (visited.has(headers as object)) return '[Circular]';
-  visited.add(headers as object);
-
-  const out: Record<string, unknown> = {};
-  for (const key of Object.keys(headers as Record<string, unknown>)) {
-    const value = (headers as Record<string, unknown>)[key];
-    if (
-      /^authorization$/i.test(key) ||
-      /^proxy-authorization$/i.test(key) ||
-      /^cookie$/i.test(key) ||
-      /^set-cookie$/i.test(key) ||
-      /^x-api-key$/i.test(key) ||
-      /^api-key$/i.test(key)
-    ) {
-      out[key] = '[REDACTED]';
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactHeaders(value, visited);
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
+  return withCycleGuard<unknown>(
+    headers as object,
+    visited,
+    () => {
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(headers as Record<string, unknown>)) {
+        const value = (headers as Record<string, unknown>)[key];
+        if (
+          /^authorization$/i.test(key) ||
+          /^proxy-authorization$/i.test(key) ||
+          /^cookie$/i.test(key) ||
+          /^set-cookie$/i.test(key) ||
+          /^x-api-key$/i.test(key) ||
+          /^api-key$/i.test(key)
+        ) {
+          out[key] = '[REDACTED]';
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+          out[key] = redactHeaders(value, visited);
+        } else {
+          out[key] = value;
+        }
+      }
+      return out;
+    },
+    () => '[Circular]',
+  );
 }
 
 const SENSITIVE_BODY_KEY =
@@ -46,72 +51,87 @@ export function redactBody(value: unknown, seen?: WeakSet<object>): unknown {
     return '[Binary/Stream Data]';
   }
 
+  // FormData stores its entries internally, not as own-enumerable properties, so the
+  // generic object walk below would see it as empty (`{}`) rather than reporting its
+  // actual (possibly sensitive) contents or an honest placeholder.
+  if (typeof FormData !== 'undefined' && value instanceof FormData) {
+    return '[FormData]';
+  }
+
   const visited = seen ?? new WeakSet<object>();
-  if (visited.has(value as object)) return '[Circular]';
-  visited.add(value as object);
-
-  if (Array.isArray(value)) {
-    if (value.length > 100) {
-      const sliced = value.slice(0, 100).map((item) => redactBody(item, visited));
-      sliced.push(`[... ${value.length - 100} more items truncated]`);
-      return sliced;
-    }
-    return value.map((item) => redactBody(item, visited));
-  }
-
-  const out: Record<string, unknown> = {};
-  const keys = Object.keys(value as Record<string, unknown>);
-
-  if (keys.length > 100) {
-    let count = 0;
-    for (const key of keys) {
-      if (count >= 100) {
-        out['...'] = `[Truncated: ${keys.length - 100} more keys]`;
-        break;
+  return withCycleGuard<unknown>(
+    value as object,
+    visited,
+    () => {
+      if (Array.isArray(value)) {
+        if (value.length > 100) {
+          const sliced = value.slice(0, 100).map((item) => redactBody(item, visited));
+          sliced.push(`[... ${value.length - 100} more items truncated]`);
+          return sliced;
+        }
+        return value.map((item) => redactBody(item, visited));
       }
-      const v = (value as Record<string, unknown>)[key];
-      if (SENSITIVE_BODY_KEY.test(key)) {
-        out[key] = '[REDACTED]';
-      } else {
-        out[key] = redactBody(v, visited);
-      }
-      count++;
-    }
-    return out;
-  }
 
-  for (const key of keys) {
-    const v = (value as Record<string, unknown>)[key];
-    if (SENSITIVE_BODY_KEY.test(key)) {
-      out[key] = '[REDACTED]';
-    } else {
-      out[key] = redactBody(v, visited);
-    }
-  }
-  return out;
+      const out: Record<string, unknown> = {};
+      const keys = Object.keys(value as Record<string, unknown>);
+
+      if (keys.length > 100) {
+        let count = 0;
+        for (const key of keys) {
+          if (count >= 100) {
+            out['...'] = `[Truncated: ${keys.length - 100} more keys]`;
+            break;
+          }
+          const v = (value as Record<string, unknown>)[key];
+          if (SENSITIVE_BODY_KEY.test(key)) {
+            out[key] = '[REDACTED]';
+          } else {
+            out[key] = redactBody(v, visited);
+          }
+          count++;
+        }
+        return out;
+      }
+
+      for (const key of keys) {
+        const v = (value as Record<string, unknown>)[key];
+        if (SENSITIVE_BODY_KEY.test(key)) {
+          out[key] = '[REDACTED]';
+        } else {
+          out[key] = redactBody(v, visited);
+        }
+      }
+      return out;
+    },
+    () => '[Circular]',
+  );
 }
 
-function redactParams(params: unknown, seen?: WeakSet<object>): unknown {
+export function redactParams(params: unknown, seen?: WeakSet<object>): unknown {
   if (!params || typeof params !== 'object') return params;
   const visited = seen ?? new WeakSet<object>();
-  if (visited.has(params as object)) return '[Circular]';
-  visited.add(params as object);
-
-  const out: Record<string, unknown> = {};
-  for (const key of Object.keys(params as Record<string, unknown>)) {
-    const value = (params as Record<string, unknown>)[key];
-    if (SENSITIVE_BODY_KEY.test(key)) {
-      out[key] = '[REDACTED]';
-    } else if (value && typeof value === 'object' && !Array.isArray(value)) {
-      out[key] = redactParams(value, visited);
-    } else {
-      out[key] = value;
-    }
-  }
-  return out;
+  return withCycleGuard<unknown>(
+    params as object,
+    visited,
+    () => {
+      const out: Record<string, unknown> = {};
+      for (const key of Object.keys(params as Record<string, unknown>)) {
+        const value = (params as Record<string, unknown>)[key];
+        if (SENSITIVE_BODY_KEY.test(key)) {
+          out[key] = '[REDACTED]';
+        } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+          out[key] = redactParams(value, visited);
+        } else {
+          out[key] = value;
+        }
+      }
+      return out;
+    },
+    () => '[Circular]',
+  );
 }
 
-function redactURL(url: string | undefined): string | undefined {
+export function redactURL(url: string | undefined): string | undefined {
   if (!url) return url;
   // Match inline credentials: http://user:pass@host
   let redacted = url.replace(/^([a-z][a-z\d+\-.]*:\/\/)([^/]+)@/i, (_match, protocol, userInfo) => {
@@ -139,7 +159,14 @@ function redactURL(url: string | undefined): string | undefined {
       const eqIndex = part.indexOf('=');
       if (eqIndex === -1) return part;
       const key = part.slice(0, eqIndex);
-      if (SENSITIVE_BODY_KEY.test(decodeURIComponent(key))) {
+      let decodedKey = key;
+      try {
+        decodedKey = decodeURIComponent(key);
+      } catch {
+        // Malformed percent-encoding: fall back to the raw key rather than throwing out
+        // of a getter (`error.config`) that callers reasonably expect to never fail.
+      }
+      if (SENSITIVE_BODY_KEY.test(decodedKey)) {
         return `${key}=[REDACTED]`;
       }
       return part;
@@ -182,6 +209,7 @@ export class AccessioError extends Error {
   static ERR_CANCELED: string = ErrorCodes.ERR_CANCELED;
   static ERR_NOT_SUPPORT: string = ErrorCodes.ERR_NOT_SUPPORT;
   static ERR_INVALID_URL: string = ErrorCodes.ERR_INVALID_URL;
+  static ERR_RATE_LIMIT_QUEUE_FULL: string = ErrorCodes.ERR_RATE_LIMIT_QUEUE_FULL;
 
   readonly code: string | null;
   private _config: AccessioRequestConfig | null;

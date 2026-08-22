@@ -7,7 +7,7 @@ export default function parseHeaders(headers: any): Record<string, string | stri
     const k = key.toLowerCase();
     const values = Array.isArray(value) ? value : [value];
     for (const val of values) {
-      if (parsed[k]) {
+      if (Object.hasOwn(parsed, k)) {
         if (Array.isArray(parsed[k])) {
           (parsed[k] as string[]).push(val);
         } else {

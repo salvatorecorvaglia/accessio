@@ -83,6 +83,65 @@ describe('cache interaction with validateStatus', () => {
     expect(second.status).toBe(500);
     expect(fetchCalls).toBe(1);
   });
+
+  it('applies config.schema to a replayed cache hit, not just the call that populated it', async () => {
+    serve(200, { id: 1 });
+    // Populated without a schema...
+    await dispatchRequest(req());
+    expect(fetchCalls).toBe(1);
+
+    // ...and a later caller's schema is still enforced against the cached data.
+    const schema = { parse: vi.fn((data: any) => ({ ...data, parsed: true })) };
+    const second = await dispatchRequest(req({ schema }));
+    expect(schema.parse).toHaveBeenCalled();
+    expect((second.data as any).parsed).toBe(true);
+    expect(fetchCalls).toBe(1);
+  });
+
+  it('rejects a cache hit whose schema fails, without hitting the network again', async () => {
+    serve(200, { id: 1 });
+    await dispatchRequest(req());
+    expect(fetchCalls).toBe(1);
+
+    const failingSchema = {
+      parse: vi.fn(() => {
+        throw new Error('Validation failed');
+      }),
+    };
+    await expect(dispatchRequest(req({ schema: failingSchema }))).rejects.toMatchObject({
+      isAccessioError: true,
+      code: 'ERR_BAD_RESPONSE',
+    });
+    expect(fetchCalls).toBe(1);
+  });
+
+  it('invokes hooks.onRequestError when a cache hit fails validateStatus', async () => {
+    serve(299);
+    await dispatchRequest(req({ validateStatus: ok2xx }));
+    expect(fetchCalls).toBe(1);
+
+    const onRequestError = vi.fn();
+    await expect(
+      dispatchRequest(
+        req({
+          validateStatus: (s: number) => s === 200,
+          hooks: { onRequestError },
+        }),
+      ),
+    ).rejects.toMatchObject({ code: 'ERR_BAD_RESPONSE' });
+    expect(onRequestError).toHaveBeenCalledTimes(1);
+    expect(onRequestError.mock.calls[0][0]).toMatchObject({ code: 'ERR_BAD_RESPONSE' });
+  });
+
+  it('invokes hooks.onRequestResponse on a cache hit that resolves', async () => {
+    serve(200, { id: 1 });
+    await dispatchRequest(req());
+    expect(fetchCalls).toBe(1);
+
+    const onRequestResponse = vi.fn();
+    await dispatchRequest(req({ hooks: { onRequestResponse } }));
+    expect(onRequestResponse).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('response cloning is scoped to shared values', () => {

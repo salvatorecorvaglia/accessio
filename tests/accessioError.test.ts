@@ -141,5 +141,43 @@ describe('AccessioError', () => {
       expect(original.auth).toEqual({ username: 'u', password: 'p' });
       expect(original.headers.authorization).toBe('Bearer s');
     });
+
+    it('does not falsely flag a shared (non-circular) nested reference as [Circular]', () => {
+      const shared = { x: 1 };
+      const err = new AccessioError(
+        'boom',
+        AccessioError.ERR_BAD_REQUEST,
+        { url: '/x', data: { a: shared, b: shared } } as any,
+        null,
+        null,
+      );
+      expect((err.config as any).data).toEqual({ a: { x: 1 }, b: { x: 1 } });
+    });
+
+    it('still redacts a genuine circular reference as [Circular]', () => {
+      const circular: any = { name: 'x' };
+      circular.self = circular;
+      const err = new AccessioError(
+        'boom',
+        AccessioError.ERR_BAD_REQUEST,
+        { url: '/x', data: circular } as any,
+        null,
+        null,
+      );
+      expect((err.config as any).data).toEqual({ name: 'x', self: '[Circular]' });
+    });
+
+    it('does not throw when a query key has malformed percent-encoding', () => {
+      const err = new AccessioError(
+        'boom',
+        AccessioError.ERR_NETWORK,
+        { url: 'https://example.com/path?%zz=1&token=abc' } as any,
+        null,
+        null,
+      );
+      expect(() => err.config).not.toThrow();
+      expect(() => JSON.stringify(err)).not.toThrow();
+      expect(err.config?.url).toContain('token=[REDACTED]');
+    });
   });
 });

@@ -42,6 +42,49 @@ describe('debug.ts', () => {
       expect(output).toContain('Params');
     });
 
+    it('redacts sensitive params the same way it redacts the body', () => {
+      logRequest(
+        { debug: true, method: 'get', url: '/search', params: { api_key: 'sk_live_123' } },
+        '/search?api_key=sk_live_123',
+      );
+      const output = consoleSpy.mock.calls[0][0];
+      expect(output).not.toContain('sk_live_123');
+      expect(output).toContain('[REDACTED]');
+    });
+
+    it('redacts sensitive query params and inline credentials in the logged URL', () => {
+      logRequest(
+        { debug: true, method: 'get', url: '/x' },
+        'https://user:pass@example.com/x?token=abc123',
+      );
+      const output = consoleSpy.mock.calls[0][0];
+      expect(output).not.toContain('pass@');
+      expect(output).not.toContain('abc123');
+    });
+
+    it('does not throw when params contain a BigInt', () => {
+      expect(() =>
+        logRequest({ debug: true, method: 'get', url: '/t', params: { big: 10n } as any }, '/t'),
+      ).not.toThrow();
+    });
+
+    it('does not throw when params are circular', () => {
+      const circular: any = { a: 1 };
+      circular.self = circular;
+      expect(() =>
+        logRequest({ debug: true, method: 'get', url: '/t', params: circular }, '/t'),
+      ).not.toThrow();
+    });
+
+    it('logs a [FormData] placeholder instead of an empty object for FormData bodies', () => {
+      const fd = new FormData();
+      fd.append('secret', 'value');
+      logRequest({ debug: true, method: 'post', url: '/upload', data: fd }, '/upload');
+      const output = consoleSpy.mock.calls[0][0];
+      expect(output).toContain('[FormData]');
+      expect(output).not.toContain('Body: {}');
+    });
+
     it('logs body data for objects', () => {
       logRequest({ debug: true, method: 'post', url: '/test', data: { key: 'value' } }, '/test');
       const output = consoleSpy.mock.calls[0][0];

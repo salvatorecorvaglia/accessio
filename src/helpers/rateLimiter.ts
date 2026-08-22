@@ -62,7 +62,13 @@ export function createRateLimiter(
 
     if (queue.length >= maxQueueSize) {
       return Promise.reject(
-        new Error(`[Accessio] Rate limiter queue size exceeded maxQueueSize (${maxQueueSize})`),
+        new AccessioError(
+          `[Accessio] Rate limiter queue size exceeded maxQueueSize (${maxQueueSize})`,
+          AccessioError.ERR_RATE_LIMIT_QUEUE_FULL,
+          null,
+          null,
+          null,
+        ),
       );
     }
 

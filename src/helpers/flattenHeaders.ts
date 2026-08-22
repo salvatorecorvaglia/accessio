@@ -113,6 +113,12 @@ export function buildFetchHeaders(headers: Record<string, string | string[]>): H
       if (value === undefined || value === null) continue;
       assertSafeHeader(key, value);
       if (Array.isArray(value)) {
+        if (value.length === 0) {
+          // Matches the empty-string scalar case below: an explicitly-set-but-empty header
+          // still becomes a real (empty-valued) header rather than silently vanishing.
+          fetchHeaders.set(key, '');
+          continue;
+        }
         for (let i = 0; i < value.length; i++) {
           const v = value[i];
           if (v !== undefined && v !== null) {

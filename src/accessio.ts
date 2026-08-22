@@ -474,8 +474,23 @@ export class Accessio {
     const visited = new Set<string>();
     let pageCount = 0;
 
+    // Cycle detection compares a normalized (absolute) form of each URL, so an API that
+    // alternates between relative and absolute forms of the same page is still caught —
+    // not just a byte-for-byte repeat.
+    const normalizeForCycleCheck = (raw: string): string => {
+      try {
+        return new URL(
+          raw,
+          currentConfig.baseURL || this.defaults.baseURL || 'http://dummy-base.invalid',
+        ).href;
+      } catch {
+        return raw;
+      }
+    };
+
     while (nextUrl) {
-      if (visited.has(nextUrl)) {
+      const cycleKey = normalizeForCycleCheck(nextUrl);
+      if (visited.has(cycleKey)) {
         throw new AccessioError(
           `Pagination cycle detected: ${nextUrl} was already requested. ` +
             'Check the `next` link returned by the API.',
@@ -485,7 +500,7 @@ export class Accessio {
           null,
         );
       }
-      visited.add(nextUrl);
+      visited.add(cycleKey);
 
       if (++pageCount > maxPages) {
         throw new AccessioError(
