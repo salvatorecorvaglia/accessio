@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-08-25
+
+### Added
+
+- Added `ERR_RATE_LIMIT_QUEUE_FULL` error code so `RateLimiter` queue-full rejections are typed `AccessioError` instances (with redacted config/response context) instead of a plain `Error`.
+- Added `Map` and `Set` serialization support to `toFormData`, appending entries/values instead of silently dropping them as empty objects.
+- Added a shared `withCycleGuard` helper (`src/helpers/cycleGuard.ts`) used across `buildURL`, `toFormData`, and `AccessioError`'s redaction logic to consistently break circular references while still allowing legitimate reuse of the same object under multiple keys.
+
+### Changed
+
+- Debug request logs (`logRequest`) now redact sensitive URL credentials and query parameters, matching the redaction already applied to `AccessioError`.
+- Hardened `mergeConfig` to explicitly skip `__proto__`, `constructor`, and `prototype` keys from both merge sources.
+- Clamped `Retry-After`-derived retry delay to a minimum of `0`.
+- Expanded test coverage for core utilities and hooks, including `autoPaginate`, `flattenHeaders`, `mergeConfig`, `buildURL`, `toFormData`, `debug`, `retry`, `rateLimiter`, and `stream`.
+
+### Fixed
+
+- Fixed path parameter interpolation in `buildURL` (`:name` syntax) to only match whole path segments, so literal colon-suffixed segments (e.g. `files/123:download`) are no longer mistaken for a `:download` placeholder and corrupted.
+- Fixed `buildFetchHeaders` to preserve explicitly-set empty-array header values as an empty header instead of dropping them.
+
 ## [4.0.1] - 2026-08-11
 
 ### Changed

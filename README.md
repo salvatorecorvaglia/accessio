@@ -12,7 +12,7 @@
 - 🧩 **Dual-Module Support** — Shipping fully compatible ES Modules (ESM) and CommonJS (CJS) builds.
 - 🔒 **Type-Safe** — Written from the ground up in TypeScript with exported first-class typings.
 - 📡 **HTTP Shorthand Methods** — `get`, `post`, `put`, `delete`, `options`, `patch`, `head`.
-- 📝 **Form Submissions** — Helper methods like `postForm`, `putForm`, and `patchForm` for simple `multipart/form-data` uploads.
+- 📝 **Form Submissions** — Helper methods like `postForm`, `putForm`, and `patchForm` for simple `multipart/form-data` uploads, with nested objects, arrays, `Map`, and `Set` values serialized automatically.
 - 🌊 **SSE & Stream Processing** — Stream server responses line-by-line using async generators (`stream`).
 - 📃 **Auto-Pagination** — Effortless cursored/linked API pagination with `autoPaginate`.
 - 🕸️ **GraphQL Support** — Sane GraphQL POST request shortcut (`gql`).
@@ -261,7 +261,7 @@ Here is a list of popular config parameters available on `AccessioRequestConfig`
 
 ## Error Handling 🛡️
 
-Errors thrown by Accessio are instances of `AccessioError` which carry metadata about the request and response, with automatic redaction of sensitive parameters (such as `api_key` or `password`) and headers (such as `authorization`, `proxy-authorization`, `x-api-key`, and `api-key`):
+Errors thrown by Accessio are instances of `AccessioError` which carry metadata about the request and response, with automatic redaction of sensitive parameters (such as `api_key` or `password`) and headers (such as `authorization`, `proxy-authorization`, `x-api-key`, and `api-key`). The same redaction is applied to structured debug logs, so sensitive URLs, query parameters, and request bodies are never printed in plaintext:
 
 ```typescript
 import accessio from 'accessio';

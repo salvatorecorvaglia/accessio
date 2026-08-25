@@ -1,6 +1,6 @@
 {
   "name": "accessio",
-  "version": "4.0.1",
+  "version": "4.1.0",
   "description": "Fast, flexible, zero-dependency modern HTTP client for JS/TS",
   "type": "module",
   "main": "./cjs/index.cjs",
@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/salvatorecorvaglia/accessio",
   "sideEffects": false,
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@11.23.0",
   "engines": {
     "node": ">=22.13.0"
   },
@@ -148,12 +148,12 @@
     "verify:package": "node scripts/verify-package.mjs"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.8",
-    "@types/node": "^26.2.0",
-    "@vitest/coverage-v8": "^4.1.10",
+    "@biomejs/biome": "2.5.10",
+    "@types/node": "^26.3.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "jsdom": "^30.0.1",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
