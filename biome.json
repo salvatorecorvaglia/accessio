@@ -1,5 +1,4 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.7/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -54,7 +53,14 @@
         "noDoubleEquals": "error",
         "noExplicitAny": "off",
         "noVar": "error",
-        "noConsole": { "level": "off", "options": { "allow": ["log"] } }
+        "noConsole": {
+          "level": "off",
+          "options": {
+            "allow": [
+              "log"
+            ]
+          }
+        }
       }
     }
   }
